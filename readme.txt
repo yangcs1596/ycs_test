@@ -1,4 +1,4 @@
-
+﻿
  git add readme.txt //添加文件  
  git status    
  git commit -m 'first commit   //执行git commit -m '‘ 在‘’之间添加更新日志，就是你更新了哪些内容
@@ -32,7 +32,17 @@
 
 5.输入指令：git push -u origin master
 --------------------- 
- 
+1. 在本地新建存放源代码的文件夹；
+
+2. 进入文件夹下，右击选择 Git Bash Here ，弹出git命令行窗口；
+
+3. 运行指定 git init，初始化git；
+
+4. git  remote add origin xxx(远程源代码地址地址)；
+
+5. git pull origin master(合并分支，这个过程需要输入用户名和密码)；
+
+6. git checkout -b xxx(分支名)
 -------------------------------------------
 
  Git鼓励大量使用分支：
