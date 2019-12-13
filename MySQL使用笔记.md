@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS `tb_message` (
   `order_id` varchar(32) CHARACTER SET utf8 DEFAULT NULL COMMENT '订单id',
   `is_deleted` int(1) DEFAULT NULL COMMENT '删除状态(0:正常,1:删除)',
   `deleted_time` datetime DEFAULT NULL COMMENT '删除时间',
+   `gmt_create` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 默认时间
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT COMMENT='消息';
 

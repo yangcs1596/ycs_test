@@ -87,6 +87,21 @@ response.getWriter().write(res);
 Person person = objectMapper.readValue("{\"name\":\"davenkin\",\"address\":\"\",\"mobile\":null,\"extra\":\"extra-value\"}", Person.class);
 ```
 
+##### - 图片处理之thumbnailator和TwelveMonkeys的使
+
+##### springboot搜索引擎 eclasticsearch
+
+* 实时的全文检索
+* logstash的安装配置（同步数据库表数据？）
+
+* 教程：  https://www.cnblogs.com/yijialong/p/9729988.html
+
+**下载Kibana**
+
+* Kibana，就是我们所说的ES的图形化用户界面，用于方便用户进行操作。
+
+* 网址： https://www.elastic.co/downloads/kibana
+
 
 
 ### 1 开发常用的修饰符功能说明
