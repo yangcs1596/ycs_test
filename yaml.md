@@ -190,7 +190,7 @@ public SqlManagerFactoryBean sqlManagerFactoryBean(DataSource dataSource) throws
 
 
 
-### Radis
+### Redis
 
 ```yaml
 spring:
@@ -255,7 +255,28 @@ spring:
 1.5、配置Web应用程序(web.xml中配置AnnotationConfigApplicationContext)
 ```
 
+```java
+@Configuration
+public  class WebConfig implements WebMvcConfigurer{
 
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        registry.addViewController("test").setViewName("emp/test");
+        
+    }
+    
+}
+#等价于
+@Controller
+public class EmpContrller {
+    
+    @RequestMapping("test")
+    public String test() {
+        
+        return "emp/test";
+    }
+}
+```
 
 ```java
 @Reference(version = "${online-service.version-2-0}", url = "${online-service.url}")注解
@@ -1354,6 +1375,7 @@ rz  弹出回话框，选择文件上传
 
 ps -ef | grep 'name'
 查看当前所处的路径：    pdw
+netstat -lnp|grep 端口号
  
 -rw——- (600) 只有所有者才有读和写的权限
 -rw-r–r– (644) 只有所有者才有读和写的权限，组群和其他人只有读的权限
@@ -1363,7 +1385,13 @@ ps -ef | grep 'name'
 -rw-rw-rw- (666) 每个人都有读写的权限
 -rwxrwxrwx (777) 每个人都有读写和执行的权限
 
-rm -f 'fileName'  删除文件 不给出提示
+rm -f 'fileName'  
+rm -rf '文件夹'
+  -d或–directory 　直接把欲删除的目录的硬连接数据删成0，删除该目录。 
+　-f或–force 　强制删除文件或目录。 
+　-i或–interactive 　删除既有文件或目录之前先询问用户。 
+　-r或-R或–recursive 　递归处理，将指定目录下的所有文件及子目录一并处理。 
+　-v或–verbose 　显示指令执行过程。 删除文件 不给出提示
 ```
 
 ```

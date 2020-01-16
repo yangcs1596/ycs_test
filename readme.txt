@@ -1,4 +1,4 @@
-﻿
+
  git add readme.txt //添加文件  
  git status    
  git commit -m 'first commit   //执行git commit -m '‘ 在‘’之间添加更新日志，就是你更新了哪些内容
@@ -7,12 +7,12 @@
 
  git remote查看当前的远程库。
 
-
 ----------------------
 修改文件后，怎么提交到远程仓库
 1.git status 查看git是否有修改内容需要提交
 2.git add 指向需要提交的内容文件
 3.git commit 提交到本地库
+
 4.git push origin master 提交到远程仓库
 ---------------------------
 更新文件到github其实也差不多的步骤

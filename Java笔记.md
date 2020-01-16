@@ -26,6 +26,10 @@
 
 模版引擎: FreeMarker  
 
+服务注册中心、配置中心: nacos
+
+服务的熔断降级： Netflix的开源组件Hystrix
+
 #### Jar包解决功能记录
 
 * net.coobird.thumbnailator    缩略图片  https://www.cnblogs.com/miskis/p/5500822.html
@@ -171,6 +175,67 @@ Person person = objectMapper.readValue("{\"name\":\"davenkin\",\"address\":\"\",
 - 抽象类中的成员变量可以是各种类型的，而接口中的成员变量只能是 **public static final** 类型的。
 - 接口中不能含有静态代码块以及静态方法(用 static 修饰的方法)，而抽象类是可以有静态代码块和静态方法。
 - \4. 一个类只能继承一个抽象类，而一个类却可以实现多个接口。
+
+##### 1-4-3 一个接口多个实现类的Spring注入方式
+
+
+
+**1. 首先， Interface1 接口有两个实现类 Interface1Impl1 和 Interface1Impl2**
+
+**Interface1 接口：**
+
+```java
+package com.example.service;
+public interface Interface1 {
+    void fun1();
+}
+```
+
+**以下是接口的两个实现类，请注意@service注解的使用方式，这里给每个实现类标注了不同的名称，方便在@Resource注入时区别注入**
+
+**Interface1 接口实现类1：**
+
+```java
+@Service("s1")
+public class Interface1Impl1 implements Interface1 { 
+    @Override 
+    public void fun1() { System.out.println("接口1实现类 ..."); }   
+    public void fun2(){  System.out.println("接口1实现类1 fun2 ..."); } 
+}
+```
+
+**Interface1 接口实现类2：**
+
+```java
+@Service("s2") 
+public class Interface1Impl2 implements Interface1 {
+    @Override 
+    public void fun1() { System.out.println("接口1实现类 ..."); } 
+    public void fun2(){ System.out.println("接口1实现类2 fun2 ..."); } 
+} 
+```
+
+**2. 通过 @Autowired 和 @Qualifier 配合注入**
+
+```java
+@Autowired
+@Qualifier("interface1Impl1")
+Interface1 interface1;    //正常启动
+```
+
+**3. 使用@Resource注入，根据默认类名区分**
+
+```java
+@Resource(name = "interface1Impl1")
+Interface1 interface1;    //正常启动
+```
+
+**4. 使用@Resource注入，根据@Service指定的名称区分**
+
+```java
+@Resource(name = "s1")
+Interface1 interface1;    //正常启动
+```
 
 ***
 
@@ -522,6 +587,16 @@ public Map<String, Object> uploadMessageFile(HttpServletRequest request, @Reques
 * StringBuilder   可变的字符序列  比StringBuilder快，线程不同步的
 * 一般建议使用StringBuilder   
 
+##### 4-1 split();注意分割
+
+```java
+1、“.”和“|”都是转义字符，必须得加"\\";
+2、如果在一个字符串中有多个分隔符，可以用“|”作为连字符
+String.split("分割1|分割2");
+```
+
+
+
 ### 5 集合 
 
 #### 1、List,Set继承接口Collection
@@ -616,6 +691,10 @@ for(String key :keys){
 Set<Entry<String, String>> entries = testData.entrySet();
 for (Entry<String, String> entry : entries) {    
     System.out.println(entry.getKey()+":"+entry.getValue());
+}
+// 4
+for(Object m:map.values()){
+    System.out.println(m);
 }
 ```
 
@@ -1968,7 +2047,7 @@ public class InitComponent implements ServletContextListener,ApplicationContextA
 
 ```
 
-#### 拦截器
+#### 拦截器、监听器、过滤器
 
 ```xml
 <!-- 多个拦截器 -->
