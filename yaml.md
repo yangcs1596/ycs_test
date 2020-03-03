@@ -88,6 +88,12 @@ prefix = “person”：配置文件中哪个下面的所有属性进行一一�
 * javax.servlet.Filter
 
   文档 ：https://www.cnblogs.com/zlbx/p/4888312.html
+  
+  ```maven脚手架生成命令
+  mvn archetype:create-from-project
+  ```
+  
+  
 
 ### RestFul风格
 
@@ -132,6 +138,64 @@ prefix = “person”：配置文件中哪个下面的所有属性进行一一�
     @RequestMapping(method = RequestMethod.PUT)
     public ResponseEntity<Void> updateUser(User user) {
     } 
+```
+
+#### Swagger2的 实时生成文档api
+
+```xml
+#引入依赖
+<dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-swagger2</artifactId>
+    <version>2.9.2</version>
+</dependency>
+<dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-swagger-ui</artifactId>
+    <version>2.9.2</version>
+</dependency>
+```
+
+```java
+#静态资源时候可能会拦截
+/**
+     * 静态资源使用
+     */
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+            registry.addResourceHandler("/**").addResourceLocations(
+                    "classpath:/static/");
+            registry.addResourceHandler("swagger-ui.html").addResourceLocations(
+                    "classpath:/META-INF/resources/");
+            registry.addResourceHandler("/webjars/**").addResourceLocations(
+                    "classpath:/META-INF/resources/webjars/");
+    }
+```
+
+```java
+Api
+ApiModel
+ApiModelProperty
+ApiOperation
+ApiParam
+ApiResponse
+ApiResponses
+ResponseHeader
+#常用注解
+@Api(value="用户controller",tags={"用户操作接口"})
+@Api(value = "/user", description = "Operations about user")
+@ApiOperation(value="获取用户信息",tags={"获取用户信息copy"},response = Order,,notes="注意问题点")
+ "用于方法；表示一个http请求的操作"
+ @ApiParam() 用于方法，参数，字段说明；表示对参数的添加元数据（说明或是否必填等） 
+ public User getUserInfo(@ApiParam(name="id",value="用户id",required=true) Long id,@ApiParam(name="username",value="用户名") String username) {
+ 
+ @ApiModel()用于类 ；表示对类进行说明，用于参数用实体类接收 
+ @ApiModel(value="user对象",description="用户对象user")
+ @ApiModelProperty()用于方法，字段
+  @ApiModelProperty(value="用户名",name="username",example="xingguo")
+
+@ApiResponses({ @ApiResponse(code = 400, message = "Invalid Order") })
+
 ```
 
 
@@ -546,6 +610,21 @@ public @interface User {
 }
 ```
 
+### jsonwebtoken的使用
+
+```xml
+<!-- JWT相关 -->
+<dependency>
+   <groupId>io.jsonwebtoken</groupId>
+   <artifactId>jjwt</artifactId>
+   <version>0.7.0</version>
+</dependency>
+```
+
+```java
+https://www.jianshu.com/p/5858b2a9b509
+```
+
 
 
 ### Node使用
@@ -560,6 +639,62 @@ $ cnpm run dev
 ```
 
 ------
+
+```js
+	#vue的一些语法用法 模板
+<p>{{ message }}</p>
+<div v-html="message"></div>
+	# v-model 指令来实现双向数据绑定：
+<input v-model="message">
+	# v-bind 样式绑定
+<div v-bind:class="{'class1': use}">
+    # v-on 监听 DOM 事件
+<!-- 完整语法 --><a v-on:click="doSomething"></a>
+<!-- 缩写 --><a @click="doSomething"></a>
+```
+
+```js
+#vue在element-ui里的一些用法
+template（模版） 在这里属于一个固定用法： <template slot-scope="scope">
+<el-table-column label="日期" width="180">
+    <template slot-scope="scope">
+        <i class="el-icon-time"></i>
+		<span style="margin-left: 10px">{{ scope.row.date }}</span>
+	</template>
+</el-table-column>
+```
+
+#### axios的使用 推荐用vue-resource
+
+```js
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+# vue的ajax不要用axios, 这个在ie11不兼容, 用vue-resource
+
+<script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
+
+https://www.runoob.com/vue2/vuejs-ajax.html
+```
+
+```js
+// 基于全局Vue对象使用http
+Vue.http.get('/someUrl', [options]).then(successCallback, errorCallback);
+Vue.http.post('/someUrl', [body], [options]).then(successCallback, errorCallback);
+
+// 在一个Vue实例内使用$http
+this.$http.get('/someUrl', [options]).then(successCallback, errorCallback);
+this.$http.post('/someUrl', [body], [options]).then(successCallback, errorCallback);
+
+
+get和post的携带参数方式不一样
+http.get(URL,{  
+        params: {  
+            "id":id  
+        }  
+    })  
+```
+
+
 
 ### FreeMarker
 
@@ -1014,7 +1149,7 @@ public class ActiveMQUtil {
 
 ```
 
-
+### Hikari 号称“史上最快连接池”
 
 ### RabbitMQ 的使用
 
@@ -1407,6 +1542,12 @@ chown 用户名  文件名
 mv A B
 ```
 
+```js
+#查询关键字
+/+关键字 ，回车即可。此为从文档当前位置向下查找关键字，按n键查找关键字下一个位置；
+?+关键字，回车即可。此为从文档挡圈位置向上查找关键字，按n键向上查找关键字；
+```
+
 
 
 ##### basicPublish方法
@@ -1454,16 +1595,30 @@ KKFileView预览项目 https://kkfileview.keking.cn/zh-cn/docs/production.html
 
   
 
-```
-2、用以下命令启动OpenOffice服务 
+```js
+#2、用以下命令启动OpenOffice服务 
 cd D:\Program Files (x86)\OpenOffice 4\program
 soffice -headless -accept="socket,host=127.0.0.1,port=8100;urp;" -nofirststartwizard 
+# 远程调用
+soffice -headless -accept="socket,host=192.168.88.65,port=8100;urp;" -nofirststartwizard
 ```
 
 ```linux
 #linux启动服务  好像和windows一样
 1 /opt/openoffice4/program/soffice -headless -accept="socket,host=127.0.0.1,port=8100;urp;" -nofirststartwizard  临时启动
 2 nohup /opt/openoffice4/program/soffice -headless -accept="socket,host=127.0.0.1,port=8100;urp;" -nofirststartwizard &  后台启动
+```
+
+```java
+# 关键转换代码
+connection = new SocketOpenOfficeConnection("192.168.88.65", 8100);
+connection.connect();
+DocumentConverter converter = new StreamOpenOfficeDocumentConverter(connection); DefaultDocumentFormatRegistry formatReg = new DefaultDocumentFormatRegistry();
+DocumentFormat txt = formatReg.getFormatByFileExtension("odt");
+DocumentFormat pdf = formatReg.getFormatByFileExtension("pdf");
+converter.convert(inputFile, txt, outputFile, pdf);
+connection.disconnect();
+
 ```
 
 
@@ -1719,6 +1874,5 @@ public final class SysSession {
     private static ThreadLocal<AuthenticatedUser> authenticatedUserLocal = new ThreadLocal<AuthenticatedUser>();
 //### 所以只有那些一次请求有可能使用到多次的变量才存储到ThreadLocal中
 ```
-
 
 

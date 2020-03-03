@@ -443,7 +443,7 @@ public byte[] getByte(String path) {
 
 
 
-#### File、FileInputStream 转换为byte[]
+##### File、FileInputStream 转换为byte[]
 
 ```java
 File file = new File("test.txt");
@@ -452,14 +452,14 @@ byte[] bytes = new byte[input.available()];
 input.read(bytes);
 ```
 
-#### byte[]转换为InputStream
+###### byte[]转换为InputStream
 
 ```java
 byte[] bytes = new byte[1024];
 InputStream input = new ByteArrayInputStream(bytes);
 ```
 
-#### byte[]转换为File
+###### byte[]转换为File
 
 ```java
 File file = new File("");
@@ -645,6 +645,23 @@ list.sort(new Comparator<Student>() {
         return o1.getId() - o2.getId();
     }
 }); 
+```
+
+##### 1-2 筛选 filter
+
+```java
+Boolean flag = List.stream().filter(w -> '1'.getValue().equals(w.getApplicationUserType())).findAny().isPresent();
+// findAny() 返回任意一个对象
+// isPresent() 判断是否是null
+```
+
+##### 1-3 List实体对象转Map
+
+```java
+List<QuickNotaryDTO> list = quickNotaryService.find(id);
+Map<String, QuickNotaryDTO> map = list.stream().collect(toMap(QuickNotaryDTO::getNotaryCode, dto -> dto));
+//getNotaryCode实体对象中的一个get方法
+// {"NotaryCode()":{xxx},} // key 和 对象
 ```
 
 
@@ -979,6 +996,8 @@ Ctrl+F，查找文本
 Ctrl+/或Ctrl+Shift+/，注释（//或者/**/）
 Ctrl+Alt+left/right，返回至上次浏览的位置
 Ctrl + Shift + Z   取消撤销
+Ctrl + Alt + U  向上继承关系 diagram
+菜单栏 Navigate F4 向下查看继承关系
 ```
 
 > IntelliJ-Idea开发工具来编写HTML代码时常用的快捷键  输入然后+Tab键

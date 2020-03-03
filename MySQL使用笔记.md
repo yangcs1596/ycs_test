@@ -82,9 +82,9 @@ CREATE TABLE IF NOT EXISTS `tb_message` (
 * FULLTEXT （全文索引：用于搜索很长一篇文章的时候，效果最好。用在比较短的文本，如果就一两行字的，普通的 INDEX 也可以）
 
 ```mysql
-ALTER TABLE t_user ADD INDEX name_city_phone(USERNAME,CITY,PHONE)  //普通复合索引
+ALTER TABLE t_user ADD INDEX name_city_phone(USERNAME,CITY,PHONE) USING BTREE //普通复合索引
 
-ALTER TABLE t_user ADD UNIQUE name_city_phone(USERNAME,CITY,PHONE) //唯一复合索引
+ALTER TABLE t_user ADD UNIQUE name_city_phone(USERNAME,CITY,PHONE) USING BTREE //唯一复合索引
 
 #drop index name
 ```
@@ -285,7 +285,12 @@ CONVERT(value, type);
 ### 查询一张表有几个字段
 
 ```mysql
+#查询表的字段
 select * from information_schema.COLUMNS where table_name='表名' and TAble_schema = '库'
+#查询某数据库的所有表
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'test';
 ```
 
 ```mysql
@@ -311,6 +316,16 @@ INNER JOIN T2 ON T1.C1 = T2.C1
 SET T1.C2 = T2.C2,
       T2.C3 = expr
 WHERE condition
+```
+
+#### delete
+
+```mysql
+# 删除20部门中工资最高的员工记录
+DELETE FROM t_emp
+WHERE deptno=20 
+ORDER BY sal+IFNULL(comm,0) DESC;
+LIMIT 1;
 ```
 
 
