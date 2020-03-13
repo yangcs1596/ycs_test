@@ -128,8 +128,10 @@ ALTER TABLE t_user ADD UNIQUE name_city_phone(USERNAME,CITY,PHONE) USING BTREE /
 #### 2、添加字段
 
 ~~~mysql
-alter table   table1 add id int unsigned not Null auto_increment primary key
-COMMENT '备注',
+alter table   table1 
+add (
+    id int unsigned not Null auto_increment primary key COMMENT '备注',
+ )
 ~~~
 
 #### 3、修改字段

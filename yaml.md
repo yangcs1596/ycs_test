@@ -522,6 +522,36 @@ private String formatArgs(Object[] args) {
 在@Transactional注解中如果不配置rollbackFor属性,那么事物只会在遇到RuntimeException的时候才会回滚,加上rollbackFor=Exception.class,可以让事物在遇到非运行时异常时也回滚
 ```
 
+#### JackSon中@JsonInclude注解详解
+
+​		比如说我有个场景，返回前端的实体类中如果某个字段为空的话那么就不返回这个字段了，如果我们平时遇到这个问题，那么真的该脑壳疼了。幸亏有我们今天的主角，这个注解就是用来在实体类序列化成json的时候在某些策略下，加了该注解的字段不去序列化该字段
+
+```java
+@JsonJsonInclude.Include.NON_NULL这个最常用，即如果加该注解的字段为null,那么就不序列化这个字段了
+@JsonJsonInclude.Include.NON_ABSENT这个包含NON_NULL，即为null的时候不序列化
+@JsonJsonInclude.Include.NON_EMPTY 这个属性包含NON_NULL，NON_ABSENT之后还包含如果字段为空也不序列化。这个也比较常用
+
+public class User {
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String username;
+    private String password;
+    private Integer age;
+    }
+```
+
+#### META-INF（common里的注解）
+
+<div style="background-color:#FF4500">项目resource下新建文件夹META-INF，在文件夹下面新建<font color="#fff">spring.factories</font>文件</div>
+
+```factories
+org.springframework.context.ApplicationContextInitializer=\
+com.notarycloud.common.log.config.TtlMDCAdapterInitializer
+
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.notarycloud.common.log.config.LogAutoConfigure
+
+```
+
 #### 自定义一个注解
 
 ##### 元注解
