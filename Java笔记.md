@@ -655,13 +655,26 @@ Boolean flag = List.stream().filter(w -> '1'.getValue().equals(w.getApplicationU
 // isPresent() 判断是否是null
 ```
 
-##### 1-3 List实体对象转Map
+##### 1-3 List实体stream()转Map
 
 ```java
 List<QuickNotaryDTO> list = quickNotaryService.find(id);
-Map<String, QuickNotaryDTO> map = list.stream().collect(toMap(QuickNotaryDTO::getNotaryCode, dto -> dto));
+Map<String, QuickNotaryDTO> map = list.stream().collect(toMap(QuickNotaryDTO::getNotaryCode, dto -> dto),
+                                                        (key1,key2)->key2);
 //getNotaryCode实体对象中的一个get方法
 // {"NotaryCode()":{xxx},} // key 和 对象
+
+
+//对象转换 方式一
+List<VO> ll = Lists.transform(entityList, (entity) -> {
+    VO vo = new VO();
+    return vo;
+});
+//方式二
+// 获取 users 集合中的 id 集合
+List<Long> ids = users.stream().map(User::getId).collect(Collectors.toList());
+// 获取 users 集合中的 id 集合并转为字符串, 通过 , 拼接
+String idsTxt = users.stream().map(User::getId).map(String::valueOf).collect(Collectors.joining(","));
 ```
 
 
@@ -774,6 +787,48 @@ String json = JSON.toJSONString(user, filter);
 
 //Object data = JSON.toJSON(list，filter);
 ```
+
+#### 9-1、接口数据校验@validation
+
+https://blog.csdn.net/u012693530/article/details/80831408
+
+| 限制                      | 说明                                                         |
+| :------------------------ | :----------------------------------------------------------- |
+| @Null                     | 限制只能为null                                               |
+| @NotNull                  | 限制必须不为null                                             |
+| @AssertFalse              | 限制必须为false                                              |
+| @AssertTrue               | 限制必须为true                                               |
+| @DecimalMax(value)        | 限制必须为一个不大于指定值的数字                             |
+| @DecimalMin(value)        | 限制必须为一个不小于指定值的数字                             |
+| @Digits(integer,fraction) | 限制必须为一个小数，且整数部分的位数不能超过integer，小数部分的位数不能超过fraction |
+| @Future                   | 限制必须是一个将来的日期                                     |
+| @Max(value)               | 限制必须为一个不大于指定值的数字                             |
+| @Min(value)               | 限制必须为一个不小于指定值的数字                             |
+| @Past                     | 限制必须是一个过去的日期                                     |
+| @Pattern(value)           | 限制必须符合指定的正则表达式                                 |
+| @Size(max,min)            | 限制字符长度必须在min到max之间                               |
+| @Past                     | 验证注解的元素值（日期类型）比当前时间早                     |
+| @NotEmpty                 | 验证注解的元素值不为null且不为空（字符串长度不为0、集合大小不为0） |
+| @NotBlank                 | 验证注解的元素值不为空（不为null、去除首位空格后长度为0），不同于@NotEmpty，@NotBlank只应用于字符串且在比较时会去除字符串的空格 |
+| @Email                    | 验证注解的元素值是Email，也可以通过正则表达式和flag指定自定义的email格式 |
+
+#### 9-2 Fastjson的SerializerFeature序列化属性
+
+https://blog.csdn.net/qq_34412985/article/details/81985459
+
+JSONObject.toJSONString(Object object, SerializerFeature... features)
+
+QuoteFieldNames———-输出key时是否使用双引号,默认为true
+
+WriteMapNullValue——–是否输出值为null的字段,默认为false
+
+WriteNullNumberAsZero—-数值字段如果为null,输出为0,而非null
+
+WriteNullListAsEmpty—–List字段如果为null,输出为[],而非null
+
+WriteNullStringAsEmpty—字符类型字段如果为null,输出为”“,而非null
+
+WriteNullBooleanAsFalse–Boolean字段如果为null,输出为false,而非null
 
 ### 10 通配符和泛型
 
@@ -1036,7 +1091,7 @@ Ctrl + Alt + U  向上继承关系 diagram
   31、bxsh:w          -webkit-box-shadow:0 0 0 #000;
 ```
 
-#### idea的Lombox插件
+#### Lombox插件
 
 - idea — setting — plugins, 
   搜索栏中输入**Lombok**。
@@ -1075,6 +1130,21 @@ Ctrl + Alt + U  向上继承关系 diagram
 
 ------
 
+##### `@Builder`
+
+注释为你的类生成相对略微复杂的构建器API。`@Builder`可以让你以下面显示的那样调用你的代码，来初始化你的实例对象：
+
+
+
+```java
+Student.builder()
+               .sno( "001" )
+               .sname( "admin" )
+               .sage( 18 )
+               .sphone( "110" )
+               .build();
+```
+
 idea的p3c插件  代码规范
 
 * idea — setting — plugins,
@@ -1112,6 +1182,17 @@ tst(1,2);//2，1
 tst(1,2,3);//3，1
 ```
 
+#### 代码中的注释
+
+  **TODO: + 说明**：
+如果代码中有该标识，说明在标识处有功能代码待编写，待实现的功能在说明中会简略说明。
+
+**FIXME: + 说明**：
+如果代码中有该标识，说明标识处代码需要修正，甚至代码是错误的，不能工作，需要修复，如何修正会在说明中简略说明。
+
+**XXX: + 说明**：
+如果代码中有该标识，说明标识处代码虽然实现了功能，但是实现的方法有待商榷，希望将来能改进，要改进的地方会在说明中简略说明。  
+
 ------
 
 ## Request
@@ -1138,6 +1219,12 @@ request.getRequestDispatcher("/flagship/error/offline.html").forward(req,resp);
 //request.getRequestDispatcher的方法
 request.getRequestDispatcher("/flagship/error/offline.html").include(req,resp);
 注：.include(req,resp)；为默认格式。
+```
+
+读取配置文件
+
+```java
+XXX.class.getClassLoader().getResourceAsStream("static/license.xml");
 ```
 
 
@@ -1234,6 +1321,30 @@ StreamUtils.copy(in, out);
     }
 ```
 
+### 实现文档的格式转换
+
+1、poi + itext。
+
+先转html再绘制，听说格式有差异。
+
+比较复杂，格式兼容差，跨平台。
+
+2、借助openoffice
+
+我觉得不要选这个，openoffice和ms office的格式差异挺大的，还不如jacob。
+
+3、jacob + ms office
+
+需要借助本地office，格式兼容最好，最后的备选方案。 借助ms office之类的必定只能兼容windows，不支持linux。
+
+4、docx4j的export pdf组件。
+
+我觉得如果是格式不是很复杂的情况，应该用这个比较好（在office开源界，poi第一它应该第二），或者是第5项中的其他方案。
+
+[plutext/docx4j-export-FO](https://link.zhihu.com/?target=https%3A//github.com/plutext/docx4j-export-FO)
+
+5、aspose等其他组件。
+
 ------
 
 ## Mybatis
@@ -1255,7 +1366,13 @@ ${}拼接字符    只能用${value}
 </select>
 ```
 
-#### sql片段
+  在使用foreach的时候最关键的也是最容易出错的就是**collection**属性，该属性是必须指定的，但是在不同情况 下，该属性的值是不一样的，主要有一下3种情况：
+
+       1. 如果传入的是单参数且参数类型是一个List的时候，collection属性值为list
+    2. 如果传入的是单参数且参数类型是一个array数组的时候，collection的属性值为array
+    3. 如果传入的参数是多个的时候，我们就需要把它们封装成一个Map了，当然单参数也可以封装成map，实际上如果你在传入参数的时候，在breast里面也是会把它封装成一个Map的，map的key就是参数名，所以这个时候collection属性值就是传入的List或array对象在自己封装的map里面的key 
+
+#### sql片段 includ
 
 ```xml
 这个元素可以被用来定义可重用的 SQL 代码段，可以包含在其他语句中。比如：
@@ -1368,6 +1485,29 @@ CDATA
    <![CDATA[  and Time > #{time}  ]]>
 </if>
 ```
+
+### [MyBatis-Plus](https://mp.baomidou.com/)
+
+* https://mp.baomidou.com/guide/wrapper.html#querywrapper
+
+```java
+#方式一  这种只能one()和list()返回实体对象
+OrderBase orderBase = orderBaseProviderService
+                    .lambdaQuery()
+                    .eq(OrderBase::getThirdOrderId, orderBaseInfo.getThirdOrderId())
+                    .one();
+#方式二  这种可以返回map
+LambdaQueryWrapper<OrderBase> lambdaQueryWrapper = new QueryWrapper<OrderBase>()
+                    .lambda()
+                    .eq(OrderBase::getThirdOrderId, orderBaseInfo.getThirdOrderId());
+            orderBaseProviderService.getOne(lambdaQueryWrapper);
+```
+
+
+
+####  @TableField
+
+* 完成字段自动填充
 
 ## ActiveMQ消息队列
 
