@@ -542,7 +542,6 @@ public class User {
 #### META-INF（common里的注解）
 
 <div style="background-color:#FF4500">项目resource下新建文件夹META-INF，在文件夹下面新建<font color="#fff">spring.factories</font>文件</div>
-
 ```factories
 org.springframework.context.ApplicationContextInitializer=\
 com.notarycloud.common.log.config.TtlMDCAdapterInitializer
@@ -1905,4 +1904,6 @@ public final class SysSession {
 //### 所以只有那些一次请求有可能使用到多次的变量才存储到ThreadLocal中
 ```
 
+### MYCAT爬坑
 
+总结：  因为mycat中分片表中的分片字段是不能更新的，所以减少left join 的复杂SQL

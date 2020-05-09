@@ -930,6 +930,67 @@ if(str!=null){
 
 ------
 
+### 13 Spring Boot Starter
+
+#### 13-1 参考地址 
+
+https://www.cnblogs.com/adversary/p/10346278.html
+
+https://www.jianshu.com/p/1d547c7a5670
+
+https://mp.weixin.qq.com/s/a--34E6iFTopUVC6orW7Jw 微信牛？
+
+#### 13-2  Spring 配置类不为扫描、未注册Bean
+
+* **需求描述**
+
+　　当我们想要利用SpringBoot封装一套组件并发布给第三方使用时，我们就不得不考虑我们的组件能否被使用者正确引入使用，此处描述的时打包成 jar 包后 Spring 配置类不为扫描、未注册Bean的问题。
+
+
+
+
+
+此方法最关键的为 <span style="color:red"> resources/META-INF/spring.factories </span>文件，当项目启动时，Spring会扫描所有jar包下面的 spring.factories 文件，进行相应的自动配置处理
+
+#### 13-3 元数据的配置
+
+参考地址 https://blog.csdn.net/dupeng0811/article/details/89876444
+
+https://mp.weixin.qq.com/s/a--34E6iFTopUVC6orW7Jw
+
+新建META-INF/spring-configuration-metadata.json文件，进行配置。
+
+```json
+
+{
+  "groups": [
+    {
+      "name": "hello",
+      "type": "com.example.springbootstarterhello.HelloProperties",
+      "sourceType": "com.example.springbootstarterhello.HelloProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "hello.msg",
+      "type": "java.lang.String",
+      "description": "打招呼的内容，默认为“World!”",
+      "sourceType": "com.example.springbootstarterhello.HelloProperties",
+      "defaultValue": "World!"
+    }
+  ],
+  "hints": []
+}
+```
+
+
+
+spring-boot-configuration-processor依赖就可以做到，它的基本原理是在编译期使用注解处理器自动生成spring-configuration-metadata.json文件
+
+------
+
+
+
 ## 常见异常
 
 异常分为免检异常和必检异常。
