@@ -1,4 +1,4 @@
-互联网技术
+*互联网技术
 
 服务框架：Dubbo, zookeeper, Rest 服务
 
@@ -105,6 +105,19 @@ Person person = objectMapper.readValue("{\"name\":\"davenkin\",\"address\":\"\",
 * Kibana，就是我们所说的ES的图形化用户界面，用于方便用户进行操作。
 
 * 网址： https://www.elastic.co/downloads/kibana
+
+#### springboot开启异步
+
+```
+@Service
+@EnableAsync
+public class BaseInfoBiz {
+	@Async
+    public void test(){
+    	****
+    }
+}
+```
 
 
 
@@ -359,6 +372,8 @@ if (ImageUtils.isImage(newFile)) {
 //方式二
 import org.apache.commons.io.FileUtils;
 FileUtils.copyInputStreamToFile(inputStream, newFile);
+
+System.getProperty("line.separator") //换行符
 ```
 
 #### 3-2  字节流的形式返回
@@ -579,6 +594,11 @@ public Map<String, Object> uploadMessageFile(HttpServletRequest request, @Reques
 }
 ```
 
+```java
+//路径问题
+System.getProperty("java.io.tmpdir")
+```
+
 
 
 ### 4 StringBuffer
@@ -595,7 +615,31 @@ public Map<String, Object> uploadMessageFile(HttpServletRequest request, @Reques
 String.split("分割1|分割2");
 ```
 
+##### 4-2 CharSequence是一个描述字符串结构的接口
 
+* Stirng类
+
+  ```
+  public final class String
+  extends Object
+  implements Serializable, Comparable<String>, CharSequence
+  ```
+
+* StringBuffer类
+
+  ```
+  public final class StringBuffer extends Object implements Serializable, CharSequence
+  ```
+
+* StringBuilder类
+
+  ```
+  public final class StringBuilder
+  extends Object
+  implements Serializable, CharSequence
+  ```
+
+  
 
 ### 5 集合 
 
@@ -655,7 +699,7 @@ Boolean flag = List.stream().filter(w -> '1'.getValue().equals(w.getApplicationU
 // isPresent() 判断是否是null
 ```
 
-##### 1-3 List实体stream()转Map
+##### 1-3 List实体stream() 
 
 ```java
 List<QuickNotaryDTO> list = quickNotaryService.find(id);
@@ -1016,6 +1060,8 @@ Runtime和Error以及他们的子类都称为免检异常，所有其他的异�
 
 ```java
 ResourceUtils.getURL("classpath:").getPath()  //获取class的路径
+//输出路径
+System.getProperty("java.io.tmpdir");
 ```
 
 

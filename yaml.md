@@ -92,8 +92,102 @@ prefix = “person”：配置文件中哪个下面的所有属性进行一一�
   ```maven脚手架生成命令
   mvn archetype:create-from-project
   ```
-  
-  
+
+### GitHub的命令
+
+* https://www.cnblogs.com/mlw1814011067/p/9908856.html
+
+1. 创建项目根目录
+
+```
+mkdir 文件夹名
+```
+
+　　2. 初始化文件夹
+
+```
+git init
+```
+
+　　3. 配置用户名和邮箱（第一次配置后，不需要再登录）
+
+```
+git config user.name 名字
+git config user.email 邮箱
+
+--------------------------------
+git config --global user.name 名字
+git config --global user.email 邮箱
+这个是针对当前电脑下的所有本地参数（项目根目录文件夹）
+```
+
+　　4. 随时查看文件状态
+
+```
+git status 
+-------------有三种状态
+changes to be commited :     这样的文件以及位于暂存区
+Untracked files:             这样的文件是新创建的，第一次进入
+```
+
+　　5. 将工作区的文件，放到暂存区
+
+```
+git add 文件名/文件夹名
+git add . 这种方式运用较多，将当前文件夹中的所有文件都放到暂存区去
+```
+
+　　6. 将暂存区的文件，放到主仓库去
+
+```
+git commit 会进入vi编辑器界面，按i/a进入编辑状态，esc退出编辑状态，：wq保存退出。必须要写内容，要不然就没办法放到主仓库去
+git commit -m 日志内容,就会跳过vi编辑界面
+```
+
+　　7. 成功后，查看暂存区是否还有内容
+
+```
+git status
+得到 nothing to commit，working directory clean 就表示文件都已经上传到主仓库中
+```
+
+　　8. 查看日志
+
+```
+git log
+commit：********    版本号
+ Author：ouyang <oy1990425@163.com>
+ Date:时间
+```
+
+　　9. 将本地仓库的内容上传到服务器仓库上
+
+```
+git push  git仓库地址  master
+```
+
+　　10. 第一次从服务器上跟新文件数据到另一台电脑上时
+
+```
+git clone git仓库地址 master（也可以写另外的名字）
+ 电脑会在当前目录下，新建一个master的本地仓库
+```
+
+#### 常用命令：
+
+git init 新建一个空的仓库
+git status 查看状态
+git add . 添加文件
+git commit -m '注释' 提交添加的文件并备注说明
+git remote add origin git@github.com:jinzhaogit/git.git 连接远程仓库
+git push -u origin master 将本地仓库文件推送到远程仓库
+git log 查看变更日志
+git reset --hard 版本号前六位 回归到指定版本
+git branch 查看分支
+git branch newname 创建一个叫newname的分支
+git checkout newname 切换到叫newname的分支上
+git merge newname 把newname分支合并到当前分支上
+git pull origin master 将master分支上的内容拉到本地上
 
 ### RestFul风格
 
@@ -138,64 +232,6 @@ prefix = “person”：配置文件中哪个下面的所有属性进行一一�
     @RequestMapping(method = RequestMethod.PUT)
     public ResponseEntity<Void> updateUser(User user) {
     } 
-```
-
-#### Swagger2的 实时生成文档api
-
-```xml
-#引入依赖
-<dependency>
-    <groupId>io.springfox</groupId>
-    <artifactId>springfox-swagger2</artifactId>
-    <version>2.9.2</version>
-</dependency>
-<dependency>
-    <groupId>io.springfox</groupId>
-    <artifactId>springfox-swagger-ui</artifactId>
-    <version>2.9.2</version>
-</dependency>
-```
-
-```java
-#静态资源时候可能会拦截
-/**
-     * 静态资源使用
-     */
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-            registry.addResourceHandler("/**").addResourceLocations(
-                    "classpath:/static/");
-            registry.addResourceHandler("swagger-ui.html").addResourceLocations(
-                    "classpath:/META-INF/resources/");
-            registry.addResourceHandler("/webjars/**").addResourceLocations(
-                    "classpath:/META-INF/resources/webjars/");
-    }
-```
-
-```java
-Api
-ApiModel
-ApiModelProperty
-ApiOperation
-ApiParam
-ApiResponse
-ApiResponses
-ResponseHeader
-#常用注解
-@Api(value="用户controller",tags={"用户操作接口"})
-@Api(value = "/user", description = "Operations about user")
-@ApiOperation(value="获取用户信息",tags={"获取用户信息copy"},response = Order,,notes="注意问题点")
- "用于方法；表示一个http请求的操作"
- @ApiParam() 用于方法，参数，字段说明；表示对参数的添加元数据（说明或是否必填等） 
- public User getUserInfo(@ApiParam(name="id",value="用户id",required=true) Long id,@ApiParam(name="username",value="用户名") String username) {
- 
- @ApiModel()用于类 ；表示对类进行说明，用于参数用实体类接收 
- @ApiModel(value="user对象",description="用户对象user")
- @ApiModelProperty()用于方法，字段
-  @ApiModelProperty(value="用户名",name="username",example="xingguo")
-
-@ApiResponses({ @ApiResponse(code = 400, message = "Invalid Order") })
-
 ```
 
 
@@ -551,7 +587,7 @@ com.notarycloud.common.log.config.LogAutoConfigure
 
 ```
 
-#### 自定义一个注解
+#### Springboot JDK8自定义一个注解
 
 ##### 元注解
 
@@ -638,6 +674,20 @@ public @interface User {
    public String address() default "";
 }
 ```
+
+##### 1-1 default的注解
+
+default是在java8中引入的关键字，也可称为Virtual
+
+```java
+public interface Interface1{
+    default void helloWorld() {
+        System.out.println("hi i'm from Interface1");
+    }
+}
+```
+
+
 
 ### jsonwebtoken的使用
 
@@ -1180,6 +1230,11 @@ public class ActiveMQUtil {
 
 ### Hikari 号称“史上最快连接池”
 
+### Kibana 可视化工具 
+
+* 与 搜索引擎Elasticsearch 合作
+* 日志可视化工具
+
 ### RabbitMQ 的使用
 
 #### 集成
@@ -1237,7 +1292,13 @@ rabbitmq-server status
 
 ```
 
-#### nginx笔记
+### nginx笔记
+
+轻量级高并发服务器 Nginx
+
+Nginx 是一款自由的、开源的、高性能的 HTTP **服务器和反向代理服务器**；同时也是一个 IMAP、POP3、SMTP 代理服务器。
+
+Nginx 可以作为一个 HTTP 服务器进行网站的发布处理，另外 Nginx 可以作为**反向代理进行负载均衡**的实现。
 
 ~~~
 cd /etc/nginx/
@@ -1751,7 +1812,289 @@ public <T> T postForObject(String url, @Nullable Object request, Class<T> respon
 }
 ```
 
-### sounarqube在jenkins上的配置
+```yml
+
+
+```
+
+
+
+### JenKins项目管理工具
+
+#### SHELL语法参数化脚本构建
+
+1、dubbo的shell脚本
+
+```shell
+rm -f /root/.m2/repository/com/online/notary/online-service-api/1.0.0/online-service-api-1.0.0.jar
+rm -f /root/.m2/repository/com/online/notary/online-common/1.0.0/online-common-1.0.0.jar
+cp /root/.jenkins/workspace/测试环境-在线受理-项目/online-common/target/online-common-1.0.0.jar /root/.m2/repository/com/online/notary/online-common/1.0.0/
+cp /root/.jenkins/workspace/测试环境-在线受理-项目/online-service-api/target/online-service-api-1.0.0.jar /root/.m2/repository/com/online/notary/online-service-api/1.0.0/
+
+```
+
+```shell
+docker服务器
+如有参数脚本执行命令： startup.sh conumer-order 18022
+#! /bin/sh 文件名startup.sh
+serviceName=$1
+port=$2
+containerId=`docker ps -a|grep $serviceName|awk '{print $1}'`
+echo $containerId
+if [ $containerId ]; then
+     docker stop $containerId
+	 docker rm $containerId
+fi
+
+docker run  -it -v  /usr/share/fonts:/usr/share/fonts  -d -p  $port:8080 --name $serviceName -m 1280M --env SKYWALKING_COLLECTOR_ARRE="192.168.88.116:11800" --env PROFILES_ACTIVE="test" --env SERVER_HOST="192.168.88.115" --env SERVER_PORT="$port" `docker images |grep $serviceName |awk '{print $2,$3}' |grep latest|awk '{print $2}'`
+
+```
+
+
+
+```shell
+#文件名如startup.sh
+sudo cp /home/gzy/online-service/online-service-1.0.0.jar /home/online_dubbox/online-service/20659/online-service-20659.jar
+#####################
+sudo /home/online_dubbox/online-service/20659/online-service-sit-20659.sh restart
+
+#文件名 online-service-sit-20659.sh
+#!/bin/sh/执行的脚本.sh
+## java env
+export JAVA_HOME=/usr/java/jdk1.8.0_171-amd64
+export JRE_HOME=$JAVA_HOME/jre
+
+API_NAME=operation-online-back-api-20566
+JAR_NAME=$API_NAME\.jar
+SERVICE_DIR=/home/zxsl/online_dubbox/operation-online-back-api/20566
+#PID  代表是PID文件
+PID=$API_NAME\.pid
+
+cd $SERVICE_DIR
+
+#使用说明，用来提示输入参数
+usage() {
+    echo "Usage: sh 执行脚本.sh [start|stop|restart|status]"
+    exit 1
+}
+
+#检查程序是否在运行
+is_exist(){
+  pid=`ps -ef|grep $JAR_NAME|grep -v grep|awk '{print $2}' `
+  #如果不存在返回1，存在返回0
+  if [ -z "${pid}" ]; then
+   return 1
+  else
+    return 0
+  fi
+}
+
+#启动方法
+start(){
+  is_exist
+  if [ $? -eq "0" ]; then
+    echo ">>> $(date "+%Y-%m-%d %H:%M:%S") ${JAR_NAME} is already running PID=${pid} <<<"
+  else
+    nohup $JRE_HOME/bin/java -Xms512m -Xmx1024m -jar $JAR_NAME --spring.profiles.active=common-pro,pro --dubbo.protocol.port=20666 --server.port=7671 --dubbo.service.shutdown.wait=180000 --dubbo.registry.file=/home/zxsl/online_dubbox/operation-online-service/20666/dubbo-registry.properties >/dev/null 2>&1 &
+    echo $! > $SERVICE_DIR/$PID
+    echo ">>> $(date "+%Y-%m-%d %H:%M:%S") start $JAR_NAME successed PID=$! <<<"
+   fi
+  }
+
+#停止方法 3分钟停止不了，则强制停止
+stop(){
+  #is_exist
+  pidf=$(cat $SERVICE_DIR/$PID)
+  kill $pidf
+  rm -rf $SERVICE_DIR/$PID
+  sleep 2
+  is_exist
+  if [ $? -eq "0" ]; then
+    echo ">>> $(date "+%Y-%m-%d %H:%M:%S") ${JAR_NAME} PID = $pid begin kill -15 $pid  <<<"
+    kill -15 $pid
+    sleep 2
+  fi
+  i=0
+  while true
+  do
+    is_exist
+    if [ $? -eq "0" ]; then
+	  if [[ $i -eq 181 ]]; then
+	   echo ">>> $(date "+%Y-%m-%d %H:%M:%S") ${JAR_NAME} PID = $pid begin kill -9 $pid  <<<"
+	   kill -9  $pid
+	   sleep 2
+	  else
+        echo ">>> $(date "+%Y-%m-%d %H:%M:%S") ${JAR_NAME} is working on the unfinished service. Please wait later....  <<<"
+        sleep 1
+		i=$(($i+1))
+	  fi
+    else
+      echo ">>> $(date "+%Y-%m-%d %H:%M:%S") ${JAR_NAME} process stopped <<<"
+      break;
+    fi
+  done
+
+}
+
+#输出运行状态
+status(){
+  is_exist
+  if [ $? -eq "0" ]; then
+    echo ">>> $(date "+%Y-%m-%d %H:%M:%S") ${JAR_NAME} is running PID is ${pid} <<<"
+  else
+    echo ">>> $(date "+%Y-%m-%d %H:%M:%S") ${JAR_NAME} is not running <<<"
+  fi
+}
+
+#重启
+restart(){
+  stop
+  start
+}
+
+#根据输入参数，选择执行对应方法，不输入则执行使用说明
+case "$1" in
+  "start")
+    start
+    ;;
+  "stop")
+    stop
+    ;;
+  "status")
+    status
+    ;;
+  "restart")
+    restart
+    ;;
+  *)
+    usage
+    ;;
+esac
+exit 0
+```
+
+#### K8s服务构建
+
+```shell
+#查看
+docker images
+#查看部分docker images|grep order
+
+order-consumer
+kubectl -n notarycloud get po -owide
+#115上执行的命令
+#1
+docker tag registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:latest registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:202007171814
+#2
+docker push registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:202007171814
+#uat环境上执行的命令
+#3
+kubectl -n notarycloud set image deployment notary-cloud-consumer-order notary-cloud-consumer-order=registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:202007171814
+
+#解释
+#docker tag 是在115把最新的latest 打一个新的tag比如2020071711
+#docker push 是把这个景象推送到镜像仓库
+#kubectl -n notarycloud set image deployment 这句是在227执行，用新的镜像替换旧的镜像
+#
+order-provider
+kubectl -n notarycloud get po -owide
+docker tag registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:latest registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:20200717511
+docker push registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:20200717511
+kubectl -n notarycloud set image deployment notary-cloud-provider-order notary-cloud-provider-order=registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:20200717511
+
+
+
+
+```
+
+
+
+有k8s的构建
+
+```
+def label = "jenkins-jnlp-slave-${UUID.randomUUID().toString()}"
+podTemplate(label: label, containers: [
+		containerTemplate(name: 'maven', image: 'maven:3-jdk-8-slim', ttyEnabled: true, command: 'cat'),
+		containerTemplate(name: 'docker', image: 'docker:18', ttyEnabled: true, command: 'cat'),
+		containerTemplate(name: 'kubectl', image: 'lachlanevenson/k8s-kubectl:v1.13.12', ttyEnabled: true, command: 'cat')
+	],
+	volumes: [
+		hostPathVolume(mountPath: '/home/jenkins/agent', hostPath: '/mnt/storage/docker/data/jenkins'),
+		hostPathVolume(mountPath: '/root/.m2', hostPath: '/mnt/storage/docker/data/jenkins/.m2'),
+		hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock')
+	])
+{
+    node (label) {
+			stage('代码检出'){
+				git branch: 'development', credentialsId: 'e71846ca-cbc1-4122-9f4f-5ea617666617', url: 'ssh://git@notarycloud-gitlab-ce/fxnotary/notary-cloud.git'
+			}
+			
+			stage('Maven构建') {
+				container('maven') {
+				    parallel (
+						"autoconfigure": {
+							stage('autoconfigure') {
+								sh """
+									# note: $PWD=/home/jenkins/agent/notary-cloud.git/
+									# mvn -f commons/notary-cloud-common-autoconfigure/pom.xml deploy
+									mvn -f pom.xml clean -Dmaven.test.skip=true install deploy
+								"""
+							}
+						}
+					)
+				}
+				container('maven') {
+				    parallel (
+						"order": {
+							stage('order') {
+								sh """
+									mvn -f consumers/notary-cloud-consumer-order/pom.xml -T 2 clean -Dmaven.test.skip=true package dockerfile:build;
+									mvn -f providers/notary-cloud-provider-order/pom.xml -T 2 clean -Dmaven.test.skip=true package dockerfile:build;
+								"""
+							}
+						}
+					)
+				}
+			}
+			
+			
+			stage('镜像推送') {
+				container('docker') {
+					parallel (
+						"order": {
+							stage('order') {
+								sh """
+									docker tag registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:latest registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:$BUILD_NUMBER;
+									docker push registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:latest;
+									docker push registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:$BUILD_NUMBER;
+									docker tag registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:latest registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:$BUILD_NUMBER;
+									docker push registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:latest;
+									docker push registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:$BUILD_NUMBER;
+								"""
+							}
+						}
+					)
+				}
+			}
+			
+			
+			stage('K8S部署') {
+				container('kubectl') {
+					sh """
+						kubectl -n notarycloud set image deployment notary-cloud-consumer-order notary-cloud-consumer-order=registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:$BUILD_NUMBER --record;
+						kubectl -n notarycloud set image deployment notary-cloud-provider-order notary-cloud-provider-order=registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:$BUILD_NUMBER --record;
+					"""
+				}
+			}
+
+    }
+}
+
+```
+
+
+
+#### sounarQube代码质量监控在jenkins上的配置
 
 ```
 sonar.projectKey=operation-online
@@ -1785,6 +2128,64 @@ java-module.sonar.projectBaseDir=./
 C:\Users\Administrator\.jenkins\plugins
 ````
 
+### Swagger2的 实时生成文档api
+
+```xml
+#引入依赖
+<dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-swagger2</artifactId>
+    <version>2.9.2</version>
+</dependency>
+<dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-swagger-ui</artifactId>
+    <version>2.9.2</version>
+</dependency>
+```
+
+```java
+#静态资源时候可能会拦截
+/**
+     * 静态资源使用
+     */
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+            registry.addResourceHandler("/**").addResourceLocations(
+                    "classpath:/static/");
+            registry.addResourceHandler("swagger-ui.html").addResourceLocations(
+                    "classpath:/META-INF/resources/");
+            registry.addResourceHandler("/webjars/**").addResourceLocations(
+                    "classpath:/META-INF/resources/webjars/");
+    }
+```
+
+```java
+Api
+ApiModel
+ApiModelProperty
+ApiOperation
+ApiParam
+ApiResponse
+ApiResponses
+ResponseHeader
+#常用注解
+@Api(value="用户controller",tags={"用户操作接口"})
+@Api(value = "/user", description = "Operations about user")
+@ApiOperation(value="获取用户信息",tags={"获取用户信息copy"},response = Order,,notes="注意问题点")
+ "用于方法；表示一个http请求的操作"
+ @ApiParam() 用于方法，参数，字段说明；表示对参数的添加元数据（说明或是否必填等） 
+ public User getUserInfo(@ApiParam(name="id",value="用户id",required=true) Long id,@ApiParam(name="username",value="用户名") String username) {
+ 
+ @ApiModel()用于类 ；表示对类进行说明，用于参数用实体类接收 
+ @ApiModel(value="user对象",description="用户对象user")
+ @ApiModelProperty()用于方法，字段
+  @ApiModelProperty(value="用户名",name="username",example="xingguo")
+
+@ApiResponses({ @ApiResponse(code = 400, message = "Invalid Order") })
+
+```
+
 
 
 参考文档：
@@ -1792,6 +2193,8 @@ C:\Users\Administrator\.jenkins\plugins
 * https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner+for+Jenkins
 
 ### springboot 整合 sitemesh3
+
+Sitemesh 是一个网页布局和修饰的框架，基于 Servlet 中的 Filter
 
 第一步: 创建`WebSiteMeshFilter` 类
 
@@ -1904,6 +2307,43 @@ public final class SysSession {
 //### 所以只有那些一次请求有可能使用到多次的变量才存储到ThreadLocal中
 ```
 
+### springboot使用ElasticSearch搜索引擎
+
+#### 参考地址：
+
+https://www.cnblogs.com/yijialong/p/9729988.html
+
+
+
 ### MYCAT爬坑
 
 总结：  因为mycat中分片表中的分片字段是不能更新的，所以减少left join 的复杂SQL
+
+### 其它
+
+NACOS
+
+JenKins
+
+GitLab  ;  GitBook
+
+```cmd
+1、是修改了文件，没有任何 git 操作
+git checkout -- aaa.html // 指定还原`aaa.html`文件
+git checkout -- * 		 // 还原所有文件
+2、修改了文件，并提交到暂存区（即：编辑之后，进行git add 但没有 git commit -m "留言xxx"）
+git log --oneline         // 可以省略
+git reset HEAD            // 回退到当前版本
+git checkout -- aaa.html
+3、修改了文件，并提交到仓库区（即：编辑之后，进行git add 并且 git commit -m "留言xxx"）
+git log --oneline   // 可以省略
+git reset HEAD^    // HEAD^ 是回退到上个版本	HEAD~数字 是回退到数字个版本
+git checkout -- aaa.html
+```
+
+
+
+pdman
+
+onlyOffice开源文档编辑器
+

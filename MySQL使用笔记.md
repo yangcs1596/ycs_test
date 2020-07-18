@@ -380,6 +380,84 @@ select
 from tb_order o
 ```
 
+### 写mysql的事务
+
+```mysql
+start transaction;
+select balance from bank where name="zhangsan";
+// 生成 重做日志 balance=600
+update bank set balance = balance - 400; 
+// 生成 重做日志 amount=400
+update finance set amount = amount + 400;
+commit;
+```
+
+存储过程
+
+CONTINUE表示遇到错误不处理，继续执行；
+ EXIT表示遇到错误时马上退出；
+ UNDO表示遇到错误后撤回之前的操作，MySQL暂不支持回滚操作；
+
+```mysql
+CREATE PROCEDURE PRO2(
+    IN c_name VARCHAR (20),
+    IN c_num INTEGER)
+BEGIN
+    DECLARE t_error INTEGER;
+    ##这里跟上面的写的不一样，但是需要在语句中根据t_error的值手动回滚下事务
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET t_error = 1;
+ 
+    START TRANSACTION;
+        INSERT INTO test_tab VALUES    (1, '2');
+        INSERT INTO test_tab VALUES    (1, '3');
+        
+        IF t_error = 1 THEN
+            ROLLBACK;
+        ELSE
+            COMMIT;
+        END IF;
+END
+          
+ -- 执行过程
+ call num_from_employee(参数)
+```
+
+
+
+
+
+postgrepsql的存储过程写法
+
+```sql
+--存储过程
+create or replace function P_DWA_ERP_LEDGER_JQ_MONTH_NEW( v_mouth varchar(8),  out v_retcode text,  out v_retinfo text,  out v_row_num integer)
+AS 
+$BODY$
+declare
+begin
+    insert into table_new(id, name, age) select t.id, t.name, m.age from student t, employees m where t.id=m.id;
+
+    GET DIAGNOSTICS V_ROW_NUM := ROW_COUNT;
+
+    -- 执行成功后的返回信息
+    V_RETCODE := 'SUCCESS';
+    V_RETINFO := '结束';
+  
+    --异常处理
+    EXCEPTION
+    WHEN OTHERS THEN
+        V_RETCODE := 'FAIL';
+        V_RETINFO := SQLERRM;
+   
+end;
+
+$BODY$
+language plpgsql;
+
+--调用存储过程
+select * from P_DWA_ERP_LEDGER_JQ_MONTH_NEW('12');
+```
+
 
 
 ### 函数用法
