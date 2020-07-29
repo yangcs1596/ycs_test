@@ -719,6 +719,8 @@ $ cnpm run dev
 
 ------
 
+#### Vue的语法
+
 ```js
 	#vue的一些语法用法 模板
 <p>{{ message }}</p>
@@ -742,6 +744,44 @@ template（模版） 在这里属于一个固定用法： <template slot-scope="
 	</template>
 </el-table-column>
 ```
+
+#### Vue.js的实例
+
+```js
+var detail = new Vue({
+    el: '#app',
+    data: {
+        #数据属性
+    },
+    mounted: function () {
+        #初始化
+    },
+    methods: {
+        #函数方法
+    },
+    computed: {
+        #computed中的函数必须用return返回最终的结果；属性的结果会被缓存，除非依赖的响应式属性变化才会重新计算。
+        testFunction: function(){
+    		return "";
+		}
+    },
+    /**使用场景
+    computed 　　　　
+        当一个属性受多个属性影响的时候就需要用到computed
+        最典型的例子： 购物车商品结算的时候
+    watch
+        当一条数据影响多条数据的时候就需要用watch
+        搜索数据**/
+    watch:{
+        #data里的数据属性监听 监听属性的变化
+    }
+    filters:{
+    	#过滤器
+ 	}
+})
+```
+
+
 
 #### axios的使用 推荐用vue-resource
 
@@ -892,6 +932,72 @@ public class ControllerConfig {
 
 #### FreeMarker常用指令
 
+- 访问map中的key
+
+```bash
+${key}
+```
+
+- 访问pojo中的属性
+
+```bash
+${key.property}
+```
+
+- 取集合中的数据
+
+```xml
+<#list studentList as student>
+ <tr> 
+<td>${student.id}</td>
+<td>${studnet.name}</td>
+</tr>
+</#list>
+```
+
+- 取循环中的下标
+
+```bash
+<#list studentList as student>
+    ${student_index}
+</#list>
+```
+
+- 判断
+
+```csharp
+<#if student_index % 2 == 0>
+<#else>
+</#if>
+```
+
+- 日期类型格式化
+
+```xml
+<!-- 可以使用?date,?time,?datetime,?string(parten)-->
+当前日期：${date?string("yyyy/MM/dd HH:mm:ss")}
+```
+
+- null值的处理
+
+```kotlin
+${val!"val的值为null"}<br>
+    判断val的值是否为null：<br>
+    <#if val??>
+    val中有内容
+    <#else>
+    val的值为null
+    </#if>
+```
+
+- Include标签
+
+```cpp
+<#include "hello.ftl">
+```
+
+
+
 ```
 分支控制语句
 语法格式如下
@@ -943,19 +1049,19 @@ list不为空
 	它用于为该模板页面创建或替换一个顶层变量
 	
 6、setting指令
-        该指令用于设置FreeMarker的运行环境，该指令的语法格式如下：
-        <#setting name = value>
-        name 的取值范围包括如下几个
-         locale ：该选项指定该模板所用的国家/语言选项
-         number_format:该选项指定格式化输出数字的格式
-         boolean_format:该选项指定两个布尔值的语法格式，默认值是"true、false"
-         date_format,time_format,datetime_format：该选项指定格式化输出日期的格式
-         time_zone:  设置格式化输出日期时所使用的时区
+    该指令用于设置FreeMarker的运行环境，该指令的语法格式如下：
+    <#setting name = value>
+    name 的取值范围包括如下几个
+    locale ：该选项指定该模板所用的国家/语言选项
+    number_format:该选项指定格式化输出数字的格式
+    boolean_format:该选项指定两个布尔值的语法格式，默认值是"true、false"
+    date_format,time_format,datetime_format：该选项指定格式化输出日期的格式
+    time_zone:  设置格式化输出日期时所使用的时区
 
 
 ```
 
-字符串的操作
+* 字符串的操作
 
 ```
 1、substring（start,end）从一个字符串中截取子串 start:截取子串开始的索引，start必须大于等于0，小于等于end end: 截取子串的长度，end必须大于等于0，小于等于字符串长度，如果省略该参数，默认为字符串长度。
@@ -982,6 +1088,32 @@ list不为空
 
 ```
 使用 >= 和 > 的时候有一点小问题。FreeMarker解释 > 的时候可以把它当作FTL标签的结束符。为了避免这种问题，可以使用 lt 代替 <， lte 代替 <=， gt 代替 > 还有 gte 代替 >=， 例如 <#if x gt y>。另外一个技巧是将表达式放到 圆括号 中， 尽管这么写并不优雅，例如 <#if (x > y)>。
+```
+
+#### java中利用ftl生成文件
+
+```java
+@Test
+public void genFile() throws Exception {
+    // 第一步：创建一个Configuration对象，直接new一个对象。构造方法的参数就是freemarker对于的版本号。
+    Configuration configuration = new Configuration(Configuration.getVersion());
+    // 第二步：设置模板文件所在的路径。
+    configuration.setDirectoryForTemplateLoading(new File("D:/workspace/e3/e3-item-web/src/main/webapp/WEB-INF/ftl"));
+    // 第三步：设置模板文件使用的字符集。一般就是utf-8.
+    configuration.setDefaultEncoding("utf-8");
+    // 第四步：加载一个模板，创建一个模板对象。
+    Template template = configuration.getTemplate("hello.ftl");
+    // 第五步：创建一个模板使用的数据集，可以是pojo也可以是map。一般是Map。
+    Map dataModel = new HashMap<>();
+    //向数据集中添加数据
+    dataModel.put("hello", "this is my first freemarker test.");
+    // 第六步：创建一个Writer对象，一般创建一FileWriter对象，指定生成的文件名。
+    Writer out = new FileWriter(new File("D:/aaa/out/hello.html"));
+    // 第七步：调用模板对象的process方法输出文件。
+    template.process(dataModel, out);
+    // 第八步：关闭流。
+    out.close();
+}
 ```
 
 
@@ -1850,7 +1982,7 @@ docker run  -it -v  /usr/share/fonts:/usr/share/fonts  -d -p  $port:8080 --name 
 
 ```
 
-
+##### springboot启动包选择环境
 
 ```shell
 #文件名如startup.sh
@@ -1894,6 +2026,7 @@ start(){
   is_exist
   if [ $? -eq "0" ]; then
     echo ">>> $(date "+%Y-%m-%d %H:%M:%S") ${JAR_NAME} is already running PID=${pid} <<<"
+#nohup 指后台运行
   else
     nohup $JRE_HOME/bin/java -Xms512m -Xmx1024m -jar $JAR_NAME --spring.profiles.active=common-pro,pro --dubbo.protocol.port=20666 --server.port=7671 --dubbo.service.shutdown.wait=180000 --dubbo.registry.file=/home/zxsl/online_dubbox/operation-online-service/20666/dubbo-registry.properties >/dev/null 2>&1 &
     echo $! > $SERVICE_DIR/$PID
@@ -1973,7 +2106,13 @@ esac
 exit 0
 ```
 
-#### K8s服务构建
+##### springboot运行jar包选择环境
+
+```sh
+java -jar  spring-boot-demo-0.0.1-SNAPSHOT.jar --SOME_ENV=always --spring.profiles.active=prod
+```
+
+#### 服务构建
 
 ```shell
 #查看
@@ -1988,7 +2127,7 @@ docker tag registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:latest 
 #2
 docker push registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:202007171814
 #uat环境上执行的命令
-#3
+#3 kubectl是k8s命令
 kubectl -n notarycloud set image deployment notary-cloud-consumer-order notary-cloud-consumer-order=registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:202007171814
 
 #解释
@@ -2127,6 +2266,18 @@ java-module.sonar.projectBaseDir=./
 ````
 C:\Users\Administrator\.jenkins\plugins
 ````
+
+#### skywalking
+
+```dockerfile
+FROM registry.k8s.ing:5000/notarycloud/notary-cloud-image-openjdk
+ADD target/${project.artifactId}-${project.version}.${project.packaging} ${project.artifactId}.${project.packaging}
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime; echo "Asia/Shanghai" > /etc/timezone
+EXPOSE 8080
+ENTRYPOINT java -jar -javaagent:/agent/skywalking-agent.jar -Dskywalking.agent.service_name=${project.artifactId} -Dskywalking.collector.backend_service=${SKYWALKING_COLLECTOR_ARRE}  -Dskywalking.agent.sample_n_per_3_secs=1500 -Xmx1024m -Dspring.profiles.active=${PROFILES_ACTIVE} -Dserver.port=8080 ${project.artifactId}.${project.packaging}
+```
+
+
 
 ### Swagger2的 实时生成文档api
 
@@ -2312,6 +2463,238 @@ public final class SysSession {
 #### 参考地址：
 
 https://www.cnblogs.com/yijialong/p/9729988.html
+
+##### Logstash详解之——input模块
+
+实例
+
+```
+input {
+    stdin {
+    }
+    jdbc {
+      # mysql数据库连接
+      jdbc_connection_string => "jdbc:mysql://192.168.88.65:3306/online_operation?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull"
+      # mysqly用户名和密码
+      jdbc_user => "root"
+      jdbc_password => "2ojf#sojo23@29"
+      # 驱动配置
+      jdbc_driver_library => "/home/gzy/logstash-6.4.2/config/conf.d/mysql/mysql-connector-java-5.1.46.jar"
+      # 驱动类名
+      jdbc_driver_class => "com.mysql.jdbc.Driver"
+      jdbc_paging_enabled => true
+      jdbc_page_size => "500"
+      # 执行指定的sql文件
+      statement_filepath => "/home/gzy/logstash-6.4.2/config/conf.d/mysql/tb_notary.sql"
+      # 设置监听 各字段含义 分 时 天 月  年 ，默认全部为*代表含义：每分钟都更新
+      schedule => "*/10 * * * *"
+      # 索引类型
+      type => "tb_notary"
+      use_column_value => true
+      tracking_column_type => "timestamp"
+      tracking_column => "gmt_modified"
+      last_run_metadata_path => "/home/gzy/logstash-6.4.2/config/conf.d/mysql/lastrun/tb_notary.point"
+    }
+}
+
+filter {
+    json {
+        source => "message"
+        remove_field => ["message"]
+    }
+}
+
+output {
+    if[type]=="tb_notary"{
+      elasticsearch {
+        #es服务器
+        hosts => ["localhost:9200"]
+        #ES索引名称
+        index => "tb_notary"
+        #自增ID
+        document_id => "%{id}"
+        #manage_template => true  
+        #使用templates
+        template => "/home/gzy/logstash-6.4.2/config/templates/tb_notary.json"
+        template_name => "tb_notary"
+        template_overwrite => true
+      }
+    }
+    stdout {
+
+    }
+}
+
+```
+
+```
+logstash -f /etc/logstash.d/
+#logstash 会自动读取 /etc/logstash.d/ 目录下所有 *.conf的文本文件，然后在自己内存里拼接成一个完整的大配置文件，再去执行。
+```
+
+
+
+```shell
+input{
+    file{
+        #path属性接受的参数是一个数组，其含义是标明需要读取的文件位置
+        path => [‘pathA’，‘pathB’]
+        #表示多就去path路径下查看是够有新的文件产生。默认是15秒检查一次。
+        discover_interval => 15
+        #排除那些文件，也就是不去读取那些文件
+        exclude => [‘fileName1’,‘fileNmae2’]
+        #被监听的文件多久没更新后断开连接不在监听，默认是一个小时。
+        close_older => 3600
+        #在每次检查文件列 表的时候， 如果一个文件的最后 修改时间 超过这个值， 就忽略这个文件。 默认一天。
+        ignore_older => 86400
+        #logstash 每隔多 久检查一次被监听文件状态（ 是否有更新） ， 默认是 1 秒。
+        stat_interval => 1
+        #sincedb记录数据上一次的读取位置的一个index
+        sincedb_path => ’$HOME/. sincedb‘
+        #logstash 从什么 位置开始读取文件数据， 默认是结束位置 也可以设置为：beginning 从头开始
+        start_position => ‘beginning’
+        #注意：这里需要提醒大家的是，如果你需要每次都从同开始读取文件的话，关设置start_position => beginning是没有用的，你可以选择sincedb_path 定义为 /dev/null
+    }            
+
+}
+input{
+    jdbc{
+    #jdbc sql server 驱动,各个数据库都有对应的驱动，需自己下载
+    jdbc_driver_library => "/etc/logstash/driver.d/sqljdbc_2.0/enu/sqljdbc4.jar"
+    #jdbc class 不同数据库有不同的 class 配置
+    jdbc_driver_class => "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+    #配置数据库连接 ip 和端口，以及数据库    
+    jdbc_connection_string => "jdbc:sqlserver://200.200.0.18:1433;databaseName=test_db"
+    #配置数据库用户名
+    jdbc_user =>   
+    #配置数据库密码
+    jdbc_password =>
+    #上面这些都不重要，要是这些都看不懂的话，你的老板估计要考虑换人了。重要的是接下来的内容。
+    # 定时器 多久执行一次SQL，默认是一分钟
+    # schedule => 分 时 天 月 年  
+    # schedule => * 22  *  *  * 表示每天22点执行一次
+    schedule => "* * * * *"
+    #是否清除 last_run_metadata_path 的记录,如果为真那么每次都相当于从头开始查询所有的数据库记录
+    clean_run => false
+    #是否需要记录某个column 的值,如果 record_last_run 为真,可以自定义我们需要表的字段名称，
+    #此时该参数就要为 true. 否则默认 track 的是 timestamp 的值.
+    use_column_value => true
+    #如果 use_column_value 为真,需配置此参数. 这个参数就是数据库给出的一个字段名称。当然该字段必须是递增的，可以是 数据库的数据时间这类的
+    tracking_column => create_time
+    #是否记录上次执行结果, 如果为真,将会把上次执行到的 tracking_column 字段的值记录下来,保存到 last_run_metadata_path 指定的文件中
+    record_last_run => true
+    #们只需要在 SQL 语句中 WHERE MY_ID > :last_sql_value 即可. 其中 :last_sql_value 取得就是该文件中的值
+    last_run_metadata_path => "/etc/logstash/run_metadata.d/my_info"
+    #是否将字段名称转小写。
+    #这里有个小的提示，如果你这前就处理过一次数据，并且在Kibana中有对应的搜索需求的话，还是改为true，
+    #因为默认是true，并且Kibana是大小写区分的。准确的说应该是ES大小写区分
+    lowercase_column_names => false
+    #你的SQL的位置，当然，你的SQL也可以直接写在这里。
+    #statement => SELECT * FROM tabeName t WHERE  t.creat_time > :last_sql_value
+    statement_filepath => "/etc/logstash/statement_file.d/my_info.sql"
+    #数据类型，标明你属于那一方势力。单了ES哪里好给你安排不同的山头。
+    type => "my_info"
+    }
+    #注意：外载的SQL文件就是一个文本文件就可以了，还有需要注意的是，一个jdbc{}插件就只能处理一个SQL语句，
+    #如果你有多个SQL需要处理的话，只能在重新建立一个jdbc{}插件。
+}
+input {
+  beats {
+    #接受数据端口
+    port => 5044
+    #数据类型
+    type => "logs"
+  }
+  #这个插件需要和filebeat进行配很这里不做多讲，到时候结合起来一起介绍。
+}
+```
+
+```shell
+
+```
+
+``` json
+#templates 文件tb_notary.json
+{
+    "index_patterns": [
+      "tb_tag"
+    ],
+    "settings": {
+      "index": {
+        "number_of_shards": 5,
+        "number_of_replicas": 1,
+        "codec": "best_compression"
+      },
+      "analysis" : {
+            "analyzer" : {
+                "pinyin_analyzer" : {
+                    "tokenizer" : "my_pinyin"
+                    },
+                "comma":{
+                  "type": "pattern",
+                  "pattern": ",",
+                  "lowercase": false
+                },
+                 "nohtml": {
+                  "tokenizer": "ik_max_word",
+                  "char_filter": ["html_strip"]
+                }
+            },
+            "tokenizer" : {
+                "my_pinyin" : {
+                    "type" : "pinyin",
+                    "keep_separate_first_letter" : false,
+                    "keep_full_pinyin" : true,
+                    "keep_original" : true,
+                    "limit_first_letter_length" : 16,
+                    "lowercase" : true,
+                    "remove_duplicated_term" : true
+                }
+            }
+        }
+    },
+    "mappings": {
+
+      "doc": {
+        "_meta": {
+          "logstash-version": "6.4.2"
+        },
+        "dynamic": "true",
+
+        "properties": {
+                    "tagName": {
+                      "type": "text",
+                      "analyzer":"ik_smart",
+                      "search_analyzer": "ik_smart",
+
+                      "fields": {
+                        "keyword": {
+                          "type": "keyword",
+                          "ignore_above": 4096
+                        },
+                        "pinyin":{
+                          "type": "text",
+                          "analyzer":"pinyin"
+                        }
+                      }
+                    },
+                    "gmtCreate": {
+                                        "type":   "date",
+                                        "format": "yyyy-MM-dd HH:mm:ss||epoch_millis"
+                                    },
+                    "gmtModified": {
+                                        "type":   "date",
+                                        "format": "yyyy-MM-dd HH:mm:ss||epoch_millis"
+                                    }
+                }
+      }
+    },
+    "aliases": {}
+}
+
+```
+
+
 
 
 

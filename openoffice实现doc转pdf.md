@@ -338,7 +338,7 @@ https://www.kutu66.com//Java_API_Classes/article_65069#1-yfsys 看不懂的示�
 
 
 
-### word转pdf
+### word转pdf ---documents4j
 
 ```
 <dependency>
@@ -369,7 +369,7 @@ public static void main(String[] args) {
 }
 ```
 
-#### 1. wkhtmltopdf插件
+#### 1. wkhtmltopdf插件 实现html转pdf
 
 ```java
 @Log4j2
