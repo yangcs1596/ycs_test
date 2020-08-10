@@ -380,6 +380,20 @@ select
 from tb_order o
 ```
 
+#### 2 分页查询百万级别
+
+```sql
+#百万级别数据很卡
+SELECT * FROM table ORDER BY id LIMIT 1000, 10; 
+#优化
+SELECT * FROM table WHERE id BETWEEN 1000000 AND 1000010; 
+#完美写法？
+SELECT * FROM table WHERE id BETWEEN 1000000 AND 1000010; 
+#索引同样可以使用在 in 语句中
+```
+
+
+
 ### 写mysql的事务
 
 ```mysql

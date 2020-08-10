@@ -219,9 +219,23 @@ public class BaseInfoBiz {
 
 - 抽象类中的成员变量可以是各种类型的，而接口中的成员变量只能是 **public static final** 类型的。
 - 接口中不能含有静态代码块以及静态方法(用 static 修饰的方法)，而抽象类是可以有静态代码块和静态方法。
-- \4. 一个类只能继承一个抽象类，而一个类却可以实现多个接口。
+- 一个类只能继承一个抽象类，而一个类却可以实现多个接口。
 
 ##### 1-4-3 一个接口多个实现类的Spring注入方式
+
+##### 1-4-4 接口的默认方法default
+
+```java
+##### 1-1 default的
+#default是在java8中引入的关键字，也可称为Virtual
+public interface Interface1{
+    default void helloWorld() {
+        System.out.println("hi i'm from Interface1");
+    }
+    #静态方法能被继承但不能被重写,接口中的静态方法不能被继承
+}
+
+```
 
 
 
@@ -438,7 +452,45 @@ while((n=in.read(buff))!=-1){
 out.flush();
 ```
 
+## 路径问题
 
+```java
+ResourceUtils.getURL("classpath:").getPath()  //获取class的路径
+//输出路径
+System.getProperty("java.io.tmpdir");
+```
+
+System.getProperty()的参数有那些:
+
+| java.version                  | Java运行时环境版本                |
+| ----------------------------- | --------------------------------- |
+| java.vendor                   | Java运行时环境供应商              |
+| java.vendor.url               | Java供应商的 URL                  |
+| java.home                     | Java安装目录                      |
+| java.vm.specification.version | Java虚拟机规范版本                |
+| java.vm.specification.vendor  | Java虚拟机规范供应商              |
+| java.vm.specification.name    | Java虚拟机规范名称                |
+| java.vm.version               | Java虚拟机实现版本                |
+| java.vm.vendor                | Java虚拟机实现供应商              |
+| java.vm.name                  | Java虚拟机实现名称                |
+| java.specification.version    | Java运行时环境规范版本            |
+| java.specification.vendor     | Java运行时环境规范供应商          |
+| java.specification.name       | Java运行时环境规范名称            |
+| java.class.version            | Java类格式版本号                  |
+| java.class.path               | Java类路径                        |
+| java.library.path             | 加载库时搜索的路径列表            |
+| java.io.tmpdir                | 默认的临时文件路径                |
+| java.compiler                 | 要使用的 JIT 编译器的名称         |
+| java.ext.dirs                 | 一个或多个扩展目录的路径          |
+| os.name                       | 操作系统的名称                    |
+| os.arch                       | 操作系统的架构                    |
+| os.version                    | 操作系统的版本                    |
+| file.separator                | 文件分隔符（在 UNIX 系统中是“/”） |
+| path.separator                | 路径分隔符（在 UNIX 系统中是“:”） |
+| line.separator                | 行分隔符（在 UNIX 系统中是“/n”）  |
+| user.name                     | 用户的账户名称                    |
+| user.home                     | 用户的主目录                      |
+| user.dir                      | 用户的当前工作目录                |
 
 ```java
  PrintWriter out = null;  
@@ -1088,14 +1140,6 @@ Runtime和Error以及他们的子类都称为免检异常，所有其他的异�
 
 ------
 
-## 路径问题
-
-```java
-ResourceUtils.getURL("classpath:").getPath()  //获取class的路径
-//输出路径
-System.getProperty("java.io.tmpdir");
-```
-
 
 
 ```java
@@ -1170,6 +1214,7 @@ ctrl + shift + F 格式化代码
 Shift +Alt +T :  重构  
 Shift +Alt +M:  提取函数  
 Shift +Alt +R:  重命名  
+shift +Alt +Z:  代码块
 Shift +Alt +C:  更改函数标记 
 ctrl + alt + v  快速返回对象类型
 

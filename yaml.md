@@ -533,6 +533,130 @@ private String formatArgs(Object[] args) {
 }
 ```
 
+```java
+#例子2  自定义注解的切面
+@Aspect
+@Component
+public class TokenCheckInterceptor {
+    private static final Logger logger = LoggerFactory.getLogger(TokenCheckInterceptor.class);
+
+    @Autowired
+    private MerchantService merchantService;
+
+    public TokenCheckInterceptor() {
+        System.out.println("===>check start");
+    }
+
+    @Pointcut("@annotation(com.xf.harbor.config.TokenCheck)")
+    private void anyMethod() {
+    }
+
+    @Around("anyMethod()")
+    public Object checkRequestHead(ProceedingJoinPoint joinPoint) throws Throwable {
+        logger.debug("===>check access token start:{}", joinPoint.getArgs());
+        long begin = System.nanoTime();
+
+        HttpServletRequest request =
+                ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        request.setCharacterEncoding("UTF-8");
+        HttpServletResponse response =
+                ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getResponse();
+        String token = request.getHeader("X-XfAuth-Token");
+        logger.debug("===> request token is {}", token);
+        String[] listAterTokenSplit = token.split("-");
+        String ak = listAterTokenSplit[1];
+        String ipAddr = request.getHeader("X-Real-IP");
+        if (ipAddr == null || ipAddr.equals("")) {
+            ipAddr = request.getRemoteAddr();
+        }
+        logger.info("request X-Real-IP ipAddr={}", ipAddr);
+        int expireTime = Integer.parseInt(listAterTokenSplit[2]);
+        if (expireTime < MyUtil.getCurrentTimestamp()) { //token 超时
+            writeResponse(response,
+                    new ApiResponse(ResponseCodeEnums.token_timeout.getStatus(), ResponseCodeEnums.token_timeout.getMessage()));
+            return null;
+        }
+
+        Object[] args = joinPoint.getArgs();
+        String requestBody = new Gson().toJson(args[0]);
+
+        String sk = "";
+        String allowIps = "";
+        try {
+            Merchant merchant = merchantService.getMerchant(ak);
+            if (merchant != null) {
+                sk = merchant.getSecretKey();
+                allowIps = merchant.getAllowIps();
+            }
+            logger.info("===> access key is: {}", ak);
+            //check ipAddr
+            if (!StringUtils.equals(allowIps, "*")) {
+                String[] ips = allowIps.split(",");
+                if (!Arrays.asList(ips).contains(ipAddr)) {
+                    writeResponse(response,
+                            new ApiResponse(ResponseCodeEnums.limited_ip.getStatus(), ResponseCodeEnums.limited_ip.getMessage()));
+                    return null;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            writeResponse(response,
+                    new ApiResponse(ResponseCodeEnums.system_exception.getStatus(), ResponseCodeEnums.system_exception.getMessage()));
+            return null;
+        }
+
+        String requestUri = request.getRequestURI();
+        String requestMethod = request.getMethod();
+        String queryParam = getParamString(request.getParameterMap());
+
+        logger.info(
+                "===>get the equest url:{}; and request method:{}; "
+                        + "request param is {};request body is {}",
+                requestUri, requestMethod, queryParam, requestBody);
+
+        AuthTokenHelper helper = new AuthTokenHelper();
+        helper.setAccessKey(ak);
+        helper.setSecretKey(sk);
+
+        if (helper.verifyToken(token, requestUri, requestMethod, queryParam, requestBody)) {
+            Object o = joinPoint.proceed();
+            long end = System.nanoTime();
+            logger.info("API deal time log {}:{}",
+                    joinPoint.getTarget().getClass() + "." + joinPoint.getSignature().getName(),
+                    (end - begin) / 1000000);
+            return o;
+        } else {
+            writeResponse(response,
+                    new ApiResponse(ResponseCodeEnums.token_mismatch.getStatus(), ResponseCodeEnums.token_mismatch.getMessage()));
+            return null;
+        }
+    }
+
+    private String getParamString(Map<String, String[]> parameterMap) {
+        String queryParam = null;
+        if (parameterMap.size() > 0) {
+            ArrayList<String> parameterKey = new ArrayList<>(parameterMap.keySet());
+            Collections.sort(parameterKey);
+            ArrayList<String> keyQuotValues = new ArrayList<>();
+            for (String key : parameterKey) {
+                keyQuotValues.add(String.format("%s=%s", key, parameterMap.get(key)[0]));
+            }
+            queryParam = StringUtils.join(keyQuotValues, "&");
+        }
+        return queryParam;
+    }
+
+    private void writeResponse(HttpServletResponse response, ApiResponse apiResponse) throws IOException {
+        logger.info("===>token check failed.return response={}", new Gson().toJson(apiResponse));
+        String responseMap = new Gson().toJson(apiResponse);
+        response.setContentType("application/json;charset=utf-8");
+        response.getOutputStream().write(responseMap.getBytes());
+        response.flushBuffer();
+    }
+
+}
+```
+
 
 
 如果不想每次都写private  final Logger logger = LoggerFactory.getLogger(XXX.class); 可以用注解**@Slf4j**
@@ -664,6 +788,8 @@ public @interface 注解名 {定义体}
 注解的默认值
 注解元素必须有确定的值，要么指定时给默认值，要么使用时给值。不过有时候我们需要确定表达一个元素不存在值，所以使用空字符串或者负数表示某个元素不存在，在定义注解时，这已经成为一个约定用法。
 
+注解一般与aop联合使用
+
 ```java
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
@@ -675,15 +801,23 @@ public @interface User {
 }
 ```
 
-##### 1-1 default的注解
-
-default是在java8中引入的关键字，也可称为Virtual
+##### 获取注解的三个方式,
 
 ```java
-public interface Interface1{
-    default void helloWorld() {
-        System.out.println("hi i'm from Interface1");
-    }
+/**是否存在对应 Annotation 对象*/
+public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) 
+{
+    return GenericDeclaration.super.isAnnotationPresent(annotationClass);
+}
+/**获取 Annotation 对象*/
+public <A extends Annotation> A getAnnotation(Class<A> annotationClass) 
+{
+    return (A) annotationData().annotations.get(annotationClass);
+}
+/**获取所有 Annotation 对象数组*/   
+public Annotation[] getAnnotations() 
+{
+    return AnnotationParser.toArray(annotationData().annotations);
 }
 ```
 
@@ -745,6 +879,21 @@ template（模版） 在这里属于一个固定用法： <template slot-scope="
 </el-table-column>
 ```
 
+* 依懒项升级
+
+```cmd
+首先安装依赖
+npm install -g npm-check-updates
+然后检测依赖版本
+ncu
+更新dependencies到新版本：
+ncu -u
+更新全部到最新版本：
+npm run install
+```
+
+
+
 #### Vue.js的实例
 
 ```js
@@ -780,6 +929,74 @@ var detail = new Vue({
  	}
 })
 ```
+
+#### 路由和组件的懒加载
+
+```vue
+路由和组件的常用两种懒加载方式：
+1、vue异步组件实现路由懒加载
+　　component：resolve=>(['需要加载的路由的地址'，resolve])
+2、es提出的import(推荐使用这种方式)
+　　const HelloWorld = （）=>import('需要加载的模块地址')
+###例子#########
+<template>
+  <div class="hello">
+  <One-com></One-com>
+  1111
+  </div>
+</template>
+
+<script>
+export default {
+  components:{
+    "One-com":resolve=>(['./one'],resolve)
+     // "One-com": resolve => require(['../components/study/css'],resolve)
+     // "One-com": ()=>import("./one");
+  },
+  data(){
+  }
+}
+</script>
+```
+
+#### 组件传递参数
+
+```vue
+#1 子组件主动获取父组件的数据和方法：  
+    this.$parent.数据
+    this.$parent.方法
+#2 父组件传递参数
+<child-first :value="form" :father="this"></child-first>//父组件 把当前对象传过去
+//接收父组件传过来的对象  
+props:{
+    value:{},
+    father:Object
+}
+```
+
+#### this.$的调用参数或方法
+
+this.$refs //获取dom元素
+
+this.emit //子组件通过this.$emit方式向父组件传递参
+
+```vue
+//子组件调用  this.$emit('closeMain',flag);
+//父组件传递子组件方法如下 v-on可以用@代替
+<indexImportOrder ref="indexImportOrder" v-on:closeMain="closeMain"/>
+父组件实现方法
+closeMain(arguments){
+    ....
+},
+```
+
+this.$store //全局 
+
+* https://blog.csdn.net/lemonC77/article/details/95077691 this.$store.dispatch
+
+this.router //路由
+
+this.$set //触发对象更新
 
 
 
@@ -2112,6 +2329,14 @@ exit 0
 java -jar  spring-boot-demo-0.0.1-SNAPSHOT.jar --SOME_ENV=always --spring.profiles.active=prod
 ```
 
+#### windowns启动jar命令
+
+```
+java -jar *.jar（*替换为需启动的jar包名称)
+```
+
+
+
 #### 服务构建
 
 ```shell
@@ -2119,16 +2344,17 @@ java -jar  spring-boot-demo-0.0.1-SNAPSHOT.jar --SOME_ENV=always --spring.profil
 docker images
 #查看部分docker images|grep order
 
-order-consumer
+#order-consumer
+#查看
 kubectl -n notarycloud get po -owide
 #115上执行的命令
 #1
-docker tag registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:latest registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:202007171814
+docker tag registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:latest registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:202007301044
 #2
-docker push registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:202007171814
+docker push registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:202007301044
 #uat环境上执行的命令
 #3 kubectl是k8s命令
-kubectl -n notarycloud set image deployment notary-cloud-consumer-order notary-cloud-consumer-order=registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:202007171814
+kubectl -n notarycloud set image deployment notary-cloud-consumer-order notary-cloud-consumer-order=registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:202007301044
 
 #解释
 #docker tag 是在115把最新的latest 打一个新的tag比如2020071711
@@ -2277,7 +2503,9 @@ EXPOSE 8080
 ENTRYPOINT java -jar -javaagent:/agent/skywalking-agent.jar -Dskywalking.agent.service_name=${project.artifactId} -Dskywalking.collector.backend_service=${SKYWALKING_COLLECTOR_ARRE}  -Dskywalking.agent.sample_n_per_3_secs=1500 -Xmx1024m -Dspring.profiles.active=${PROFILES_ACTIVE} -Dserver.port=8080 ${project.artifactId}.${project.packaging}
 ```
 
+### Spring-boot-admin的非常好用的监控和管理的源软件
 
+* 实现钉钉机器人通知 https://blog.csdn.net/yuancao24/article/details/83576194
 
 ### Swagger2的 实时生成文档api
 
@@ -2460,11 +2688,9 @@ public final class SysSession {
 
 ### springboot使用ElasticSearch搜索引擎
 
-#### 参考地址：
+* https://www.cnblogs.com/yijialong/p/9729988.html
 
-https://www.cnblogs.com/yijialong/p/9729988.html
-
-##### Logstash详解之——input模块
+#### Logstash详解之——input模块
 
 实例
 
