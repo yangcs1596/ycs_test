@@ -321,6 +321,41 @@ spring:
 》del key 删除对应的key
 ```
 
+* java的opsForValue().的方法说明
+
+```java
+#String
+//设置value
+set(K key, V value)
+get(Object key)
+append(K key, String value)  
+set(K key, V value, long timeout, TimeUnit unit)
+long size = template.opsForValue().size("key"));
+
+#HaspMap
+Long delete(H key, Object… hashKeys);
+//从键中获取指定的哈希
+get(H key, Object hashKey) //获取hashMap指定的键value
+Set keys(H key); //获取所有的key值
+void putAll(H key, Map<? extends HK, ? extends HV> m);
+void put(H key, HK hashKey, HV value); //设置散列hashKey的值
+List values(H key);
+Map<HK, HV> entries(H key); //获取整个哈希存储根据密钥
+
+#List
+Long leftPush(K key, V value);//将所有指定的值插入存储在键的列表的头部。如果键不存在，则在执行推送操作之前将其创建为空列表。 rightPush
+Long leftPushAll(K key, V… values); //批量把一个数组插入到列表中 rightPushAll
+void set(K key, long index, V value);//在列表中index的位置设置value值
+V index(K key, long index);//根据下表获取列表中的值，下标是从0开始的
+V leftPop(K key);//弹出最左边的元素，弹出之后该值在列表中将不复存在 rightPop
+
+#Set
+Long add(K key, V… values);//无序集合中添加元素，返回添加个数
+Long remove(K key, Object… values);//移除集合中一个或多个成员
+V pop(K key);//移除并返回集合中的一个随机元素
+Cursor scan(K key, ScanOptions options);//遍历set
+```
+
 
 
 ### 谷歌浏览器常用插件
@@ -687,9 +722,10 @@ public class TokenCheckInterceptor {
 ​		比如说我有个场景，返回前端的实体类中如果某个字段为空的话那么就不返回这个字段了，如果我们平时遇到这个问题，那么真的该脑壳疼了。幸亏有我们今天的主角，这个注解就是用来在实体类序列化成json的时候在某些策略下，加了该注解的字段不去序列化该字段
 
 ```java
-@JsonJsonInclude.Include.NON_NULL这个最常用，即如果加该注解的字段为null,那么就不序列化这个字段了
-@JsonJsonInclude.Include.NON_ABSENT这个包含NON_NULL，即为null的时候不序列化
-@JsonJsonInclude.Include.NON_EMPTY 这个属性包含NON_NULL，NON_ABSENT之后还包含如果字段为空也不序列化。这个也比较常用
+//Include.Include.ALWAYS 默认全部属性起作用 
+//Include.NON_DEFAULT 属性为默认值不序列化 
+//Include.NON_EMPTY 属性为 空（“”） 或者为 NULL 都不序列化 
+//Include.NON_NULL 属性为NULL 不序列化
 
 public class User {
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -697,19 +733,26 @@ public class User {
     private String password;
     private Integer age;
     }
+
+#2代码上
+ObjectMapper mapper = new ObjectMapper();
+mapper.setSerializationInclusion(Include.NON_NULL);
 ```
 
-#### META-INF（common里的注解）
+#### @Cacheable 方法缓存主键
 
-<div style="background-color:#FF4500">项目resource下新建文件夹META-INF，在文件夹下面新建<font color="#fff">spring.factories</font>文件</div>
-```factories
-org.springframework.context.ApplicationContextInitializer=\
-com.notarycloud.common.log.config.TtlMDCAdapterInitializer
+是一个既可以应用于方法级别，也可用于类级别的注解。自spring3.1开始就通过它实现了缓存管理。
 
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-com.notarycloud.common.log.config.LogAutoConfigure
+1. `@Cacheable`能干什么？
+    为了通俗易懂的理解，举个栗子：一个方法,`getBooksByUsernameAndLanguage(String username, int language)`，显然，是一个获取数据库里所有我的英文书对象的方法，返回应该是一个列表。如果这个函数的返回值很大，而且会在页面上被经常调用，那么每一次调用都要重新连接数据库并返回一个数据量庞大的list，可能页面响应和资源占用会比较大。而我们希望的是，第一次调用这个方法时，返回的数据能被放到服务器端的缓存里，以便于后面要调用这个方法时，能直接从缓存里取到，这样就不用再查数据库占用资源了。而`@Cacheable`的作用就是这个。
 
-```
+   ```java
+   //value自定义缓存名称，key用双引号,里面#加上方法的参数:获取方法的参数,  ''表示在参数之间添加分隔符
+   @Cacheable(value = "PERSON",key = "#tagId+'_'+#zz")
+   public List<Person> getPersonByTagid(Long tagId,String zz)
+   ```
+
+   
 
 #### Springboot JDK8自定义一个注解
 
@@ -976,9 +1019,17 @@ props:{
 
 #### this.$的调用参数或方法
 
-this.$refs //获取dom元素
+* this.$refs //获取dom元素
 
-this.emit //子组件通过this.$emit方式向父组件传递参
+```vue
+<input ref='aaa' type="text" />
+
+this.$refs.aaa.value='20' //this.$refs['aaa']
+```
+
+获取this.$refs.aaa 里面的数据是，只能在mounted里获取，created是获取不到的
+
+* this.emit //子组件通过this.$emit方式向父组件传递参
 
 ```vue
 //子组件调用  this.$emit('closeMain',flag);
@@ -990,13 +1041,21 @@ closeMain(arguments){
 },
 ```
 
-this.$store //全局 
+* this.$store //全局 
 
-* https://blog.csdn.net/lemonC77/article/details/95077691 this.$store.dispatch
+  https://blog.csdn.net/lemonC77/article/details/95077691 this.$store.dispatch
 
-this.router //路由
+* this.router //路由
 
-this.$set //触发对象更新
+* this.$set //触发对象更新
+
+  **当你发现你给对象加了一个属性，在控制台能打印出来，但是却没有更新到视图上时，也许这个时候就需要用到this.$set（）这个方法了**
+
+  ```vue
+  this.$set( target, key, value )
+  ```
+
+  
 
 
 
@@ -1335,6 +1394,130 @@ public void genFile() throws Exception {
 
 
 
+### java打包项目的配置
+
+src/main/java下的默认只打包java文件，如果想打包xml文件，则加如下配置
+
+```xml
+#pom.xml
+<build>
+    <!-- 资源目录 -->    
+    <resources>    
+        <resource>    
+            <!-- 设定主资源目录  -->    
+            <directory>src/main/java</directory>    
+
+            <!-- maven default生命周期，process-resources阶段执行maven-resources-plugin插件的resources目标处理主资源目下的资源文件时，只处理如下配置中包含的资源类型 -->     
+            <includes>
+                <include>**/*.xml</include>
+            </includes>  
+
+            <!-- maven default生命周期，process-resources阶段执行maven-resources-plugin插件的resources目标处理主资源目下的资源文件时，不处理如下配置中包含的资源类型（剔除下如下配置中包含的资源类型）-->      
+            <excludes>  
+                <exclude>**/*.yaml</exclude>  
+            </excludes>  
+<!-- maven default生命周期，process-resources阶段执行maven-resources-plugin插件的resources目标处理主资源目下的资源文件时，指定处理后的资源文件输出目录，默认是${build.outputDirectory}指定的目录-->      
+            <!--<targetPath>${build.outputDirectory}</targetPath> -->      
+
+            <!-- maven default生命周期，process-resources阶段执行maven-resources-plugin插件的resources目标处理主资源目下的资源文件时，是否对主资源目录开启资源过滤 -->    
+            <filtering>true</filtering>     
+        </resource>  			
+    </resources> 	
+</build>
+```
+
+#### 默认resources目录下的文件都会被打包
+
+如果想resources目录下的xml文件不被打包，可通过如下配置:
+
+```html
+<!--过滤resource下的文件-->
+	<resources>  
+        <resource>  
+            <directory>src/main/resources</directory>  
+            <includes>  
+                <include>*.properties</include>  <!--打包properties文件-->
+            </includes>  
+            <excludes>  
+                <exclude>*.xml</exclude>  <!--过滤xml与yaml文件-->
+                <exclude>*.yaml</exclude>  
+            </excludes>  
+        </resource>  
+```
+
+插件完成
+
+```xml
+<build>
+    <plugin>  
+        <artifactId>maven-resources-plugin</artifactId>  
+        <executions>  
+            <execution>  
+                <id>copy-resources</id>  
+                <phase>validate</phase>  
+                <goals>  
+                    <goal>copy-resources</goal>  
+                </goals>  
+                <configuration>  
+<!-- 并把文件复制到target/conf目录下-->
+                    <outputDirectory>${project.build.directory}/conf</outputDirectory>  
+                    <resources>  
+                        <resource>  
+                            <directory>src/main/resources</directory>  
+<!-- 指定不需要处理的资源 <excludes> <exclude>WEB-INF/*.*</exclude> </excludes> -->  
+							<excludes> <exclude>**/*.xml</exclude> </excludes>
+                            <filtering>true</filtering>  
+                        </resource>  
+                    </resources>  
+                </configuration>  
+            </execution>  
+        </executions> 
+    </plugin> 
+</build>build>
+```
+
+
+
+#### pluginManagement说明
+
+假如存在两个项目，项目A为项目B的父项目，其关系通过pom文件的关系确定。项目A的父pom文件片段如下：
+
+```xml
+<build>
+<pluginManagement>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.1</version>
+            <configuration>
+                <attach>true</attach>
+            </configuration>
+            <executions>
+                <execution>
+                    <phase>compile</phase>
+                    <goals>
+                        <goal>jar</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</pluginManagement>
+</build>
+```
+
+如果项目B也想使用该plugin配置，则在项目B的子pom文件中只需要如下配置：
+
+```xml
+<plugins>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+    </plugin>
+</plugins>
+```
+
 ------
 
 ### 浏览器客户端使用activeMQ
@@ -1579,6 +1762,36 @@ public class ActiveMQUtil {
 
 ### Hikari 号称“史上最快连接池”
 
+```yaml
+# 数据库配置
+spring:
+  datasource:
+  type: com.zaxxer.hikari.HikariDataSource
+  driverClassName: com.mysql.jdbc.Driver
+  url: jdbc:mysql://localhost:3306/ssm?useUnicode=true&characterEncoding=utf-8&useSSL=false
+  username: root
+  password: root
+  # Hikari 连接池配置
+  # 最小空闲连接数量
+  hikari:
+    minimum-idle: 5
+    # 空闲连接存活最大时间，默认600000（10分钟）
+    idle-timeout: 180000
+    # 连接池最大连接数，默认是10
+    maximum-pool-size: 10
+    # 此属性控制从池返回的连接的默认自动提交行为,默认值：true
+    auto-commit: true
+    # 连接池名称
+    pool-name: MyHikariCP
+    # 此属性控制池中连接的最长生命周期，值0表示无限生命周期，默认1800000即30分钟
+    max-lifetime: 1800000
+    # 数据库连接超时时间,默认30秒，即30000
+    connection-timeout: 30000
+    connection-test-query: SELECT 1
+```
+
+
+
 ### Kibana 可视化工具 
 
 * 与 搜索引擎Elasticsearch 合作
@@ -1639,117 +1852,6 @@ rabbitmq-server -detached 后台启动
 #查看状态
 rabbitmq-server status
 
-```
-
-### nginx笔记
-
-轻量级高并发服务器 Nginx
-
-Nginx 是一款自由的、开源的、高性能的 HTTP **服务器和反向代理服务器**；同时也是一个 IMAP、POP3、SMTP 代理服务器。
-
-Nginx 可以作为一个 HTTP 服务器进行网站的发布处理，另外 Nginx 可以作为**反向代理进行负载均衡**的实现。
-
-~~~
-cd /etc/nginx/
-vim nginx.conf
-cd /usr/sbin/
-./nginx -s reload
-~~~
-
-```nginx
-#配置说明
-########### 每个指令必须有分号结束。#################
-#user administrator administrators;  #配置用户或者组，默认为nobody nobody。
-#worker_processes 2;  #允许生成的进程数，默认为1
-#pid /nginx/pid/nginx.pid;   #指定nginx进程运行文件存放地址
-error_log log/error.log debug;  #制定日志路径，级别。这个设置可以放入全局块，http块，server块，级别以此为：debug|info|notice|warn|error|crit|alert|emerg
-events {
-    accept_mutex on;   #设置网路连接序列化，防止惊群现象发生，默认为on
-    multi_accept on;  #设置一个进程是否同时接受多个网络连接，默认为off
-    #use epoll;      #事件驱动模型，select|poll|kqueue|epoll|resig|/dev/poll|eventport
-    worker_connections  1024;    #最大连接数，默认为512
-}
-http {
-    include       mime.types;   #文件扩展名与文件类型映射表
-    default_type  application/octet-stream; #默认文件类型，默认为text/plain
-    #access_log off; #取消服务日志    
-    log_format myFormat '$remote_addr–$remote_user [$time_local] $request $status $body_bytes_sent $http_referer $http_user_agent $http_x_forwarded_for'; #自定义格式
-    access_log log/access.log myFormat;  #combined为日志格式的默认值
-    sendfile on;   #允许sendfile方式传输文件，默认为off，可以在http块，server块，location块。
-    sendfile_max_chunk 100k;  #每个进程每次调用传输数量不能大于设定的值，默认为0，即不设上限。
-    keepalive_timeout 65;  #连接超时时间，默认为75s，可以在http，server，location块。
-
-    upstream mysvr {   
-      server 127.0.0.1:7878;
-      server 192.168.10.121:3333 backup;  #热备
-    }
-    error_page 404 https://www.baidu.com; #错误页
-    server {
-        keepalive_requests 120; #单连接请求上限次数。
-        listen       4545;   #监听端口
-        server_name  127.0.0.1;   #监听地址       
-        location  ~*^.+$ {       #请求的url过滤，正则匹配，~为区分大小写，~*为不区分大小写。
-           #root path;  #根目录
-           #index vv.txt;  #设置默认页
-           proxy_pass  http://mysvr;  #请求转向mysvr 定义的服务器列表
-           deny 127.0.0.1;  #拒绝的ip
-           allow 172.18.5.54; #允许的ip           
-        } 
-    }
-}
-```
-
-
-
-```
-gzy@5185188
-ps -ef |grep rabbit  linux查看  /home/env
-
-退出编辑模式 
-　　按ESC键，然后 ：注意这里是要加冒号
-　　　　退出vi
-    :q!  不保存文件，强制退出vi命令
-    :w   保存文件，不退出vi命令
-    :wq  保存文件，退出vi命令
-
-#添加stomp相关的插件
-rabbitmq-plugins enable rabbitmq_web_stomp rabbitmq_stomp rabbitmq_web_stomp_examples
-;
-#重启服务
-rabbitmqctl stop_app
-rabbitmqctl start_app
-#查看集群状态，有使用集群的话集群中的所有服务器都要添加插件
-rabbitmqctl cluster_status
-```
-
-开放防火墙端口号
-
-```
-firewall-cmd --zone=public --add-port=15672/tcp --permanent #网页端口
-firewall-cmd --zone=public --add-port=5672/tcp --permanent  #AMQP端口,java使用
-firewall-cmd --reload # 重新加载
-//关闭某个端口
-"sudo iptables -A INPUT -p tcp --dport $PORT -j DROP"
-"sudo iptables -A OUTPUT -p tcp --dport $PORT -j DROP" 
-//linux或者
-/sbin/iptables -I INPUT -p tcp --dport 5672 -j ACCEPT  
-/sbin/iptables -I INPUT -p tcp --dport 15672 -j ACCEPT
-备注一下
-/sbin/iptables -I INPUT -p tcp --dport 8011 -j ACCEPT #开启8011端口 
-/etc/rc.d/init.d/iptables save #保存配置 
-/etc/rc.d/init.d/iptables restart #重启服务 
-
-查看端口号
-1、lsof -i:端口号
-2、netstat -tunlp|grep 端口号
-可以通过"netstat -anp" 来查看哪些端口被打开
-
-//添加入站规则
-启动指令:service iptables start   
-重启指令:service iptables restart   
-关闭指令:service iptables stop 
-
-iptables -A OUTPUT -s 192.168.88.94 -p tcp -m tcp --sport 15674 -j ACCEPT 
 ```
 
 #### 配置信息
@@ -1933,6 +2035,152 @@ internal: 当前 exchange 是否用于 rabbitMQ 内部使用，默认为 false
 arguments: 扩展参数，用于扩展 AMQP 协议自制定化使用
 ```
 
+
+
+#### basicPublish方法
+
+```java
+ void basicPublish(String exchange, String routingKey, BasicProperties props, byte[] body) throws IOException;
+
+void basicPublish(String exchange, String routingKey, boolean mandatory, BasicProperties props, byte[] body) throws IOException;
+
+void basicPublish(String exchange, String routingKey, boolean mandatory, boolean immediate, BasicProperties props, byte[] body) throws IOException;
+
+```
+
+- exchange 交换器名称
+- routingKey 路由键
+- props 有14个成员
+
+```tsx
+ public static class BasicProperties extends com.rabbitmq.client.impl.AMQBasicProperties {
+        private String contentType;   //消息类型如(text/plain)
+        private String contentEncoding; //编码
+        private Map<String,Object> headers; //header
+        private Integer deliveryMode; //消息的投递模式
+        private Integer priority; //优先级
+        private String correlationId;
+        private String replyTo;
+        private String expiration; //过期时间
+        private String messageId;
+        private Date timestamp;
+        private String type;
+        private String userId;
+        private String appId;
+        private String clusterId;
+```
+
+### nginx笔记
+
+轻量级高并发服务器 Nginx
+
+Nginx 是一款自由的、开源的、高性能的 HTTP **服务器和反向代理服务器**；同时也是一个 IMAP、POP3、SMTP 代理服务器。
+
+Nginx 可以作为一个 HTTP 服务器进行网站的发布处理，另外 Nginx 可以作为**反向代理进行负载均衡**的实现。
+
+```
+cd /etc/nginx/
+vim nginx.conf
+cd /usr/sbin/
+./nginx -s reload
+```
+
+```nginx
+#配置说明
+########### 每个指令必须有分号结束。#################
+#user administrator administrators;  #配置用户或者组，默认为nobody nobody。
+#worker_processes 2;  #允许生成的进程数，默认为1
+#pid /nginx/pid/nginx.pid;   #指定nginx进程运行文件存放地址
+error_log log/error.log debug;  #制定日志路径，级别。这个设置可以放入全局块，http块，server块，级别以此为：debug|info|notice|warn|error|crit|alert|emerg
+events {
+    accept_mutex on;   #设置网路连接序列化，防止惊群现象发生，默认为on
+    multi_accept on;  #设置一个进程是否同时接受多个网络连接，默认为off
+    #use epoll;      #事件驱动模型，select|poll|kqueue|epoll|resig|/dev/poll|eventport
+    worker_connections  1024;    #最大连接数，默认为512
+}
+http {
+    include       mime.types;   #文件扩展名与文件类型映射表
+    default_type  application/octet-stream; #默认文件类型，默认为text/plain
+    #access_log off; #取消服务日志    
+    log_format myFormat '$remote_addr–$remote_user [$time_local] $request $status $body_bytes_sent $http_referer $http_user_agent $http_x_forwarded_for'; #自定义格式
+    access_log log/access.log myFormat;  #combined为日志格式的默认值
+    sendfile on;   #允许sendfile方式传输文件，默认为off，可以在http块，server块，location块。
+    sendfile_max_chunk 100k;  #每个进程每次调用传输数量不能大于设定的值，默认为0，即不设上限。
+    keepalive_timeout 65;  #连接超时时间，默认为75s，可以在http，server，location块。
+
+    upstream mysvr {   
+      server 127.0.0.1:7878;
+      server 192.168.10.121:3333 backup;  #热备
+    }
+    error_page 404 https://www.baidu.com; #错误页
+    server {
+        keepalive_requests 120; #单连接请求上限次数。
+        listen       4545;   #监听端口
+        server_name  127.0.0.1;   #监听地址       
+        location  ~*^.+$ {       #请求的url过滤，正则匹配，~为区分大小写，~*为不区分大小写。
+           #root path;  #根目录
+           #index vv.txt;  #设置默认页
+           proxy_pass  http://mysvr;  #请求转向mysvr 定义的服务器列表
+           deny 127.0.0.1;  #拒绝的ip
+           allow 172.18.5.54; #允许的ip           
+        } 
+    }
+}
+```
+
+
+
+```
+gzy@5185188
+ps -ef |grep rabbit  linux查看  /home/env
+
+退出编辑模式 
+　　按ESC键，然后 ：注意这里是要加冒号
+　　　　退出vi
+    :q!  不保存文件，强制退出vi命令
+    :w   保存文件，不退出vi命令
+    :wq  保存文件，退出vi命令
+
+#添加stomp相关的插件
+rabbitmq-plugins enable rabbitmq_web_stomp rabbitmq_stomp rabbitmq_web_stomp_examples
+;
+#重启服务
+rabbitmqctl stop_app
+rabbitmqctl start_app
+#查看集群状态，有使用集群的话集群中的所有服务器都要添加插件
+rabbitmqctl cluster_status
+```
+
+开放防火墙端口号
+
+```
+firewall-cmd --zone=public --add-port=15672/tcp --permanent #网页端口
+firewall-cmd --zone=public --add-port=5672/tcp --permanent  #AMQP端口,java使用
+firewall-cmd --reload # 重新加载
+//关闭某个端口
+"sudo iptables -A INPUT -p tcp --dport $PORT -j DROP"
+"sudo iptables -A OUTPUT -p tcp --dport $PORT -j DROP" 
+//linux或者
+/sbin/iptables -I INPUT -p tcp --dport 5672 -j ACCEPT  
+/sbin/iptables -I INPUT -p tcp --dport 15672 -j ACCEPT
+备注一下
+/sbin/iptables -I INPUT -p tcp --dport 8011 -j ACCEPT #开启8011端口 
+/etc/rc.d/init.d/iptables save #保存配置 
+/etc/rc.d/init.d/iptables restart #重启服务 
+
+查看端口号
+1、lsof -i:端口号
+2、netstat -tunlp|grep 端口号
+可以通过"netstat -anp" 来查看哪些端口被打开
+
+//添加入站规则
+启动指令:service iptables start   
+重启指令:service iptables restart   
+关闭指令:service iptables stop 
+
+iptables -A OUTPUT -s 192.168.88.94 -p tcp -m tcp --sport 15674 -j ACCEPT 
+```
+
 #### 查看日志的一些linux命令
 
 ```
@@ -1989,39 +2237,6 @@ mv A B
 
 
 
-##### basicPublish方法
-
-```java
- void basicPublish(String exchange, String routingKey, BasicProperties props, byte[] body) throws IOException;
-
-void basicPublish(String exchange, String routingKey, boolean mandatory, BasicProperties props, byte[] body) throws IOException;
-
-void basicPublish(String exchange, String routingKey, boolean mandatory, boolean immediate, BasicProperties props, byte[] body) throws IOException;
-
-```
-
-- exchange 交换器名称
-- routingKey 路由键
-- props 有14个成员
-
-```tsx
- public static class BasicProperties extends com.rabbitmq.client.impl.AMQBasicProperties {
-        private String contentType;   //消息类型如(text/plain)
-        private String contentEncoding; //编码
-        private Map<String,Object> headers; //header
-        private Integer deliveryMode; //消息的投递模式
-        private Integer priority; //优先级
-        private String correlationId;
-        private String replyTo;
-        private String expiration; //过期时间
-        private String messageId;
-        private Date timestamp;
-        private String type;
-        private String userId;
-        private String appId;
-        private String clusterId;
-```
-
 ------
 
 ### OpenOffice服务的启动命令
@@ -2039,8 +2254,20 @@ KKFileView预览项目 https://kkfileview.keking.cn/zh-cn/docs/production.html
 cd D:\Program Files (x86)\OpenOffice 4\program
 soffice -headless -accept="socket,host=127.0.0.1,port=8100;urp;" -nofirststartwizard 
 # 远程调用
-soffice -headless -accept="socket,host=192.168.88.65,port=8100;urp;" -nofirststartwizard
+soffice -headless -accept="socket,host=192.168.88.65,port=8100;urp;" -nofirststartwizard &
 ```
+
+* 自动启动
+
+  ```
+  修改配置文件
+  vi /etc/rc.local
+  
+  添加如下命令
+  soffice -headless -accept="socket,host=127.0.0.1,port=8100;urp;" -nofirststartwizard &
+  ```
+
+  
 
 ```linux
 #linux启动服务  好像和windows一样
@@ -2077,6 +2304,74 @@ taskkill -pid 进程pid -f  //根据pid杀死的进程
 ```
 
 
+
+------
+
+### springboot的邮件发送
+
+#### 1.引入依赖
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-mail</artifactId>
+</dependency>
+<dependency>
+    <groupId>com.sun.mail</groupId>
+    <artifactId>javax.mail</artifactId>
+    <version>1.6.2</version>
+</dependency>
+```
+
+#### 2.发件人账号信息写入配置文件
+
+```yml
+spring:
+    mail:
+        default-encoding: utf-8  #设置编码格式
+        host: smtp.qq.com        #这里用的是QQ邮箱，所以是qq.com
+        password: *************  #注意此密码不是邮箱登陆密码，而是邮箱的授权码
+        username: *******@qq.com #邮箱账号
+```
+
+#### 3.例子
+
+```java
+	@Value("${spring.mail.username}")
+    private String from;
+ 
+    @Autowired
+    private JavaMailSender javaMailSender;
+ 
+   /**
+     * 功能描述：发送html邮件
+     *
+     * @param to      发送目标邮箱
+     * @param subject 邮件标题
+     * @param content 邮件内容
+     */
+    public void sendHtmlMail(String to, String subject, String content) throws MessagingException {
+        //创建message
+        MimeMessage message = javaMailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true);
+        //发件人
+        helper.setFrom(from);
+        //收件人
+        helper.setTo(to);
+        //邮件标题
+        helper.setSubject(subject);
+        //true指的是html邮件
+        helper.setText(content, true);
+        //发送邮件
+        javaMailSender.send(message);
+    }
+```
+
+#### 4.调用示例
+
+```java
+ mailService.sendHtmlMail("5***17@qq.com", "helloWorld", "<h1 style='color:red'>helloWorld</h1>");
+```
 
 ------
 
@@ -2161,12 +2456,75 @@ public <T> T postForObject(String url, @Nullable Object request, Class<T> respon
 }
 ```
 
-```yml
 
+
+### POM配置私服maven地址
+
+```xml
+<repositories>
+    <repository>
+        <id>nexus</id>
+        <url>http://nexus.company.com/repository/maven-public/</url>
+        <releases>
+            <enabled>true</enabled>
+            <updatePolicy>always</updatePolicy>
+            <checksumPolicy>warn</checksumPolicy>
+        </releases>
+        <snapshots>
+            <enabled>true</enabled>
+            <updatePolicy>always</updatePolicy>
+            <checksumPolicy>warn</checksumPolicy>
+        </snapshots>
+    </repository>
+</repositories>
+<distributionManagement>
+    <repository>
+        <!--id的名字可以任意取，但是在setting文件中的属性<server>的ID与这里一致-->
+        <id>releases</id>
+        <!--指向仓库类型为host(宿主仓库）的储存类型为Release的仓库-->
+        <url>http://47.96.4.110:8081/repository/java-release/</url>
+    </repository>
+    <snapshotRepository>
+        <id>snapshots</id>
+        <!--指向仓库类型为host(宿主仓库）的储存类型为Snapshot的仓库-->
+        <url>http://47.96.4.110:8081/repository/java-snapshot/</url>
+    </snapshotRepository>
+</distributionManagement>
 
 ```
 
+#maven的conf的setting.xml文件设置
 
+```xml
+<!--此处设置的用户名和密码都是nexus的登陆配置-->
+ <servers>
+     <server>
+         <id>releases</id>  <!--对应pom.xml的id=releases的仓库-->
+         <username>xuxiaoxiao</username>
+         <password>xuxiaoxiao123</password>
+     </server>
+     <server>
+         <id>snapshots</id> <!--对应pom.xml中id=snapshots的仓库-->
+         <username>xuxiaoxiao</username>
+         <password>xuxiaoxiao123</password>
+     </server>
+</servers>
+```
+
+##### 在项目所在文件夹根目录使用maven命令打包时：
+
+```
+<!-- 不执行单元测试，也不编译测试类 -->
+mvn install -Dmaven.test.skip=true
+
+```
+
+或
+
+```
+<!-- 不执行单元测试，但会编译测试类，并在target/test-classes目录下生成相应的class -->
+mvn install -DskipTests=true
+```
 
 ### JenKins项目管理工具
 

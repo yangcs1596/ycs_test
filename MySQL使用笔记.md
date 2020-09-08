@@ -581,7 +581,15 @@ declare i int;                      #申明变量
     end loop; 
 ```
 
+#### 5、FIND_IN_SET(#{type},arr)数组查询
 
+```
+FIND_IN_SET(#{type},arr)
+#{type}表示将判断的单个值 例如 1
+arr表示数组格式的字符串，例如 1,2,3,4
+```
+
+6、
 
 ### JDBC的配置参数列表
 

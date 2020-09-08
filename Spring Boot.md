@@ -12,6 +12,8 @@
 
 2014，martin fowler
 
+
+
 微服务：架构风格（服务微化）
 
 一个应用应该是一组小型服务；可以通过HTTP的方式进行互通；
@@ -639,6 +641,8 @@ SpringBoot推荐给容器中添加组件的方式；推荐使用全注解的方�
 
 2、使用**@Bean**给容器中添加组件
 
+活用组件
+
 ```java
 /**
  * @Configuration：指明当前类是一个配置类；就是来替代之前的Spring配置文件
@@ -1085,6 +1089,117 @@ Negative matches:（没有启动，没有匹配成功的自动配置类）
 ```
 
 
+
+------
+
+
+
+## 9、springboot自定义参数解析
+
+HandlerMethodArgumentResolver
+
+* https://www.jianshu.com/p/40606baf49b8 例子
+
+### 1、自定义解析器
+
+```java
+
+import org.springframework.core.MethodParameter;
+import org.springframework.web.bind.support.WebDataBinderFactory;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.method.support.ModelAndViewContainer;
+
+/**
+ * 用于绑定@CurrentUser的方法参数解析器
+ *
+ * @author lism
+ */
+public class CurrentUserMethodArgumentResolver implements HandlerMethodArgumentResolver {
+
+    public CurrentUserMethodArgumentResolver() {
+    }
+
+    @Override
+    public boolean supportsParameter(MethodParameter parameter) {
+        if (parameter.getParameterType().isAssignableFrom(UserBean.class) && parameter.hasParameterAnnotation(CurrentUser.class)) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+        CurrentUser currentUserAnnotation = parameter.getParameterAnnotation(CurrentUser.class);
+        //从Session 获取用户
+        Object object = webRequest.getAttribute(currentUserAnnotation.value(), NativeWebRequest.SCOPE_SESSION);
+//从  accessToken获得用户信息
+       if (object == null) {
+            String token = webRequest.getHeader("Authorization");
+            if (token == null) {
+                token = webRequest.getParameter("accessToken");
+            }
+            //为了测试先写死用户名
+            //TODO: 取真实用户
+            return new UserBean(1L,"admin");
+        }
+        return object;
+    }
+}
+```
+
+### 2、自定义注解
+
+```java
+import java.lang.annotation.*;
+
+/**
+ * <p>绑定当前登录的用户</p>
+ * <p>不同于@ModelAttribute</p>
+ *
+ * @author lism
+ */
+@Target({ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface CurrentUser {
+
+    /**
+     * 当前用户在request中的名字
+     *
+     * @return
+     */
+    String value() default "user";
+
+}
+```
+
+### 3、在控制器中使用@CurrentUser`
+
+```java
+@RestController
+@RequestMapping(value = "/test")
+public class TestController  {
+
+    /**
+     * 根据name查询
+     *
+     * @param request
+     * @return
+     */
+    @RequestMapping(value = "/testCurrentUser", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+    @ResponseBody
+    public void test(@CurrentUser UserBean userBean, @RequestBody SubjectRequest request) {
+        String createdBy = userBean.getUsername();
+        log.info(createdBy);
+    }
+}
+```
+
+
+
+我们可以通过实现`HandlerMethodArgumentResolver`接口来实现对自定义的参数进行解析。
+比如可以解析自定义的时间格式、自定义解析Map对象等这些spring原本不支持的对象格式。
 
 
 
@@ -3409,11 +3524,11 @@ https://hub.docker.com/
 [root@localhost ~]# docker pull tomcat
 3、根据镜像启动容器
 docker run --name mytomcat -d tomcat:latest
-4、docker ps  
+4、docker ps  #docker ps|grep order
 查看运行中的容器
 5、 停止运行中的容器
 docker stop  容器的id
-6、查看所有的容器
+6、查看所有的容器 # docker ps -a |grep order
 docker ps -a
 7、启动容器
 docker start 容器id
@@ -3427,7 +3542,8 @@ docker start 容器id
 10、为了演示简单关闭了linux的防火墙
 service firewalld status ；查看防火墙状态
 service firewalld stop：关闭防火墙
-11、查看容器的日志
+
+11、查看容器的日志 #docker logs -f --tail=1000 b80891309c17 查看1000行的日志
 docker logs container-name/container-id
 
 更多命令参看

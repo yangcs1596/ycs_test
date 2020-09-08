@@ -237,6 +237,22 @@ public interface Interface1{
 
 ```
 
+#### 1-5 java8的新特性
+
+##### 1-5-1  Optional类使用
+
+```java
+Integer value1 = null;
+// Optional.ofNullable - 允许传递为 null 参数
+Optional<Integer> a = Optional.ofNullable(value1);
+// Optional.of - 如果传递的参数是 null，抛出异常 NullPointerException
+Optional<Integer> b = Optional.of(value2);
+
+//获取类名称
+Object.getClass().getSimpleName();
+
+```
+
 
 
 **1. 首先， Interface1 接口有两个实现类 Interface1Impl1 和 Interface1Impl2**
@@ -452,7 +468,60 @@ while((n=in.read(buff))!=-1){
 out.flush();
 ```
 
-## 路径问题
+#### 3-3 批量下载 zip形式
+
+引入jar包
+
+```xml
+<dependency>
+    <groupId>org.apache.ant</groupId>
+    <artifactId>ant</artifactId>
+    <version>1.9.3</version>
+</dependency>
+```
+
+实例
+
+```java
+public static void zipDownload(List<FileInfo> fileMap, HttpServletResponse response, HttpServletRequest request) throws IOException {
+        // 处理响应头
+        setResponse(response, request, "临时压缩文件", null);
+
+        ZipOutputStream zos = new ZipOutputStream(response.getOutputStream());
+        InputStream in = null;
+        byte[] data;
+        String fileName;
+        Map<String, Integer> entryNum = Maps.newHashMap();
+        for (FileInfo fileInfo : fileMap) {
+            // 避免文件名重复,给重复的文件编号
+            fileName = getFileName(entryNum, fileInfo.getFileName(), false);
+            zos.putNextEntry(new ZipEntry(fileName));
+            try {
+                // data = new StorageClient1().download_file1(fileInfo.getFileUrl());
+                data = downloadHelper.downloadAsByteArray(fileInfo.getFileUrl());
+                if (data == null || data.length <= 0) {
+                    log.info("File[" + fileInfo.getId() + "] does not exist or cannot be read.");
+                    continue;
+                }
+                in = new ByteArrayInputStream(data);
+                StreamUtils.copy(in, zos);
+            } catch (Exception e) {
+                log.error("材料解密报错{}", e.toString());
+            }
+            zos.closeEntry();
+            if (null != in) {
+                in.close();
+            }
+        }
+
+        zos.flush();
+        zos.close();
+    }
+```
+
+
+
+#### 3-4 路径问题
 
 ```java
 ResourceUtils.getURL("classpath:").getPath()  //获取class的路径
@@ -623,7 +692,7 @@ public void getFile(HttpServletRequest request , HttpServletResponse response) t
 } 
 ```
 
-#### 3-3 uploadFile
+#### 3-5 uploadFile
 
 ```java
 /**
@@ -787,6 +856,7 @@ Boolean flag = List.stream().filter(w -> '1'.getValue().equals(w.getApplicationU
 
 ```java
 List<QuickNotaryDTO> list = quickNotaryService.find(id);
+// 转map
 Map<String, QuickNotaryDTO> map = list.stream().collect(toMap(QuickNotaryDTO::getNotaryCode, dto -> dto),
                                                         (key1,key2)->key2);
 //getNotaryCode实体对象中的一个get方法
@@ -972,6 +1042,8 @@ WriteNullBooleanAsFalse–Boolean字段如果为null,输出为false,而非null
 
   ```java
    public <T, S extends T> T testGenericMethodDefine(T t, S s){}
+  //<T> T 表示返回的是一个泛型
+  //T t 表示传递的参数是一个泛型
   ```
 
 #### 通配符 ？
@@ -980,7 +1052,11 @@ WriteNullBooleanAsFalse–Boolean字段如果为null,输出为false,而非null
   List<?> unknownList
   ```
 
+  ？表示不确定的 java 类型
+  
   对于参数值是`未知类型`的容器类，`只能`读取其中元素，`不能`向其中添加元素， 因为，其类型是未知，所以编译器无法识别添加元素的类型和容器的类型是否兼容，唯一的例外是NULL
+  
+* 泛型中通配符常用的 T，E，K，V，？
 
 ### 11  transient 关键字的不会被序列化
 
@@ -1318,8 +1394,6 @@ Ctrl + Alt + U  向上继承关系 diagram
 
 注释为你的类生成相对略微复杂的构建器API。`@Builder`可以让你以下面显示的那样调用你的代码，来初始化你的实例对象：
 
-
-
 ```java
 Student.builder()
                .sno( "001" )
@@ -1328,6 +1402,22 @@ Student.builder()
                .sphone( "110" )
                .build();
 ```
+
+用了@Builder若要使用无参构造方法，用注解@Tolerate
+
+```java
+@Builder
+@Data
+public class XX(){
+    //-----
+    @Tolerate
+    public XX(){
+        
+    }
+}
+```
+
+
 
 idea的p3c插件  代码规范
 
