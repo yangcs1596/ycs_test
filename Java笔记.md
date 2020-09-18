@@ -93,6 +93,18 @@ Person person = objectMapper.readValue("{\"name\":\"davenkin\",\"address\":\"\",
 
 ##### - 图片处理之thumbnailator和TwelveMonkeys的使
 
+谷歌开源工具-图片处理类库
+
+```
+<dependency>
+    <groupId>net.coobird</groupId>
+    <artifactId>thumbnailator</artifactId>
+    <version>0.4.8</version>
+</dependency>
+```
+
+
+
 ##### springboot搜索引擎 eclasticsearch
 
 * 实时的全文检索
@@ -152,6 +164,276 @@ public class BaseInfoBiz {
 **6、合成复用原则（Composite Reuse Principle）**
 
 　　原则是尽量使用合成/聚合的方式，而不是使用继承。
+
+#### Spring事件分发
+
+```java
+/**事件源**/
+public class Entry {
+	private long id; // 编号   
+    private String name; //标题
+}
+
+/**
+ * 事件对象
+**/
+public class EntryEvent{ 
+    public static final int ENTRY_ADDED = 100; //事件类型:博客文章被创建   
+    public static final int ENTRY_DELETED = 101;//事件类型:博客文章被删除   
+    public static final int ENTRY_MODIFIED = 102;//事件类型:博客文章被修改   
+  
+    private int eventType; //事件类型   
+    private Entry entry; //博客文章对象   
+    private Date date; //事件触发日期   
+    private Map params; //事件辅助参数 
+}
+
+/**事件监听器和实现接口**/
+public interface EntryListener {
+    public abstract void entryAdded(EntryEvent entryevent);
+}
+
+/** 
+ * 邮件管理器 实现类
+ * @author Administrator 
+ * 
+ */  
+public class EmailManager implements EntryListener{  
+  
+    @Override  
+    public void entryAdded(EntryEvent entryevent) {  
+  
+        System.out.println("EmailManager 处理 博客文章被创建事件。");  
+          
+    }
+}
+```
+
+##### 分发器
+
+```java
+public class EntryEventDispatcher {  
+  
+    private static EntryEventDispatcher instance = new EntryEventDispatcher();  
+    private ArrayList listeners=new ArrayList();  
+  
+    public static EntryEventDispatcher getInstance() {  
+        return instance;  
+    }  
+  
+    private EntryEventDispatcher() {  
+          
+        String[] observers = PropertyMgr.getProperty("observers").split(",");  
+        for(String s : observers) {  
+              
+            System.out.println(s);  
+            try {  
+                this.addListener((EntryListener)(Class.forName(s).newInstance()));  
+            } catch (InstantiationException e) {  
+                e.printStackTrace();  
+            } catch (IllegalAccessException e) {  
+                e.printStackTrace();  
+            } catch (ClassNotFoundException e) {  
+                e.printStackTrace();  
+            }  
+        }  
+          
+  
+    }  
+  
+    public synchronized void addListener(EntryListener listener) {  
+        System.out.println(":"+listener);  
+        if (listener == null) {  
+            System.out.println(":"+listener);  
+            throw new NullPointerException();  
+        } else {  
+            listeners.add(listener);  
+            return;  
+        }  
+    }  
+  
+    public synchronized void removeListener(EntryListener listener) {  
+        listeners.remove(listener);  
+    }  
+  
+    public void dispatchEvent(EntryEvent event) {  
+        // System.out.println("msgDispatchEvent");   
+        int eventType = event.getEventType();  
+        long t1=System.currentTimeMillis();  
+        System.out.println("kaishi="+t1);  
+        for (int i = 0; i < listeners.size(); i++) {  
+            try {  
+                EntryListener listener = (EntryListener) listeners.get(i);  
+                String name = listener.getClass().getName();  
+                name = name.substring(name.lastIndexOf('.') + 1);  
+  
+                switch (eventType) {  
+                case EntryEvent.ENTRY_ADDED: // 创建博客文章   
+                    listener.entryAdded(event);  
+                    break;  
+  
+                case EntryEvent.ENTRY_DELETED: // 删除博客文章   
+                    listener.entryDeleted(event);   
+                    break;  
+  
+                case EntryEvent.ENTRY_MODIFIED: //修改 博客文章   
+                    listener.entryModified(event);  
+                    break;  
+  
+                }    
+            } catch (Exception e) {  
+                // logger.error(e);   
+            }    
+        }    
+        // Profiler.end("msgDispatchEvent");   
+    }  
+} 
+
+@Test
+	EntryManager eventManager=new EntryManager();  
+	Entry entry=new Entry();  
+	// 事件分发   
+    EntryEvent event = new EntryEvent(EntryEvent.ENTRY_ADDED, entry, null);  
+    EntryEventDispatcher.getInstance().dispatchEvent(event); 
+```
+
+java监听器的实现和原理
+
+https://www.cnblogs.com/againn/p/9512013.html
+
+首先创建一个事件源Robot：
+
+```
+ 1 package com.ssm.listener.robotListener;
+ 2 
+ 3 /**
+ 4  * 事件源：机器人
+ 5  */
+ 6 public class Robot {
+ 7 
+ 8     private RobotListener listener;
+ 9 
+10     /**
+11      * 注册机器人监听器
+12      * @param listener
+13      */
+14     public void registerListener(RobotListener listener){
+15      this.listener  = listener;
+16     }
+17 
+18     /**
+19      * 工作
+20      */
+21     public void working(){
+22         if(listener!=null){
+23             Even even = new Even(this);
+24             this.listener.working(even);
+25         }
+26         System.out.println("机器人开始工作......");
+27     }
+28 
+29     /**
+30      * 跳舞
+31      */
+32     public void dancing(){
+33         if(listener!=null){
+34             Even even = new Even(this);
+35             this.listener.dancing(even);
+36         }
+37         System.out.println("机器人开始跳舞......");
+38     }
+39 
+40 
+41 }
+```
+
+
+
+ 
+
+ 创建时间对象Even：
+
+```
+ 1 package com.ssm.listener.robotListener;
+ 2 
+ 3 /**
+ 4  * 事件对象
+ 5  */
+ 6 public class Even {
+ 7 
+ 8     private Robot robot;
+ 9 
+10     public Even(){
+11         super();
+12     }
+13     public Even(Robot robot){
+14         super();
+15         this.robot = robot;
+16     }
+17 
+18 
+19     public Robot getRobot() {
+20         return robot;
+21     }
+22 
+23     public void setRobot(Robot robot) {
+24         this.robot = robot;
+25     }
+26 }
+```
+
+
+
+创建时间监听器接口RobotListener：
+
+```
+ 1 package com.ssm.listener.robotListener;
+ 2 
+ 3 /**
+ 4  * 事件监听器
+ 5  */
+ 6 public interface RobotListener {
+ 7 
+ 8     public void working(Even even);
+ 9     public void dancing(Even even);
+10 }
+```
+
+
+
+```
+ 1 package com.ssm.listener.robotListener;
+ 2 
+ 3 public class MyRobotListener implements  RobotListener{
+ 4     @Override
+ 5     public void working(Even even) {
+ 6         Robot robot = even.getRobot();
+ 7         System.out.println("机器人工作提示：请看管好的你机器人，防止它偷懒！");
+ 8     }
+ 9 
+10     @Override
+11     public void dancing(Even even) {
+12         Robot robot = even.getRobot();
+13         System.out.println("机器人跳舞提示：机器人跳舞动作优美，请不要走神哦！");
+14     }
+15 }
+```
+
+事件监听器测试类
+
+```
+ 1 package com.ssm.listener.robotListener;
+ 2 
+ 3 public class TestListener {
+ 4 
+ 5     public static void main(String[] args) {
+ 6         Robot robot = new Robot();
+ 7         robot.registerListener(new MyRobotListener());
+ 8         robot.working();
+ 9         robot.dancing();
+10     }
+11 }
+```
 
 ### 1 开发常用的修饰符功能说明
 

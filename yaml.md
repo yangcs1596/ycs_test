@@ -945,6 +945,8 @@ var detail = new Vue({
     data: {
         #数据属性
     },
+    components:{},
+    props: {},
     mounted: function () {
         #初始化
     },
@@ -2072,7 +2074,63 @@ void basicPublish(String exchange, String routingKey, boolean mandatory, boolean
 
 ### nginx笔记
 
-轻量级高并发服务器 Nginx
+#### 安装
+
+**nginx官网** http://nginx.org/en/download.html
+
+```
+进入用户组目录
+# cd usr/local/src
+下载组件
+# wget http://nginx.org/download/nginx-1.10.2.tar.gz
+
+# wget http://www.openssl.org/source/openssl-fips-2.0.10.tar.gz
+# wget http://zlib.net/zlib-1.2.11.tar.gz
+# wget ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.40.tar.gz
+安装C++编译环境
+# yum install gcc-c++
+安装顺序 openssl安装  pcre安装 zlib安装 nginx安装
+解压
+# tar zxvf openssl-fips-2.0.10.tar.gz
+# cd openssl-fips-2.0.10
+# ./config && make && make install
+其它安装同理
+
+找一下nginx安装到什么位置上了
+# whereis nginx
+# cd user/local/nginx
+启动
+# user/local/nginx/sbin/nginx
+```
+
+报错了，error while loading shared libraries: libpcre.so.1: cannot open shared object file: No such file or directory，按照下面方式解决
+
+```
+1.用whereis libpcre.so.1命令找到libpcre.so.1在哪里
+2.用ln -s /usr/local/lib/libpcre.so.1 /lib64命令做个软连接就可以了
+3.用sbin/nginx启动Nginx
+4.用ps -aux | grep nginx查看状态
+# whereis libpcre.so.1
+# ln -s /usr/local/lib/libpcre.so.1 /lib64
+# sbin/nginx[root@localhost nginx]# ps -aux | grep nginx 
+```
+
+#### 常用命令
+
+```
+启动
+[root@localhost ~]# /usr/local/nginx/sbin/nginx
+停止/重启
+[root@localhost ~]# /usr/local/nginx/sbin/nginx -s stop(quit、reload)
+命令帮助
+[root@localhost ~]# /usr/local/nginx/sbin/nginx -h
+验证配置文件
+[root@localhost ~]# /usr/local/nginx/sbin/nginx -t
+配置文件
+[root@localhost ~]# vim /usr/local/nginx/conf/nginx.conf
+```
+
+#### 配置
 
 Nginx 是一款自由的、开源的、高性能的 HTTP **服务器和反向代理服务器**；同时也是一个 IMAP、POP3、SMTP 代理服务器。
 
@@ -2128,7 +2186,7 @@ http {
 }
 ```
 
-
+## RabbitMQ的和前端消息交互
 
 ```
 gzy@5185188
