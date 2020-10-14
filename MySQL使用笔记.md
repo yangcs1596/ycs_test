@@ -40,6 +40,18 @@ select * from table_name limit 5; // 检索 前5行
 
 
 
+#### 2、coalesce函数
+
+返回列表中第一个非null表达式的值。如果所有表达式求值为null，则返回null
+
+```mysql
+COALESCE()函数有两种用法：
+COALESCE ( expression1, expression2 );
+COALESCE ( expression1, expression2, ... expression-n );
+```
+
+**需注意：vertica中空字符串跟null值不一样**
+
 ###  数据库操作
 
 #### 1、建表

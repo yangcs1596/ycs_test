@@ -30,6 +30,11 @@
 
 服务的熔断降级： Netflix的开源组件Hystrix
 
+#### 软件备注
+
+* **vs code**,  **webstorm** 边写前端js+html
+* **datagrip**， **navicat**  连接数据库
+
 #### Jar包解决功能记录
 
 * net.coobird.thumbnailator    缩略图片  https://www.cnblogs.com/miskis/p/5500822.html
@@ -535,7 +540,88 @@ Object.getClass().getSimpleName();
 
 ```
 
+```java
+    public String testSimple(Test4 test) {
+        if (test == null) {
+            return "";
+        }
+        if (test.getTest3() == null) {
+            return "";
+        }
+        if (test.getTest3().getTest2() == null) {
+            return "";
+        }
+        if (test.getTest3().getTest2().getInfo() == null) {
+            return "";
+        }
+        return test.getTest3().getTest2().getInfo();
+    }
+```
 
+
+
+但是使用Optional后，整个就都不一样了。
+
+```java
+ public String testOptional(Test test) {
+        return Optional.ofNullable(test).flatMap(Test::getTest3)
+                .flatMap(Test3::getTest2)
+                .map(Test2::getInfo)
+                .orElse("");
+    }
+```
+
+1、Optional.ofNullable(test)，如果test为空，则返回一个单例空Optional对象，如果非空则返回一个Optional包装对象，Optional将test包装；
+
+还有ifPresent()方法
+
+```java
+  public static <T> Optional<T> ofNullable(T value) {
+        return value == null ? empty() : of(value);
+    }
+```
+
+2、flatMap(Test::getTest3)判断test是否为空，如果为空，继续返回第一步中的单例Optional对象，否则调用Test的getTest3方法；
+
+```java
+public<U> Optional<U> flatMap(Function<? super T, Optional<U>> mapper) {
+        Objects.requireNonNull(mapper);
+        if (!isPresent())
+            return empty();
+        else {
+            return Objects.requireNonNull(mapper.apply(value));
+        }
+    }
+```
+
+3、flatMap(Test3::getTest2)同上调用Test3的getTest2方法；
+
+4、map(Test2::getInfo)同flatMap类似，但是flatMap要求Test3::getTest2返回值为Optional类型，而map不需要，flatMap不会多层包装，map返回会再次包装Optional；
+
+```java
+    public<U> Optional<U> map(Function<? super T, ? extends U> mapper) {
+        Objects.requireNonNull(mapper);
+        if (!isPresent())
+            return empty();
+        else {
+            return Optional.ofNullable(mapper.apply(value));
+        }
+    }
+```
+
+5、orElse("");获得map中的value，不为空则直接返回value，为空则返回传入的参数作为默认值。
+
+```javascript
+orElseGet(() -> createUser());
+```
+
+```java
+public T orElse(T other) {
+    return value != null ? value : other;
+}
+```
+
+#### 1-6 多实现类的注入问题
 
 **1. 首先， Interface1 接口有两个实现类 Interface1Impl1 和 Interface1Impl2**
 
@@ -686,6 +772,68 @@ finally{
 ```
 
 *栈  代码运行区  *栈  存放数据  *方法区
+
+#### 2-1 多线程java多线程之Future和FutureTask
+
+```dart
+Future<List> future = getDataFromRemoteByFuture();
+        //do something....
+        List data = future.get();
+```
+
+```java
+private Future<List> getDataFromRemoteByFuture() {
+
+        return threadPool.submit(new Callable<List>() {
+            @Override
+            public List call() throws Exception {
+                return getDataFromRemote();
+            }
+        });
+    }
+```
+
+**也可以利用FutureTask来获取结果：**
+
+```dart
+FutureTask<List> futureTask = new FutureTask<List>(new Callable<List>() {
+            @Override
+            public List call() throws Exception {
+                return getDataFromRemote();
+            }
+        });
+        threadPool.submit(futureTask);
+        futureTask.get();
+```
+
+**实际例子**
+
+```java
+private final ExecutorService executorService;
+try {
+    List<FutureTask<Map<String, Object>>> futureTasks = new LinkedList<>();
+    for (SignatureRequest signatureRequest : request.getStampInfos()) {//多个文件盖章
+         Callable<Map<String, Object>> callable = () -> {
+         String fileId = signatureSynthesis(signatureRequest, request.getSignType());
+             //signatureSynthesis这个方法的要用@Override
+         Map<String, Object> map = new HashMap<>();
+         map.put("pdfId", signatureRequest.getPdfId());
+         map.put("fileId", fileId);
+         return map;
+       };
+    	FutureTask<Map<String, Object>> future = new FutureTask<>(callable);
+   	 	executorService.submit(future);
+    //                new Thread(future).start();
+    	futureTasks.add(future);
+    }
+    for (FutureTask<Map<String, Object>> future:futureTasks) {
+    	resultMap.add(future.get());
+    }
+} catch (Exception e) {
+    log.error("生成签名失败", e);
+    throw new BaseException(ERROR, "生成签名失败", e);
+}
+```
 
 ### 3 IO流功能对象
 
