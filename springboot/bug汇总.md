@@ -1,5 +1,7 @@
 # **Security**
 
+* Spring Security 提供了BCryptPasswordEncoder类,实现Spring的PasswordEncoder接口使用BCrypt强哈希方法来加密密码。方法采用SHA-256 +随机盐+密钥对密码进行加密
+
 在里面还依赖了几个自定义的类，都是必须配置的。分别是
 HrService，
 MyFilterInvocationSecurityMetadataSource，

@@ -34,6 +34,7 @@
 
 * **vs code**,  **webstorm** 边写前端js+html
 * **datagrip**， **navicat**  连接数据库
+* 构造原型工具 axure  生成的html文件放在tomcat的webapps下即可访问
 
 #### Jar包解决功能记录
 
@@ -620,6 +621,44 @@ public T orElse(T other) {
     return value != null ? value : other;
 }
 ```
+
+##### 1-5-2 @@FunctionalInterface都能实现Lambda，不加的话再运行期会校验是否是函数接口，加了编译的时候就会校验
+
+* 什么是函数式接口  
+
+```java
+//什么是函数式接口
+Runnable r = () -> System.out.println("hello world");
+//当不指明函数式接口时，编译器会自动解释这种转化：
+new Thread(
+   () -> System.out.println("hello world")
+).start();
+//函数式接口只能有一个抽象方法，如果你尝试添加第二个抽象方法，将抛出编译时错误。
+//自定义函数式接口
+@FunctionalInterface 
+public interface WorkerInterface {   
+    public void doSomeWork(countRecoder, count);
+    //可以定义多个静态方法
+    static void printHello(){
+        System.out.println("Hello");
+    }
+}
+//lambda表达式的引用
+(countRecoder, count) -> countRecoder.setCountOfFirstStage(count)
+```
+
+* 案例
+
+```java
+@FunctionalInterface
+public interface XttblogService {
+    void sayMessage(String message);
+}
+//引用
+XttblogService xttblogService = message -> System.out.println("Hello " + message);
+```
+
+
 
 #### 1-6 多实现类的注入问题
 
@@ -1378,14 +1417,16 @@ Tip:
 ### 7 映射
 
 ```java
-Class className= class.forName("className");  //获取类名
+Class className= class.forName("className");  //获取类名 或者直接xx.class.getMethod()
 Method method=className.getMethod(MethodName,XXX.class，"参数".getClass());// 构造函数  注意getClass()可能会改变
-method.invoke(className.newInstance,"参数")；
+method.invoke(className.newInstance,"参数")；  //执行（实例对象， 参数）
 ```
 
 ```java
 BeanUtils.copyProperties(源对象, 目标对象);  //另一个实体
 ```
+
+
 
 ### 8 序列化
 
