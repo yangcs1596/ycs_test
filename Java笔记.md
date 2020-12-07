@@ -36,7 +36,7 @@
 * **datagrip**， **navicat**  连接数据库
 * 构造原型工具 axure  生成的html文件放在tomcat的webapps下即可访问
 
-#### Jar包解决功能记录
+#### Jar工具包解决功能记录
 
 * net.coobird.thumbnailator    缩略图片  https://www.cnblogs.com/miskis/p/5500822.html
 
@@ -111,7 +111,7 @@ Person person = objectMapper.readValue("{\"name\":\"davenkin\",\"address\":\"\",
 
 
 
-##### springboot搜索引擎 eclasticsearch
+##### - springboot搜索引擎 eclasticsearch
 
 * 实时的全文检索
 * logstash的安装配置（同步数据库表数据？）
@@ -124,7 +124,7 @@ Person person = objectMapper.readValue("{\"name\":\"davenkin\",\"address\":\"\",
 
 * 网址： https://www.elastic.co/downloads/kibana
 
-#### springboot开启异步
+### springboot开启异步
 
 ```
 @Service
@@ -141,7 +141,7 @@ public class BaseInfoBiz {
 
 总体来说设计模式分为三大类：
 
-　　**创建型模式，**共五种：**工厂方法模式、抽象工厂模式、单例模式、建造者模式、原型模式**。
+　　**创建型模式，**共五种：**工厂方法模式、抽象工厂模式、单例模式、建造者模式、原型模式**。s
 
 　　**结构型模式，**共七种：**适配器模式、装饰器模式、代理模式、外观模式、桥接模式、组合模式、享元模式**。
 
@@ -441,6 +441,63 @@ https://www.cnblogs.com/againn/p/9512013.html
 11 }
 ```
 
+### 减少if-else的方法
+
+大概就是接口，多态等形式
+
+* 工厂模式
+
+  ```java
+  //工厂类
+  public class UserPayServiceStrategyFactory {
+  
+      private static Map<String,UserPayService> services = new ConcurrentHashMap<String,UserPayService>();
+  
+      public  static UserPayService getByUserType(String type){
+          return services.get(type);
+      }
+  
+      public static void register(String userType,UserPayService userPayService){
+          Assert.notNull(userType,"userType can't be null");
+          services.put(userType,userPayService);
+      }
+  }
+  //引用 就可以找到自己要的service进行其它公用方法
+  UserPayService strategy = UserPayServiceStrategyFactory.getByUserType(vipType);
+  ```
+
+* Spring Bean 的注册
+
+  还记得我们前面定义的 UserPayServiceStrategyFactory 中提供了的 Register 方法吗？他就是用来注册策略服务的。
+
+  接下来，我们就想办法调用 Register 方法，把 Spring 通过 IOC 创建出来的 Bean 注册进去就行了。
+
+  这种需求，可以借用 Spring 中提供的 InitializingBean 接口，这个接口为 Bean 提供了属性初始化后的处理方法。
+
+  它只包括 afterPropertiesSet 方法，凡是继承该接口的类，在 Bean 的属性初始化后都会执行该方法。
+
+  ```java
+  //例子
+  @Service
+  public class ParticularlyVipPayService implements UserPayService,InitializingBean {
+  
+      @Override
+      public BigDecimal quote(BigDecimal orderPrice) {
+           if (消费金额大于30元) {
+              return 7折价格;
+          }
+      }
+  
+      //这里进行了注册Register  至此工厂模式完成
+      @Override
+      public void afterPropertiesSet() throws Exception {
+          UserPayServiceStrategyFactory.register("ParticularlyVip",this);
+      }
+  }
+  ```
+
+  
+
 ### 1 开发常用的修饰符功能说明
 
 #### 1-1 类 
@@ -525,9 +582,33 @@ public interface Interface1{
 
 ```
 
-#### 1-5 java8的新特性
+#### 1-5 继承
 
-##### 1-5-1  Optional类使用
+##### 1.继承的主要作用在于，在已有基础上继续进行功能的扩充。
+
+语法：`class 子类 extends 父类{}`  
+
+#### 2 继承的限制
+
+* 子类对象在进行实例化前首先调用父类构造方法，再调用子类构造方法实例化子类对象。
+
+  **实际在子类构造方法中，相当于隐含了一个语句super()，调用父类的无参构造。同时如果父类里没有提供无参构造，那么这个时候就必须使用super(参数)明确指明要调用的父类构造方法。**
+
+* 只允许单继承不允许多继承（一个子类继承一个父类
+
+  **Java中不允许多重继承，但是允许多层继承！多层继承一般不会超过三层**
+
+* 在继承时，子类会继承父类的所有结构。
+
+  **在进行继承的时候，子类会继承父类的所有结构（包括私有属性、构造方法、普通方法）**
+  **显示继承**：所有非私有操作属于显示继承（可以直接调用）。
+  **隐式继承**：所有私有操作属于隐式继承（不可以直接调用，需要通过其它形式调用（get或者set））。
+
+  发现子类能够使用的是所有非private操作
+
+#### 1-7 java8的新特性
+
+##### 1-7-1  Optional类使用
 
 ```java
 Integer value1 = null;
@@ -622,7 +703,7 @@ public T orElse(T other) {
 }
 ```
 
-##### 1-5-2 @@FunctionalInterface都能实现Lambda，不加的话再运行期会校验是否是函数接口，加了编译的时候就会校验
+##### 1-7-2 @@FunctionalInterface都能实现Lambda，不加的话再运行期会校验是否是函数接口，加了编译的时候就会校验
 
 * 什么是函数式接口  
 
@@ -660,7 +741,7 @@ XttblogService xttblogService = message -> System.out.println("Hello " + message
 
 
 
-#### 1-6 多实现类的注入问题
+#### 1-8 多实现类的注入问题
 
 **1. 首先， Interface1 接口有两个实现类 Interface1Impl1 和 Interface1Impl2**
 
@@ -821,6 +902,7 @@ Future<List> future = getDataFromRemoteByFuture();
 ```
 
 ```java
+// ExecutorService executor = Executors.newCachedThreadPool();
 private Future<List> getDataFromRemoteByFuture() {
 
         return threadPool.submit(new Callable<List>() {
@@ -1326,8 +1408,8 @@ Boolean flag = List.stream().filter(w -> '1'.getValue().equals(w.getApplicationU
 ```java
 List<QuickNotaryDTO> list = quickNotaryService.find(id);
 // 转map
-Map<String, QuickNotaryDTO> map = list.stream().collect(toMap(QuickNotaryDTO::getNotaryCode, dto -> dto),
-                                                        (key1,key2)->key2);
+Map<String, QuickNotaryDTO> map = list.stream().collect(toMap(QuickNotaryDTO::getNotaryCode, dto -> dto,
+                                                        (key1,key2)->key2));
 //getNotaryCode实体对象中的一个get方法
 // {"NotaryCode()":{xxx},} // key 和 对象
 
@@ -1393,6 +1475,14 @@ for (Entry<String, String> entry : entries) {
 for(Object m:map.values()){
     System.out.println(m);
 }
+```
+
+##### 2-2 map.stream()
+
+```java
+//map转list java8新特性
+List<Value> values = map.values().stream().collect(Collectors.toList());
+//for循环去转
 ```
 
 
@@ -1485,7 +1575,7 @@ https://blog.csdn.net/u012693530/article/details/80831408
 
 https://blog.csdn.net/qq_34412985/article/details/81985459
 
-JSONObject.toJSONString(Object object, SerializerFeature... features)
+* JSONObject.toJSONString(Object object, SerializerFeature... features)
 
 QuoteFieldNames———-输出key时是否使用双引号,默认为true
 

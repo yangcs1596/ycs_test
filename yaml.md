@@ -2500,6 +2500,7 @@ tail - 100f
 sz filename
 # rz命令本地上传文件到服务器：
 rz  弹出回话框，选择文件上传
+rz -y 文件名 上传并覆盖
  
 
 ps -ef | grep 'name'
@@ -2767,6 +2768,8 @@ public <T> T postForObject(String url, @Nullable Object request, Class<T> respon
 
 ### POM配置私服maven地址
 
+Nexus搭建私有仓库
+
 ```xml
 <repositories>
     <repository>
@@ -2828,10 +2831,40 @@ mvn install -Dmaven.test.skip=true
 
 或
 
-```
-<!-- 不执行单元测试，但会编译测试类，并在target/test-classes目录下生成相应的class -->
+```xml
+<!--不执行单元测试，但会编译测试类，并在target/test-classes目录下生成相应的class -->
 mvn install -DskipTests=true
+<!--不执行测试用例，但编译测试用例类生成相应的class文件至target/test-classes下。 -->
+mvn clean package -DskipTests -U  //删除再打包，跳过测试
+
+mvn package   // 生成target目录，编译、测试代码，生成测试报告，生成jar/war文件
+<!-- -U 强制刷新本地仓库不存在release版和所有的snapshots版本。-->
+<!--清空本地仓库的命令-->
+mvn dependency:purge-local-repository
+<!--查看jar包之间的依赖-->
+mvn dependency:tree -U
+mvn dependency:tree -U -f notary-cloud-provider-order/pom.xml
 ```
+
+#### Maven的脚本
+
+```
+<!-- 发布到私服 -->
+mvn clean deploy -X -Dmaven.test.skip=true
+
+如果想发布到snapshot仓库中，则需要在版本号后加上-SNAPSHOT(注意这里必须是大写)
+snapshot快照库和release发布库
+我们在开发阶段，可以将公用库的版本设置为快照版本，而被依赖组件则引用快照版本进行开发，在公用库的快照版本更新后，我们也不需要修改pom文件提示版本号来下载新的版本，直接mvn执行相关编译、打包命令即可重新下载最新的快照库了，从而也方便了我们进行开发。
+```
+
+
+
+```
+发布到指定仓库
+mvn deploy:deploy-file -DgroupId=com.xy.oracle -DartifactId=ojdbc14 -Dversion=10.2.0.4.0 -Dpackaging=jar -Dfile=E:\ojdbc14.jar -Durl=http://127.0.0.1:8081/nexus/content/repositories/thirdparty/ -DrepositoryId=thirdparty
+```
+
+
 
 ### JenKins项目管理工具
 
@@ -2861,6 +2894,8 @@ if [ $containerId ]; then
 fi
 
 docker run  -it -v  /usr/share/fonts:/usr/share/fonts  -d -p  $port:8080 --name $serviceName -m 1280M --env SKYWALKING_COLLECTOR_ARRE="192.168.88.116:11800" --env PROFILES_ACTIVE="test" --env SERVER_HOST="192.168.88.115" --env SERVER_PORT="$port" `docker images |grep $serviceName |awk '{print $2,$3}' |grep latest|awk '{print $2}'`
+/*********这条是vue的脚本构建***********/
+docker run  -d -p $port:8080 --name $serviceName  `docker images |grep $serviceName |awk '{print $2,$3}' |grep latest|awk '{print $2}'`  
 
 ```
 
@@ -3002,7 +3037,7 @@ java -jar *.jar（*替换为需启动的jar包名称)
 
 
 
-#### 服务构建
+#### K8S的命令服务构建
 
 ```shell
 #查看
@@ -3026,20 +3061,30 @@ kubectl -n notarycloud set image deployment notary-cloud-consumer-order notary-c
 #docker push 是把这个景象推送到镜像仓库
 #kubectl -n notarycloud set image deployment 这句是在227执行，用新的镜像替换旧的镜像
 #
-order-provider
+#order-provider
 kubectl -n notarycloud get po -owide
 docker tag registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:latest registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:20200717511
+#
 docker push registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:20200717511
+#
 kubectl -n notarycloud set image deployment notary-cloud-provider-order notary-cloud-provider-order=registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:20200717511
-
-
 
 
 ```
 
 
 
-有k8s的构建
+```shell
+#k8s的其它命令
+# 降为一个副本,确保配置有reload  测试环境目前只有一个副本，此命令不用执行
+kubectl -n notarycloud scale deploy/mycat --replicas=1
+# 恢复副本数量 测试环境目前只有一个副本，此命令不用执行
+kubectl -n notarycloud scale deploy/mycat --replicas=2
+```
+
+
+
+用k8s的构建
 
 ```
 def label = "jenkins-jnlp-slave-${UUID.randomUUID().toString()}"
@@ -3121,6 +3166,269 @@ podTemplate(label: label, containers: [
 }
 
 ```
+
+# PipeLine语法学习
+
+https://www.w3cschool.cn/jenkins/jenkins-jg9528pb.html
+
+https://www.jianshu.com/p/f1167e8850cd
+
+```groovy
+pipeline{
+    agent any  //全局必须带有agent表明此pipeline执行节点
+    stages{
+        stage('代码检出'){
+		   git branch: 'development', credentialsId: 'e71846ca-cbc1-4122-9f4f-5ea617666617', url: 'ssh://git@notarycloud-gitlab-ce/fxnotary/notary-cloud-order.git'
+			}
+        stage("first stage"){
+            agent { label 'master' }  //具体执行的步骤节点，非必须
+            steps{
+                echo "this is first step"
+            }
+        }
+    }
+}
+```
+
+## Jenkis pipeline构建项目实践-编写podTemplate实现和k8s对接
+
+```groovy
+def label = "jenkins-jnlp-slave-${UUID.randomUUID().toString()}"
+podTemplate(label: label, containers: [
+		containerTemplate(name: 'maven', image: 'maven:3-jdk-8-slim', ttyEnabled: true, command: 'cat'),
+		containerTemplate(name: 'docker', image: 'docker:18', ttyEnabled: true, command: 'cat'),
+		containerTemplate(name: 'kubectl', image: 'lachlanevenson/k8s-kubectl:v1.13.12', ttyEnabled: true, command: 'cat')
+	],
+	nodeSelector:'ci=jenkins',
+	volumes: [
+		nfsVolume(mountPath: '/home/jenkins/agent', serverAddress: '192.168.88.225', serverPath: '/mnt/file', readOnly: false),
+		nfsVolume(mountPath: '/root/.m2', serverAddress: '192.168.88.225', serverPath: '/mnt/file/.m2', readOnly: false),
+		hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock')
+	])
+{
+    node (label) {
+			stage('代码检出'){
+				git branch: 'development', credentialsId: 'e71846ca-cbc1-4122-9f4f-5ea617666617', url: 'ssh://git@notarycloud-gitlab-ce/fxnotary/notary-cloud-order.git'
+			}
+			
+			def BUILD_RELEASE_VERSION = readMavenPom().getVersion().replace("-SNAPSHOT", "")
+			
+			stage('Maven构建') {
+				container('maven') {
+				    parallel (
+						"autoconfigure": {
+							stage('autoconfigure') {
+								sh """
+									# note: $PWD=/home/jenkins/agent/notary-cloud.git/
+									# mvn -f commons/notary-cloud-common-autoconfigure/pom.xml deploy
+									mvn -f pom.xml clean -Dmaven.test.skip=true install deploy
+								"""
+							}
+						}
+					)
+				}
+				container('maven') {
+				    parallel (
+						"order": {
+							stage('order') {
+								sh """
+									mvn -f notary-cloud-consumer-order/pom.xml -T 2 clean -Dmaven.test.skip=true package dockerfile:build;
+									mvn -f notary-cloud-provider-order/pom.xml -T 2 clean -Dmaven.test.skip=true package dockerfile:build;
+								"""
+							}
+						}
+					)
+				}
+			}
+			
+			
+			stage('镜像推送') {
+				container('docker') {
+					parallel (
+						"order": {
+							stage('order') {
+								sh """
+									docker tag registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:latest registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:${BUILD_RELEASE_VERSION};
+									docker push registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:latest;
+									docker push registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:${BUILD_RELEASE_VERSION};
+									docker tag registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:latest registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:${BUILD_RELEASE_VERSION};
+									docker push registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:latest;
+									docker push registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:${BUILD_RELEASE_VERSION};
+								"""
+							}
+						}
+					)
+				}
+			}
+			
+			
+			stage('K8S部署') {
+				container('kubectl') {
+					sh """
+						kubectl -n notarycloud set image deployment notary-cloud-consumer-order notary-cloud-consumer-order=registry.k8s.ing:5000/notarycloud/notary-cloud-consumer-order:${BUILD_RELEASE_VERSION} --record;
+						kubectl -n notarycloud patch deployment notary-cloud-consumer-order -p "{\\"spec\\":{\\"template\\":{\\"metadata\\":{\\"labels\\":{\\"date\\":\\"`date +'%s'`\\"}}}}}"
+						kubectl -n notarycloud set image deployment notary-cloud-provider-order notary-cloud-provider-order=registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:${BUILD_RELEASE_VERSION} --record;
+						kubectl -n notarycloud patch deployment notary-cloud-provider-order -p "{\\"spec\\":{\\"template\\":{\\"metadata\\":{\\"labels\\":{\\"date\\":\\"`date +'%s'`\\"}}}}}"
+					"""
+				}
+			}
+
+    }
+}
+
+```
+
+## git的subModel语句记录
+
+https://blog.csdn.net/caz28/article/details/107547745
+
+```shell
+//添加子项目链接到main里的主项目了
+git submodule add https://xxxxx/sub_mod.git sub_mod
+//子项目若为空，则执行如下
+git submodule init &&　git submodule update
+//更新
+git submodule update --remote
+```
+
+
+
+
+
+# kubectl常用示例
+
+* http://zhangblog.com/2020/08/09/kubernetes05/ 帮助文档地址
+
+## 查看类命令
+
+```shell
+# 获取节点和服务版本信息
+kubectl get nodes
+# 获取节点和服务版本信息，并查看附加信息
+kubectl get nodes -o wide
+
+# 获取pod信息，默认是default名称空间
+kubectl get pod
+# 获取pod信息，默认是default名称空间，并查看附加信息【如：pod的IP及在哪个节点运行】
+kubectl get pod -o wide
+# 获取指定名称空间的pod
+kubectl get pod -n kube-system
+# 获取指定名称空间中的指定pod
+kubectl get pod -n kube-system podName
+# 获取所有名称空间的pod
+kubectl get pod -A 
+# 查看pod的详细信息，以yaml格式或json格式显示
+kubectl get pods -o yaml
+kubectl get pods -o json
+
+# 查看pod的标签信息
+kubectl get pod -A --show-labels 
+# 根据Selector（label query）来查询pod
+kubectl get pod -A --selector="k8s-app=kube-dns"
+
+# 查看运行pod的环境变量
+kubectl exec podName env
+# 查看指定pod的日志
+kubectl logs -f --tail 500 -n kube-system kube-apiserver-k8s-master
+
+# 查看所有名称空间的service信息
+kubectl get svc -A
+# 查看指定名称空间的service信息
+kubectl get svc -n kube-system
+
+# 查看componentstatuses信息
+kubectl get cs
+# 查看所有configmaps信息
+kubectl get cm -A
+# 查看所有serviceaccounts信息
+kubectl get sa -A
+# 查看所有daemonsets信息
+kubectl get ds -A
+# 查看所有deployments信息
+kubectl get deploy -A
+# 查看所有replicasets信息
+kubectl get rs -A
+# 查看所有statefulsets信息
+kubectl get sts -A
+# 查看所有jobs信息
+kubectl get jobs -A
+# 查看所有ingresses信息
+kubectl get ing -A
+# 查看有哪些名称空间
+kubectl get ns
+
+# 查看pod的描述信息
+kubectl describe pod podName
+kubectl describe pod -n kube-system kube-apiserver-k8s-master  
+# 查看指定名称空间中指定deploy的描述信息
+kubectl describe deploy -n kube-system coredns
+
+# 查看node或pod的资源使用情况
+# 需要heapster 或metrics-server支持
+kubectl top node
+kubectl top pod 
+
+# 查看集群信息
+kubectl cluster-info   或  kubectl cluster-info dump
+# 查看各组件信息【172.16.1.110为master机器】
+kubectl -s https://172.16.1.110:6443 get componentstatuses
+```
+
+## 操作类命令
+
+```shell
+# 创建资源
+kubectl create -f xxx.yaml
+# 应用资源
+kubectl apply -f xxx.yaml
+# 应用资源，该目录下的所有 .yaml, .yml, 或 .json 文件都会被使用
+kubectl apply -f <directory>
+# 创建test名称空间
+kubectl create namespace test
+
+# 删除资源
+kubectl delete -f xxx.yaml
+kubectl delete -f <directory>
+# 删除指定的pod
+kubectl delete pod podName
+# 删除指定名称空间的指定pod
+kubectl delete pod -n test podName
+# 删除其他资源
+kubectl delete svc svcName
+kubectl delete deploy deployName
+kubectl delete ns nsName
+# 强制删除
+kubectl delete pod podName -n nsName --grace-period=0 --force
+kubectl delete pod podName -n nsName --grace-period=1
+kubectl delete pod podName -n nsName --now
+```
+
+## 进阶命令操作
+
+```shell
+# kubectl exec：进入pod启动的容器
+kubectl exec -it podName -n nsName /bin/sh    #进入容器
+kubectl exec -it podName -n nsName /bin/bash  #进入容器
+
+# kubectl label：添加label值
+kubectl label nodes k8s-node01 zone=north  #为指定节点添加标签 
+kubectl label nodes k8s-node01 zone-       #为指定节点删除标签
+kubectl label pod podName -n nsName role-name=test    #为指定pod添加标签
+kubectl label pod podName -n nsName role-name=dev --overwrite  #修改lable标签值
+kubectl label pod podName -n nsName role-name-        #删除lable标签
+
+# kubectl滚动升级； 通过 kubectl apply -f myapp-deployment-v1.yaml 启动deploy
+kubectl apply -f myapp-deployment-v2.yaml     #通过配置文件滚动升级
+kubectl set image deploy/myapp-deployment myapp="registry.cn-beijing.aliyuncs.com/google_registry/myapp:v3"   #通过命令滚动升级
+kubectl rollout undo deploy/myapp-deployment 或者 kubectl rollout undo deploy myapp-deployment    #pod回滚到前一个版本
+kubectl rollout undo deploy/myapp-deployment --to-revision=2  #回滚到指定历史版本
+
+# kubectl scale：动态伸缩
+kubectl scale deploy myapp-deployment --replicas=5  # 动态伸缩
+kubectl scale --replicas=8 -f myapp-deployment-v2.yaml  #动态伸缩【根据资源类型和名称伸缩，其他配置「如：镜像版本不同」不生效】
+```
+
+# 
 
 #### 自动化构建一些插件
 
@@ -3600,6 +3908,19 @@ input {
 ### MYCAT爬坑
 
 总结：  因为mycat中分片表中的分片字段是不能更新的，所以减少left join 的复杂SQL
+
+* mycat 8066查询端口
+
+* mycat 9066管理端口
+
+  ```mssql
+  # 动态加载schema.xml配置
+  reload @@config;
+  # 动态加载所有配置
+  reload @@config_all;
+  ```
+
+  
 
 ### 其它
 
