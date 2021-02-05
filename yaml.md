@@ -189,6 +189,81 @@ git checkout newname 切换到叫newname的分支上
 git merge newname 把newname分支合并到当前分支上
 git pull origin master 将master分支上的内容拉到本地上
 
+#### github下载部分文件方法
+
+```
+将https中的路径/tree/master换成/trunk/即可
+
+若要换成某个分支的 则将 /tree/master 换成 /branches/分支名/ 即可
+```
+
+#### git的subModel语句记录
+
+https://blog.csdn.net/caz28/article/details/107547745
+
+```shell
+//添加子项目链接到main里的主项目了
+git submodule add https://xxxxx/sub_mod.git sub_mod
+//子项目若为空，则执行如下
+git submodule init &&　git submodule update
+//更新
+git submodule update --remote
+```
+
+1. 假设当前工作目录是 /home/caz/main/，当前项目远程仓库是 https://xxxxx/main.git。
+2. 在main目录里，
+
+```bash
+git submodule add https://xxxxx/sub_mod.git sub_mod
+```
+
+​	这样就把sub_mod这个子项目链接到main里的主项目了。
+​	在main目录里，会多出一个**.gitmodules**文件，和一个**sub_mod**目录。
+
+3. 然后，git add 这些文件目录，git commit，git push，就提交到远程git仓库了。
+4. 其他用户clone了这个main项目后，git submodule，会看到相关sub_mod信息，也有sub_mod目录和.gitmodules文件，但sub_mod没有checkout，sub_mod目录里是空的。
+5. 这时候，
+
+```bash
+git submodule init &&　git submodule update
+```
+
+就可以checkout出sub_mod来了。
+也可以：
+
+```bash
+git clone --recursive https://xxxxx/main.git
+```
+
+这一步相当于git clone xxx && git submodule init &&　git submodule update
+使用submodule的好处是，不用先检出sub_mod，再copy到main里来，sub_mod也可以随时更新，main里也不会有烦人的untrack文件信息。
+
+如果主项目里有多个submodel，用下面命令更新。
+
+```bash
+git submodule foreach git pull
+```
+
+1. 如果要删除submodel，比较麻烦：
+
+```bash
+git rm -r --cached sub_mod
+//删除目录。
+rm .gitmodules
+//删除文件
+vim .git/config
+```
+
+删除config中的submodel配置。
+4.git add
+5.git commit
+
+
+
+#### GitLab安装教程
+
+
+
 ### RestFul风格
 
 * 在Restful之前的操作：
@@ -558,14 +633,33 @@ public FileSystemXmlApplicationContext(boolean refresh, @Nullable ApplicationCon
 
 
 
+##### @ControllerAdvice 全局异常处理器
+
+```java
 @ControllerAdvice
+public class MyGlobalExceptionHandler {
+    @ExceptionHandler(Exception.class)
+    public ModelAndView customException(Exception e) {
+        ModelAndView mv = new ModelAndView();
+        mv.addObject("message", e.getMessage());
+        mv.setViewName("myerror");
+        return mv;
+    }
+}
+```
+
+
 
 ```java
 @ControllerAdvice，是Spring3.2提供的新注解，从名字上可以看出大体意思是控制器增强
 ```
 
-- `@ControllerAdvice`是一个`@Component`，用于定义`@ExceptionHandler`，`@InitBinder`和`@ModelAttribute`方法，适用于所有使用`@RequestMapping`方法。
+- `@ControllerAdvice`是一个`@Component`，
+
+  用于定义`@ExceptionHandler`，`@InitBinder`和`@ModelAttribute`方法，适用于所有使用`@RequestMapping`方法。
+
 - Spring4之前，`@ControllerAdvice`在同一调度的Servlet中协助所有控制器。Spring4已经改变：`@ControllerAdvice`支持配置控制器的子集，而默认的行为仍然可以利用。
+
 - 在Spring4中， `@ControllerAdvice`通过`annotations()`, `basePackageClasses()`, `basePackages()`方法定制用于选择控制器子集。
 
 * 向前端返回数据时，自动忽略返回内容为null的属性
@@ -1010,7 +1104,30 @@ https://www.jianshu.com/p/5858b2a9b509
 
 ### Node使用
 
-安装项目所需的依赖
+#### 创建一个新项目
+
+* **vue init**
+
+```
+是vue-cli2.x的初始化方式，可以使用github上面的一些模板来初始化项目
+
+webpack是官方推荐的标准模板名
+使用方式：vue init webpack 项目名称
+
+electron-vue的模板
+使用方式：vue init simulatedgreg/electron-vue 项目名称
+
+
+```
+
+* vue create
+
+  ```
+  - 是vue-cli3.x的初始化方式，模板是固定的，模板选项可自由配置
+  使用方式：vue create 项目名称
+  ```
+
+  
 
 ```cmd
 $ cd my-project
@@ -1171,7 +1288,9 @@ closeMain(arguments){
 
 * this.$store //全局 
 
-  https://blog.csdn.net/lemonC77/article/details/95077691 this.$store.dispatch
+  https://blog.csdn.net/lemonC77/article/details/95077691 
+  
+  *  this.$store.dispatch('login', param).then( ()=> {})来调取store里的user.js的login方法，从而要更新。
 
 ```js
 export default new Vuex.Store({
@@ -1185,7 +1304,7 @@ export default new Vuex.Store({
 用法： $store.state
 ```
 
-
+**注：必须要用commit(‘SET_TOKEN’, tokenV)调用mutations里的方法，才能在store存储成功。**
 
 * this.router //路由
 
@@ -1280,7 +1399,10 @@ export default {
 我们在使用 npm install 安装模块的模块的时候 ，一般会使用下面这几种命令形式：
 
 ```
-`npm ``install` `moduleName ``# 安装模块到项目目录下` `npm ``install` `-g moduleName ``# -g 的意思是将模块安装到全局，具体安装到磁盘哪个位置，要看 npm config prefix 的位置。` `npm ``install` `-save moduleName ``# -save 的意思是将模块安装到项目目录下，并在package文件的dependencies节点写入依赖。` `npm ``install` `-save-dev moduleName ``# -save-dev 的意思是将模块安装到项目目录下，并在package文件的devDependencies节点写入依赖。`
+`npm ``install` `moduleName ``# 安装模块到项目目录下` 
+`npm ``install` `-g moduleName ``# -g 的意思是将模块安装到全局，具体安装到磁盘哪个位置，要看 npm config prefix 的位置。
+` `npm ``install` `-save moduleName ``# -save 的意思是将模块安装到项目目录下，并在package文件的dependencies节点写入依赖。
+` `npm ``install` `-save-dev moduleName ``# -save-dev 的意思是将模块安装到项目目录下，并在package文件的devDependencies节点写入依赖。`
 ```
 
 那么问题来了，在项目中我们应该使用四个命令中的哪个呢？这个就要视情况而定了。下面对这四个命令进行对比，看完后你就不再这么问了。
@@ -1324,6 +1446,21 @@ export default {
 devDependencies 节点下的模块是我们在开发时需要用的，比如项目中使用的 gulp ，压缩css、js的模块。这些模块在我们的项目部署后是不需要的，所以我们可以使用 -save-dev 的形式安装。像 express 这些模块是项目运行必备的，应该安装在 dependencies 节点下，所以我们应该使用 -save 的形式安装。
 
 ------
+
+##### vue使用ESLint代码规范和格式规范prettier
+
+在vue-cli在init初始化时会询问是否需要添加ESLint，确认之后在创建的项目中就会出现.eslintignore和.eslintrc.js两个文件。
+
+>  .eslintignore类似Git的.gitignore用来忽略一些文件不使用ESLint检查。
+>  .eslintrc.js是ESLint配置文件，用来设置插件、自定义规则、解析器等配置。
+>
+> 
+
+
+
+> 如何在老项目中增加规则https://blog.csdn.net/IT_HLM/article/details/78776630
+
+
 
 #### Tomcat部署vue项目
 
@@ -2835,7 +2972,7 @@ mvn install -Dmaven.test.skip=true
 <!--不执行单元测试，但会编译测试类，并在target/test-classes目录下生成相应的class -->
 mvn install -DskipTests=true
 <!--不执行测试用例，但编译测试用例类生成相应的class文件至target/test-classes下。 -->
-mvn clean package -DskipTests -U  //删除再打包，跳过测试
+mvn clean package -DskipTests -U  //删除再打包，跳过测试 --常用
 
 mvn package   // 生成target目录，编译、测试代码，生成测试报告，生成jar/war文件
 <!-- -U 强制刷新本地仓库不存在release版和所有的snapshots版本。-->
@@ -2845,6 +2982,32 @@ mvn dependency:purge-local-repository
 mvn dependency:tree -U
 mvn dependency:tree -U -f notary-cloud-provider-order/pom.xml
 ```
+
+##### Maven父pom和子pom的版本号一并批量修改
+
+```xml
+Maven Release Plugin插件
+1 设置新的版本号
+mvn versions:set -DnewVersion=1.7-SNAPSHOT
+2 撤销设置
+mvn versions:revert
+3 提交设置
+mvn versions:commit
+
+Versions Maven Plugin插件
+mvn release:update-versions -DdevelopmentVersion=3.3.2-SNAPSHOT
+
+
+//发布版本，添加tag
+- mvn -DdevelopmentVersion=3.2.0-SNAPSHOT -DreleaseVersion=3.1.0 -Dresume=false -DignoreSnapshots=true -B release:prepare
+
+//mvn release:prepare 发版本
+//mvn release:rollback 回滚命令
+//mvn release:clean 清除宏文件
+//mvn release:perform 执行发布
+```
+
+
 
 #### Maven的脚本
 
@@ -2859,14 +3022,88 @@ snapshot快照库和release发布库
 
 
 
-```
+```xml
 发布到指定仓库
 mvn deploy:deploy-file -DgroupId=com.xy.oracle -DartifactId=ojdbc14 -Dversion=10.2.0.4.0 -Dpackaging=jar -Dfile=E:\ojdbc14.jar -Durl=http://127.0.0.1:8081/nexus/content/repositories/thirdparty/ -DrepositoryId=thirdparty
+```
+
+#### Maven的scm配置git
+
+* https://my.oschina.net/u/3744526/blog/4673956
+
+```xml
+<scm>#git项目地址可以用SSH  也可以用 HTTPS的          <connection>scm:git:http://10.69.205.31:8886/mazhenbang/maven_scm.git</connection>    #git项目地址可以用SSH  也可以用 HTTPS的    <developerConnection>scm:git:http://10.69.205.31:8886/mazhenbang/maven_scm.git</developerConnection>
+    #git项目浏览器里的地址  <url>http://10.69.205.31:8886/mazhenbang/maven_scm/tree/master</url>
+</scm>
+#不要忘记加distributionManagement 否则发布不上去
+```
+
+#### maven中pom的scope理解
+
+```
+compile:默认值，表示当前依赖包，要参与当前项目的编译，后续测试，运行时，打包
+provided:代表在编译和测试的时候用，运行，打包的时候不会打包进去
+test：表示当前依赖包只参与测试时的工作：比如Junit
+runtime：表示当前依赖包只参与运行周期，其他跳过了
+system：从参与度和provided一致，不过被依赖项不会从maven远程仓库下载，而是从本地的系统拿。需要
+systemPath属性来定义路径
+```
+
+#### maven的内置属性
+
+```xml
+Maven的六类属性，${project.basedir}，${project.build.directory}
+
+${project.build.sourceDirectory}：项目的主源码目录，默认为 src/main/java
+
+${project.build.testSourceDirectory}：项目的测试源码目录，默认为 src/test/java
+
+${project.build.directory}：项目构件输出目录，默认为 target/
+
+${project.outputDirectory}：项目主代码编译输出目录，默认为 target/classes/
+
+${project.testOutputDirectory}：项目测试代码编译输出目录，默认为 target/test-classes/
+
+${project.groupId}：项目的 groupId
+
+${project.artifactId}：项目的 artifactId
+
+p r o j e c t . v e r s i o n ： 项 目 的 v e r s i o n ， 与 {project.version}：项目的 version，与project.version：项目的version，与{version}等价
+
+p r o j e c t . b u i l d . f i a n l N a m e ： 项 目 打 包 输 出 文 件 的 名 称 。 默 认 为 {project.build.fianlName}：项目打包输出文件的名称。默认为project.build.fianlName：项目打包输出文件的名称。默认为{project.artifactId}-${project.version}
+```
+
+* 设置编码格式
+
+ ```xml
+<properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+</properties>
+ ```
+
+* mvn
+
+```xml
+maven 默认的打包类型为 jar，
+在项目聚合的时候，需要显式的将 父项目的 packing 指定为 pom，
+然后再指定所属的子模块，如下所示
+<packing>pom</packing>
+<modules>
+       <module>kern-base</module>
+       <module>kern-dao</module>
+       <module>kern-service</module>
+       <module>kern-control</module>
+</modules>
+如果没有将packing 指定为pom ，那么子模块之间将无法正常的进行依赖传递。
+我们执行的maven命令的时候将首先对父项目执行，而后当 父项目 的packing 类型为 pom 时，将对所有的子模块执行同样的命令，否则将无法执行同样的命令，那么依赖的传递将无法由maven 编译或者打包命令 得以执行。
 ```
 
 
 
 ### JenKins项目管理工具
+
+* 安装BlueOcean插件的界面更美观 https://blog.csdn.net/fly910905/article/details/80331830
 
 #### SHELL语法参数化脚本构建
 
@@ -3278,21 +3515,6 @@ podTemplate(label: label, containers: [
 
 ```
 
-## git的subModel语句记录
-
-https://blog.csdn.net/caz28/article/details/107547745
-
-```shell
-//添加子项目链接到main里的主项目了
-git submodule add https://xxxxx/sub_mod.git sub_mod
-//子项目若为空，则执行如下
-git submodule init &&　git submodule update
-//更新
-git submodule update --remote
-```
-
-
-
 
 
 # kubectl常用示例
@@ -3471,6 +3693,28 @@ java-module.sonar.projectBaseDir=./
 ````
 C:\Users\Administrator\.jenkins\plugins
 ````
+
+##### sonarQube配合maven使用
+
+* setting.xml的配置
+
+```xml
+<profile>
+    <id>sonar</id>
+    <activation>
+        <activeByDefault>true</activeByDefault>
+    </activation>
+    <properties>
+        <sonar.jdbc.url>jdbc:mysql://localhost:3306/sonar?useUnicode=true&characterEncoding=utf8</sonar.jdbc.url>
+        <sonar.jdbc.driver>com.mysql.jdbc.Driver</sonar.jdbc.driver>
+        <sonar.jdbc.username>sonar</sonar.jdbc.username>
+        <sonar.jdbc.password>sonar</sonar.jdbc.password>
+        <sonar.host.url>http://localhost:9000</sonar.host.url>
+    </properties>
+</profile>
+```
+
+* 执行 mvn clean install  sonar:sonar
 
 #### skywalking
 
@@ -3924,7 +4168,9 @@ input {
 
 ### 其它
 
-NACOS
+### NACOS
+
+#### nacos生产环境的集群负载
 
 JenKins
 

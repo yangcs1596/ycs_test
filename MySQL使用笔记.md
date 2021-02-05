@@ -168,7 +168,15 @@ ALTER TABLE t_user ADD UNIQUE name_city_phone(USERNAME,CITY,PHONE) USING BTREE /
 - Hash索引无法用于排序
 - Hash不适用于区分度小的列上，如性别字段
 
+##### 1-2 查询强制索引
 
+force index(index_name)
+
+```mysql
+select * from table as a force index(index_name) 
+```
+
+如果数据库删除了此索引，没有及时更新程序，会导致报错.
 
 #### 2、添加字段
 

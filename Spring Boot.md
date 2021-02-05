@@ -476,6 +476,32 @@ person:
       age: 12
 ```
 
+注入map
+
+```java
+@Value("#{${spring.mysql.ip}}")
+private Map<String,String> map;
+```
+
+注入list
+
+```java
+@Value("#{'${list}'.split(',')}")
+private List<String> list;
+```
+
+注入失败是否这个依赖
+
+```xml
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-configuration-processor</artifactId>
+  <optional>true</optional>
+</dependency>
+```
+
+
+
 javaBean：
 
 ```java
@@ -777,7 +803,7 @@ java -jar spring-boot-02-config-02-0.0.1-SNAPSHOT.jar --spring.config.location=G
 
 所有的配置都可以在命令行上进行指定
 
-java -jar spring-boot-02-config-02-0.0.1-SNAPSHOT.jar --server.port=8087  --server.context-path=/abc
+**java -jar spring-boot-02-config-02-0.0.1-SNAPSHOT.jar --server.port=8087  --server.context-path=/abc**
 
 多个配置用空格分开； --配置项=值
 
@@ -3545,7 +3571,13 @@ service firewalld stop：关闭防火墙
 
 11、查看容器的日志 #docker logs -f --tail=1000 b80891309c17 查看1000行的日志
 docker logs container-name/container-id
+12、进入容器
+docker-enter 80bbd5d7c8b2
 
+13、根据容器id进入到对应文件夹  docker attach 容器ID 或者
+docker exec -it 镜像id /bin/bash
+1）Ctrl + d 退出并停止容器；
+2）Ctrl + p + q 退出并在后台运行容器；或者 exit
 更多命令参看
 https://docs.docker.com/engine/reference/commandline/docker/
 可以参考每一个镜像的文档

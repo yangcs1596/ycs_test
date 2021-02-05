@@ -139,6 +139,10 @@ public class BaseInfoBiz {
 
 ### 设计模式
 
+#### 开发模式
+
+https://www.cnblogs.com/JavaHxm/p/11016315.html 
+
 总体来说设计模式分为三大类：
 
 　　**创建型模式，**共五种：**工厂方法模式、抽象工厂模式、单例模式、建造者模式、原型模式**。s
@@ -170,6 +174,129 @@ public class BaseInfoBiz {
 **6、合成复用原则（Composite Reuse Principle）**
 
 　　原则是尽量使用合成/聚合的方式，而不是使用继承。
+
+#### 开发模式用到的例子
+
+##### springboot思路：
+
+1、注册服务到一个容器管理bean, 利用构造器函数初始化对象
+2、注入bean即可使用
+
+(@Bean的修饰的方法参数会自动注入，1：复杂类型可以通过@Qualifier(value=“XXX”)限定; 2：对于普通类型使用@Value(XXX)指定)
+
+例子
+
+```java
+
+```
+
+
+
+* 创造者模式
+
+  ```java
+  建造者模式将很多功能集成到一个类里，这个类可以创造出比较复杂的东西
+  ```
+
+* 工厂模式
+
+  ```java
+  工厂模式关注的是创建单个产品
+  使用抽象工厂模式（扩展性较好） 
+  1、写一个接口，多个实现类
+  2、写一个接口，多个工厂类去实现
+  ```
+
+* 适配器模式
+
+  ```java
+  1.类的适配器模式
+  我的理解：public class Adapter extends Source implements Targetable { }
+  主要是继承里面的方法，不局限于实现接口
+  
+  更好的兼容性
+  2.对象的适配器模式
+  让实现类持有Source类的实例，在接口方法用实例的方法
+  public class Wrapper implements Targetable {  
+    
+      private Source source;  
+        
+      public Wrapper(Source source){   //这里是生成实例
+          this.source = source;  
+      }  
+      @Override  
+      public void method2() {  
+          System.out.println("this is the targetable method!");  
+      }  
+    
+      @Override  
+      public void method1() {    //桥接模式与此很像，实现类具有实例，多一个抽象类
+          source.method1(); //注意这段  
+      }  
+  } 
+  3.接口的适配器模式（抽象模式）
+  接口中定义了太多的方法，以致于有时我们在一些实现类中并不是都需要
+  //抽象类实现接口
+  public abstract class Wrapper2 implements Sourceable{ //策略模式也很像      
+      public void method1(){}  
+      public void method2(){}  
+  } 
+  //实现类继承
+  public class SourceSub1 extends Wrapper2 {  
+      public void method1(){  
+          System.out.println("the sourceable interface's first Sub1!");  
+      }  
+  }
+  
+  类的适配器模式：当希望将一个类转换成满足另一个新接口的类时，可以使用类的适配器模式，创建一个新类，继承原有的类，实现新的接口即可。
+  
+  对象的适配器模式：当希望将一个对象转换成满足另一个新接口的对象时，可以创建一个Wrapper类，持有原类的一个实例，在Wrapper类的方法中，调用实例的方法就行。
+  
+  接口的适配器模式：当不希望实现一个接口中所有的方法时，可以创建一个抽象类Wrapper，实现所有方法，我们写别的类的时候，继承抽象类即可。
+  ```
+
+* 代理模式
+
+  ```java
+  使用代理模式，可以将功能划分的更加清晰，有助于后期维护！
+  和装饰器模式很像
+  1 方法实现类和代理类都实现同一个接口
+  2 代理类拥有实现类的实例
+  3 代理器里面的方法可以有对事项方法做控制
+  ```
+
+* 外观模式
+
+  ```java
+  起到类和类之间解耦的作用
+  ```
+
+##### springboot的策略模式+工程模式例子
+
+```java
+@Service
+public class FactoryForStrategy {
+
+    @Autowired
+    Map<String, Strategy> strategys = new ConcurrentHashMap<>(3);
+    //定义public interface Strategy，多个实现方法即可
+    
+    public Strategy getStrategy(String component) throws Exception{
+        Strategy strategy = strategys.get(component);
+        if(strategy == null) {
+            throw new RuntimeException("no strategy defined");
+        }
+        return strategy;
+    }
+
+}
+```
+
+
+
+------
+
+
 
 #### Spring事件分发
 
@@ -555,16 +682,28 @@ https://www.cnblogs.com/againn/p/9512013.html
 ##### 1-4-1 特性
 
 - 接口中每一个方法也是隐式抽象的,接口中的方法会被隐式的指定为 **public abstract**（只能是 public abstract，其他修饰符都会报错）。
+
 - 接口中可以含有变量，但是接口中的变量会被隐式的指定为 **public static final** 变量（并且只能是 public，用 private 修饰会报编译错误）。
+
 - 接口中的方法是不能在接口中实现的，只能由实现接口的类来实现接口中的方法。
+
+  接口直接也可以继承
+
+  public interface a extends b; 
 
 ##### 1-4-2 抽象类和接口的区别
 
 * 抽象类中的方法可以有方法体，就是能实现方法的具体功能，但是接口中的方法不行。
 
 - 抽象类中的成员变量可以是各种类型的，而接口中的成员变量只能是 **public static final** 类型的。
+
 - 接口中不能含有静态代码块以及静态方法(用 static 修饰的方法)，而抽象类是可以有静态代码块和静态方法。
+
 - 一个类只能继承一个抽象类，而一个类却可以实现多个接口。
+
+  public abstract class c implement b ;
+
+  public class  d extends c implement a;
 
 ##### 1-4-3 一个接口多个实现类的Spring注入方式
 
@@ -588,7 +727,7 @@ public interface Interface1{
 
 语法：`class 子类 extends 父类{}`  
 
-#### 2 继承的限制
+##### 2 继承的限制
 
 * 子类对象在进行实例化前首先调用父类构造方法，再调用子类构造方法实例化子类对象。
 
@@ -605,6 +744,38 @@ public interface Interface1{
   **隐式继承**：所有私有操作属于隐式继承（不可以直接调用，需要通过其它形式调用（get或者set））。
 
   发现子类能够使用的是所有非private操作
+
+##### 3 泛型嵌套
+
+* `List<String>` —- 参数化的类型 
+  `List<E>` —- 泛型   
+  `List<?>` —- 无限制通配符类型 
+  `<E extends SomeClass>` —- 有限制类型参数 
+  `List <? extends SomeClass>`—- 有限制通配符类型 
+  `<T extends Comparable<T>>` —– 递归类型限制 
+  `static <E> List<E> asList(E[] a)` —- 泛型方法
+
+**Java泛型**中的标记符含义： 
+
+ **E - Element (在集合中使用，因为集合中存放的是元素)**
+
+ **T - Type（Java 类）**
+
+ **K - Key（键）**
+
+ **V - Value（值）**
+
+ **N - Number（数值类型）**
+
+ **R -** return（返回值）
+
+**？ -  表示不确定的java类型**
+
+
+
+------
+
+
 
 #### 1-7 java8的新特性
 
@@ -802,6 +973,22 @@ Interface1 interface1;    //正常启动
 
 ***
 
+#### 1-9 @Deprecated画横线的方式
+
+```java
+/**
+* @deprecated replaced by <code>getEncodingForIndex(int charsetIndex)</code>
+*/
+@Deprecated
+public void method();
+
+/** 
+ * @deprecated {@link NotaryProductionProviderClient#findProductionVariable(String, String, String)}
+ */
+```
+
+
+
 ### 2 创建线程都用实现接口 Runnable
 
 ```java
@@ -956,7 +1143,120 @@ try {
 }
 ```
 
+#### 2-2 函数式接口
+
+* Supplier接口
+
+  java.util.function.Supplier<T> 接口仅包含一个无参的方法： T get() 。用来获取一个泛型参数指定类型的对象数据。
+
+  **供给型接口 Supplier：T get（）**
+  特点是，它的抽象方法：**无参有返回值**
+
+  ```java
+  Supplier<MakeCertResponse> issueSupplier = () -> doPost(MAKE_CERT_URL, request, MakeCertResponse.class)
+  ```
+
+  
+
+* Consumer 接口
+
+    java.util.function.Consumer<T> 接口则正好与Supplier接口相反，它不是生产一个数据，而是消费一个数据，其数据类型由泛型决定。
+
+  **消费型接口Consumer：void accept（T t）**
+  特点是，它的抽象方法：**有参无返回值**
+
+  ```java
+  import java.util.function.Consumer;
+  
+      public class DemoConsumer {
+          private static void consumeString(Consumer<String> function) {
+              function.accept("Hello");
+          }
+  
+          public static void main(String[] args) {
+              consumeString(s ‐ > System.out.println(s));
+          }
+      }
+  ```
+
+  
+
+* Predicate 接口
+
+  有时候我们需要对某种类型的数据进行判断，从而得到一个boolean值结果。这时可以使用java.util.function.Predicate<T> 接口。
+
+  **判断型接口 Predicate：boolean test（T t）**
+  **特点是，它的抽象方法；boolean test（有参）无论你给我什么参数，都是用来判断条件，**
+
+  结果只有**true，false**
+
+```java
+import java.util.function.Predicate;
+
+    public class DemoPredicateTest {
+        private static void method(Predicate<String> predicate) {
+            boolean veryLong = predicate.test("HelloWorld");
+            System.out.println("字符串很长吗：" + veryLong);
+        }
+
+        public static void main(String[] args) {
+            method(s ‐ > s.length() > 5);
+        }
+    }
+```
+
+
+
+* function接口
+
+  Function 接口中最主要的抽象方法为： R apply(T t) ，根据类型T的参数获取类型R的结果。
+
+   使用的场景例如：将 String 类型转换为 Integer 类型。
+
+  **功能型接口 Function<T，R>：R apply（T t）**
+  特点是，它的抽象方法：**有参有返回值**
+
+```java
+import java.util.function.Function;
+
+public class Demo11FunctionApply {
+    private static void method(Function<String, Integer> function) {
+        int num = function.apply("10");
+        System.out.println(num + 20);
+    }
+
+    public static void main(String[] args) {
+        method(s ‐ > Integer.parseInt(s));
+    }
+}
+```
+
+**其它例子**
+
+```java
+public class Demo{
+	public static void main(String[] args) {
+		// 匿名内部类
+		Runnable task = new Runnable() {
+			@Override
+			public void run() { // 覆盖重写抽象方法
+				System.out.println("多线程任务执行中！");
+			}
+		};
+		new Thread(task).start(); // 启动线程
+	}
+}
+//函数式接口简化
+public static void main(String[] args) {
+    new Thread(() -> System.out.println("多线程任务执行中！")).start(); // 启动线程
+}
+```
+
+
+
 ### 3 IO流功能对象
+
+**File类的对象代表一个文件或一个目录（文件夹）的路径**
 
 ```java
 打印流 -- 输出流
@@ -967,6 +1267,24 @@ transient  //瞬态关键字  防止某些字段被序列化
 ```
 
 **注意点：**   try{}catch{}finally{ **此处必须要对流进行关闭操作**} 否则会占用电脑内存。
+
+文件存储需规范
+
+<div style="color:red; text-align:center">文件系统存储规范</div>
+为方便进行文件服务器冷热数据存放及备份，建议各个中心业务系统的文件存放规范如下：
+1、将文件按照一定的存放规则，存到文件夹中，避免单个文件夹里面的文档过多。
+文件分为业务类文件，模板类文件、当事人信息类文件等。
+业务类文件，即办理业务时产生的文件
+例如：
+业务中心名称->业务模块->年份->月份->日期->订单号（卷宗号）
+->模板->模板类别
+->当事人文件->当事人编号
+日期目录如：/2020/12/09/格式：/yyyy/mm/dd/
+2、文件统一命名规则，系统生成的文件建议使用小写字母、数字、下划线，尽量不使用中
+文、特殊字符等,文件名称尽量简短。
+3、每年年初将一年前的业务文件存放冷数据盘。
+4、5年以前的业务文件存放归档数据盘。
+5、当事人信息文件、业务文件进行加密储存。
 
 #### 3-1  文件上传的操作
 
@@ -1372,6 +1690,10 @@ String.split("分割1|分割2");
 ​	equals()和==方法决定引用值是否指向同一对象 equals()在类中被覆盖，为的是当两个分 离的对象的内容和类型相配的话，返回真值。
 
 ```java
+实例化直接赋值
+List<String> alpha = Arrays.asList("a", "b", "c", "d");
+实例化
+List<String> lists = new ArrayList<String>();
 遍历循环
 for(Object obj : List){}  //不使用角标
 ```
@@ -1503,6 +1825,27 @@ Tip:
 堆栈：先进后出
 
 队列：先进先出
+
+#### 6.1 枚举和常量
+
+```java
+ public static LinkedHashMap<String, String> values = null;
+
+PaymentEnum(String value, String desc) {
+    this.value = value;
+    this.desc = desc;
+}
+
+static {
+    values = Maps.newLinkedHashMapWithExpectedSize(values().length);
+    for (PaymentEnum payment : values()
+        ) {
+        values.put(payment.value, payment.desc);
+    }
+}
+```
+
+
 
 ### 7 映射
 
@@ -1713,7 +2056,11 @@ https://mp.weixin.qq.com/s/a--34E6iFTopUVC6orW7Jw 微信牛？
 
 
 
-
+```
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.notarycloud.common.autoconfigure.ui.LogRecordPlusUiStart,\
+com.notarycloud.common.autoconfigure.file.FileConverterAutoConfiguration
+```
 
 此方法最关键的为 <span style="color:red"> resources/META-INF/spring.factories </span>文件，当项目启动时，Spring会扫描所有jar包下面的 spring.factories 文件，进行相应的自动配置处理
 
@@ -1754,7 +2101,14 @@ spring-boot-configuration-processor依赖就可以做到，它的基本原理是
 
 ------
 
+### 14  白名单/*和/**的区别
 
+/* 是拦截所有的文件夹，不包含子文件夹
+/** 是拦截所有的文件夹及里面的子文件夹
+
+相当于/*只有后面一级
+
+/** 可以包含多级
 
 ## 常见异常
 
@@ -2310,7 +2664,7 @@ parameterType=”Blog” resultType=”Blog”>
 注意这种情况下我们覆盖一个后缀，而同时也附加前缀。
 ```
 
-CDATA
+#### CDATA
 
 * mybatis的xml文件中需要写一些特殊字符，入><&这些字符在xml解析的时候会被转义，但是我们不希望它被转义，这时候就使用<![CDATA[]]>
 
@@ -2321,7 +2675,7 @@ CDATA
 </if>
 ```
 
-### [MyBatis-Plus](https://mp.baomidou.com/)
+## [MyBatis-Plus](https://mp.baomidou.com/)
 
 * https://mp.baomidou.com/guide/wrapper.html#querywrapper
 
@@ -2340,7 +2694,7 @@ LambdaQueryWrapper<OrderBase> lambdaQueryWrapper = new QueryWrapper<OrderBase>()
 
 
 
-####  @TableField
+###  @TableField
 
 * 完成字段自动填充
 
