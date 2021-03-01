@@ -674,7 +674,81 @@ public class MyGlobalExceptionHandler {
     default-property-inclusion: NON_NULL
   ```
 
+##### @import
+
+> 1、<span style="color:red">**@Import只能用在类上**</span> ，@Import通过快速导入的方式实现把实例加入spring的IOC容器中
+>
+> 2、加入IOC容器的方式有很多种，@Import注解就相对很牛皮了，<span style="color:red">**@Import注解可以用于导入第三方包**</span> ，当然@Bean注解也可以，但是@Import注解快速导入的方式更加便捷
+>
+> 3、@Import注解有三种用法
+
+* #### 第一种用法：直接填class数组
+
+  **直接填对应的class数组，class数组可以有0到多个。**
+
+  语法如下：
+
+  ```javascript
+  @Import({ 类名.class , 类名.class... })
+  public class TestDemo {
   
+  }
+  ```
+
+  对应的import的bean都将加入到spring容器中，这些在容器中bean名称是该类的**全类名** ，比如com.yc.类名
+
+  
+
+* #### 第二种用法：ImportSelector方式【重点】
+
+这种方式的前提就是一个类要实现ImportSelector接口，假如我要用这种方法，目标对象是Myclass这个类，分析具体如下：
+
+创建Myclass类并实现ImportSelector接口
+
+```java
+public class Myclass implements ImportSelector {
+//既然是接口肯定要实现这个接口的方法
+    @Override
+    public String[] selectImports(AnnotationMetadata annotationMetadata) {
+        return new String[0];
+    }
+}
+```
+
+分析实现接口的selectImports方法中的：
+
+- 1、返回值： 就是我们实际上要导入到容器中的组件全类名【**重点** 】
+- 2、参数： AnnotationMetadata表示当前被@Import注解给标注的所有注解信息【不是重点】
+
+> 需要注意的是selectImports方法可以返回空数组但是不能返回null，否则会报空指针异常！
+
+以上分析完毕之后，具体用法步骤如下：
+
+第一步：创建Myclass类并实现ImportSelector接口，这里用于演示就添加一个全类名给其返回值
+
+```java
+public class Myclass implements ImportSelector {
+    @Override
+    public String[] selectImports(AnnotationMetadata annotationMetadata) {
+        return new String[]{"com.yc.Test.TestDemo3"};
+    }
+}
+```
+
+第二步：编写TestDemo 类，并标注上使用ImportSelector方式的Myclass类
+
+```java
+@Import({TestDemo2.class,Myclass.class})
+public class TestDemo {
+        @Bean
+        public AccountDao2 accountDao2(){
+            return new AccountDao2();
+        }
+
+}
+```
+
+
 
 #### 获取参数
 
@@ -3047,6 +3121,9 @@ test：表示当前依赖包只参与测试时的工作：比如Junit
 runtime：表示当前依赖包只参与运行周期，其他跳过了
 system：从参与度和provided一致，不过被依赖项不会从maven远程仓库下载，而是从本地的系统拿。需要
 systemPath属性来定义路径
+#特殊
+import只能用在dependencyManagement块中，它将spring-boot-dependencies 中dependencyManagement下的dependencies插入到当前工程的dependencyManagement中，所以不存在依赖传递。 
+当没有<scope>import</scope>时，意思是将spring-boot-dependencies 的dependencies全部插入到当前工程的dependencies中，并且会依赖传递。
 ```
 
 #### maven的内置属性
@@ -3514,6 +3591,52 @@ podTemplate(label: label, containers: [
 }
 
 ```
+
+## linux定时任务
+
+```shell
+crontab -e
+* * * * * /usr/local/sbin/test.sh
+
+crontab -l #查看所有的定时任务
+
+```
+
+```shell
+#linux应该都有crontab，没有的话可以安装一下：
+yum install  vixie-cron
+yum install  crontabs
+
+安装完以后开启crontab服务
+service crond start
+用以下的方法启动、关闭这个cron服务： 
+service crond start //启动服务 
+service crond stop //关闭服务 
+service crond restart //重启服务 
+service crond reload //重新载入配置
+加入开机自动启动: 
+[root@CentOS ~]# chkconfig –level 35 crond on
+取消开机自动启动crond服务: 
+[root@CentOS ~]# chkconfig crond off
+
+chmod 755 hello.sh，否则没有执行权限
+新增调度任务可用两种方法： 
+1)、在命令行输入: crontab -e 然后添加相应的任务，wq存盘退出。 
+2)、直接编辑/etc/crontab 文件，即vi /etc/crontab，添加相应的任务。 
+*/5 * * * * /usr/local/sbin/test.sh >> /usr/local/sbin/hello.sh
+
+```
+
+编写第一个shell文件，
+
+```shell
+#!/bin/bash
+echo "hello world !!"
+
+#!/bin/bash是必须要写的，表示要是/bin/bash这个执行脚本的命令执行接下来写的脚本, 
+```
+
+
 
 
 

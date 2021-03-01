@@ -3592,7 +3592,60 @@ https://docs.docker.com/engine/reference/commandline/docker/
 docker pull mysql
 ```
 
+## 5、Dockerfile文件命令介绍
 
+```shell
+FROM openjdk:8-jdk  //指定基础镜//在镜像内部执行一些命令，比如安装软件，配置环境等，换行可以使用RUN groupadd -r mysql && useradd -r -g mysql mysql
+
+
+
+//设置变量的值，ENV MYSQL_MA JOR 5.7，可以通过docker run --e key=value修改，后面可以直接使用${MYSQL_MA JOR}
+ENV MYSQL_MAJOR 5.7
+VOLUME /var/lib/mysql   //指定数据的挂在目录
+　　
+ 
+
+
+//将主机的文件复制到镜像内，如果目录不存在，会自动创建所需要的目录，注意只是复制，不会提取和解压
+COPY docker-entrypoint.sh /usr/local/bin/
+ 
+//将主机的文件复制到镜像内，和COPY类似，只是ADD会对压缩文件提取和解压
+ADD application.yml /etc/it/
+　
+ 
+
+
+//指定镜像的工作目录，之后的命令都是基于此目录工作，若不存在则创建
+WORKDIR /usr/local
+WORKDIR tomcat RUN
+touch test.txt
+//会在/usr/local/tomcat下创建test.txt文件
+ 
+ 
+//容器启动的时候默认会执行的命令，若有多个CMD命令，则最后一个生效
+CMD ["mysqld"] 或CMD mysqld
+ 
+ 
+
+
+//和CMD的使用类似，和cmd不同的是docker run执行时，会覆盖CMD的命令，而ENTRYPOINT不会
+ENTRYPOINT ["docker-entrypoint.sh"]
+
+//指定镜像要暴露的端口，启动镜像时，可以使用-p将该端口映射给宿主机
+EXPOSE 3306
+
+#实际项目例子
+FROM registry.k8s.ing:5000/notarycloud/notary-cloud-image-prometheus-openjdk
+ADD target/${project.artifactId}-${project.version}.${project.packaging} ${project.artifactId}.${project.packaging}
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime; echo "Asia/Shanghai" > /etc/timezone
+EXPOSE 8080
+EXPOSE 1234
+ENTRYPOINT java -javaagent:/prometheus/${jmx_prometheus_javaagent.name}=1234:/prometheus/jmx_exporter.yaml -jar  -Xmx1024m -Dspring.profiles.active=${PROFILES_ACTIVE} -Dserver.port=8080 ${project.artifactId}.${project.packaging}
+```
+
+https://blog.csdn.net/catoop/article/details/90812876 mvn使用docker
+
+命令"mvn dockerfile:build -f pom.xml"
 
 错误的启动
 
@@ -3657,14 +3710,14 @@ docker run --name some-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag --
 
 ```xml
 <dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-jdbc</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>mysql</groupId>
-			<artifactId>mysql-connector-java</artifactId>
-			<scope>runtime</scope>
-		</dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-jdbc</artifactId>
+</dependency>
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <scope>runtime</scope>
+</dependency>
 ```
 
 
