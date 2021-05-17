@@ -187,7 +187,10 @@ https://www.cnblogs.com/JavaHxm/p/11016315.html
 例子
 
 ```java
-
+@Bean
+public xxx tt(Object obj){ //此处的obj，可以自动注入进来
+    
+}
 ```
 
 
@@ -279,7 +282,10 @@ public class FactoryForStrategy {
 
     @Autowired
     Map<String, Strategy> strategys = new ConcurrentHashMap<>(3);
+    //注意此处map, Strategy是一个接口 
     //定义public interface Strategy，多个实现方法即可
+    //@Component("one")
+    //public class StrategyOne implements Strategy {}
     
     public Strategy getStrategy(String component) throws Exception{
         Strategy strategy = strategys.get(component);
@@ -2110,6 +2116,110 @@ spring-boot-configuration-processor依赖就可以做到，它的基本原理是
 
 /** 可以包含多级
 
+------
+
+
+
+## 代码整理
+
+### 1、Comparable<T> 和 Comparator<T>
+
+```java
+public class Apple implements Comparable<Apple> {
+    /**
+     * 苹果的重量
+     */
+    private int  weight;
+
+    /**
+     * 自然排序即从小到大
+     * 返回1的，代表此对象比参数对象大，排在后面，这样就可以控制降序或升序排列
+     */
+    @Override
+    public int compareTo(Apple apple) {
+        if (this.weight > apple.getWeight())
+        {
+            return -1;
+        }
+        else if (this.weight < apple.getWeight())
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+}
+#####分割线########
+/**
+* 使用方式为  Arrays.sort(apples, new WeightComparator());
+* 故Comparator为一个比较器
+**/
+public class WeightComparator implements Comparator<Apple> {
+    /**
+     * 苹果的重量
+     */
+    private int  weight;
+
+    /**
+     * 自然排序即从小到大
+     * 返回1的，代表此对象比参数对象大，排在前面，这样就可以控制降序或升序排列
+     */
+    @Override
+    public int compare(Apple a, Apple b) {
+        if (a.getWeight() > b.getWeight())
+        {
+            return 1;
+        }
+        else if (a.getWeight() < b.getWeight())
+        {
+            return -1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+}
+```
+
+
+
+### 2、向下递归示例
+
+```java
+//xxx组织机构树形列表方法
+public List<Organization> xxxTreeOrg（xxx xx）{
+   //所有的组织机构list
+　　List<Organization> allOrganizationList = xxxDao.findAllOrgList();
+
+   //所有一级组织机构List
+　　List<Organization> oneOrganizationList = xxxDao.findOneOrgList();
+
+　　for (Organization oneOrganization : oneOrganizationList) {
+    　　oneOrganization.setChild(doOrgIterator(oneOrganization, allOrganizationList));
+　　}　　return oneOrganizationList;
+}
+
+        
+//向下递归的方法
+private List<Organization> doOrgIterator(Organization oneOrganization, List<Organization> allOrganizationList) {
+　　List<Organization> childList = new ArrayList<>();
+　　for (Organization organization : allOrganizationList) {
+    　　if(oneOrganization.getId().intValue() == organization.getPid().intValue()) {
+    　　　　organization.setChild(doOrgIterator(organization, allOrganizationList));
+    　　　　childList.add(organization);
+   　　 }
+　　}
+　　return childList;
+}
+```
+
+
+
+------
+
 ## 常见异常
 
 异常分为免检异常和必检异常。
@@ -2273,7 +2383,7 @@ Ctrl + Alt + U  向上继承关系 diagram
 - 使用学习参考：https://blog.csdn.net/a2267378/article/details/81180373
 - 在日常开发中，我们尽量少直接使用@Data注解，而是换成@Setter、@Getter、@NoArgsConstructor、@AllArgsConstructor、@ToString即可
 
-```
+```java
 常用的 lombok 注解：
 
 @Data   ：注解在类上；包含了@ToString，@EqualsAndHashCode，@Getter / @Setter和@RequiredArgsConstructor的功能，提供类所有属性的 getter 和 setter 方法，此外还提供了equals、canEqual、hashCode、toString 方法
@@ -2300,7 +2410,10 @@ Ctrl + Alt + U  向上继承关系 diagram
 
 默认生成的方法是public的，如果要修改方法修饰符可以设置AccessLevel的值，例如：@Getter(access = AccessLevel.PROTECTED)
 
-@RequiredArgsConstructor：注解在类上；会生成构造方法（可能带参数也可能不带参数），如果带参数，这参数只能是以final修饰的未经初始化的字段，或者是以@NonNull注解的未经初始化的字段@RequiredArgsConstructor(staticName = "of")会生成一个of()的静态方法，并把构造方法设置为私有的。
+@RequiredArgsConstructor：注解在类上；会生成构造方法（可能带参数也可能不带参数），如果带参数，这参数只能是以final修饰的未经初始化的字段，或者是以@NonNull注解的未经初始化的字段
+都会针对final成员变量生成构造函数，所以，可以省略@Autowired、@Inject、@Resource等依赖注入注解。
+
+@RequiredArgsConstructor(staticName = "of")会生成一个of()的静态方法，并把构造方法设置为私有的。
 ```
 
 ------
@@ -2575,6 +2688,15 @@ ${}拼接字符    只能用${value}
 ```
 
 #### parameterType
+
+#### resultType
+
+```xml
+当使用resultType做SQL语句返回结果类型处理时，对于SQL语句查询出的字段在相应的pojo中必须有和它相同的字段对应，而resultType中的内容就是pojo在本项目中的位置。
+mapper.selectUsers(@param("num") int num)
+<select id=”selectUsers” parameterType=”int”
+resultType=”com.model.POJO”>
+```
 
 #### resultMap
 

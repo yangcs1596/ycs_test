@@ -10,3 +10,22 @@ java类什么时候加载？，加载类的原理机制是怎么样的？
 
 2.通过类名调用静态变量的时候（类名.class除外）
 
+
+
+### java数字求和变成有很多小数位的小数?
+
+```java
+现象：
+Double d1=904163.08;
+Double d2=210298.99;
+// 结果是：1114462.0699999998
+```
+
+```java
+//修改方法 
+BigDecimal b1 = new BigDecimal(Double.toString(904163.08));
+BigDecimal b2 = new BigDecimal(Double.toString(210298.99));
+//结果1114462.07
+System.out.println(b1.add(b2).doubleValue());
+```
+

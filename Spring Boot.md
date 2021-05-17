@@ -3532,7 +3532,7 @@ systemctl stop docker
 | ---- | ----------------------------------------------- | -------------------------------------------------------- |
 | 检索 | docker  search 关键字  eg：docker  search redis | 我们经常去docker  hub上检索镜像的详细信息，如镜像的TAG。 |
 | 拉取 | docker pull 镜像名:tag                          | :tag是可选的，tag表示标签，多为软件的版本，默认是latest  |
-| 列表 | docker images \| grep  镜像名                   | 查看所有本地镜像                                         |
+| 列表 | docker images  \| grep  镜像名                  | 查看所有本地镜像                                         |
 | 删除 | docker rmi image-id                             | 删除指定的本地镜像                                       |
 
 https://hub.docker.com/
@@ -3569,7 +3569,7 @@ docker start 容器id
 service firewalld status ；查看防火墙状态
 service firewalld stop：关闭防火墙
 
-11、查看容器的日志 #docker logs -f --tail=1000 b80891309c17 查看1000行的日志
+11、查看容器的日志 #docker logs -f --tail=1000 38b8317cbee8 查看1000行的日志
 docker logs container-name/container-id
 12、进入容器
 docker-enter 80bbd5d7c8b2

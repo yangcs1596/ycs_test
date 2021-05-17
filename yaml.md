@@ -189,6 +189,43 @@ git checkout newname 切换到叫newname的分支上
 git merge newname 把newname分支合并到当前分支上
 git pull origin master 将master分支上的内容拉到本地上
 
+git fetch 将某个远程主机的更新，全部取回本地
+
+```
+git fetch <远程主机名> <分支名>
+```
+
+git rebase的使用
+
+* Git 操作
+  假设Git目前只有一个分支master。开发人员的工作流程是
+
+  git clone master branch
+  **在自己本地checkout -b local创建一个本地开发分支**
+  在本地的开发分支上开发和测试
+  阶段性开发完成后（包含功能代码和单元测试），可以准备提交代码
+  首先切换到master分支，git pull拉取最新的分支状态
+  然后切回local分支
+  通过git rebase -i 将本地的多次提交合并为一个，以简化提交历史。本地有多个提交时,如果不进行这一步,在git rebase master时会多次解决冲突(最坏情况下,每一个提交都会相应解决一个冲突)
+  git rebase master 将master最新的分支同步到本地，这个过程可能需要手动解决冲突(如果进行了上一步的话,只用解决一次冲突)
+  然后切换到master分支，git merge将本地的local分支内容合并到master分支
+  git push将master分支的提交上传
+
+  ```
+  本地开发分支可以灵活管理
+  git checkout master
+  git pull
+  git checkout local
+  git rebase -i HEAD~2  //合并提交 --- 2表示合并两个
+  git rebase master---->解决冲突--->git rebase --continue
+  git checkout master
+  git merge local
+  git push
+  ```
+
+  
+
+
 #### github下载部分文件方法
 
 ```
@@ -206,8 +243,8 @@ https://blog.csdn.net/caz28/article/details/107547745
 git submodule add https://xxxxx/sub_mod.git sub_mod
 //子项目若为空，则执行如下
 git submodule init &&　git submodule update
-//更新
-git submodule update --remote
+//更新update
+git submodule update --recursive --remote
 ```
 
 1. 假设当前工作目录是 /home/caz/main/，当前项目远程仓库是 https://xxxxx/main.git。
@@ -259,6 +296,14 @@ vim .git/config
 5.git commit
 
 
+
+#### git的cherry pick功能
+
+###### 合并分支有两种操作:
+
+一种情况是你需要将你分支的所有代码变动,此时可以采用分支合并
+merge
+另一种情况,只需要提交几个改动,不需要全部合并(有些情况下整个分支合并冲突太多处理起来过于麻烦)
 
 #### GitLab安装教程
 
@@ -612,6 +657,8 @@ public class EmpContrller {
 }
 ```
 
+#### @NonNUll和@NULLable区别
+
 ```java
 @Reference(version = "${online-service.version-2-0}", url = "${online-service.url}")注解
 
@@ -745,6 +792,43 @@ public class TestDemo {
             return new AccountDao2();
         }
 
+}
+```
+
+
+
+#### @PostConstruct、  @PreDestroy注解
+
+@PostConstruct该注解被用来修饰一个非静态的void（）方法。
+
+​     被@PostConstruct修饰的方法会在服务器**加载Servlet**的时候运行，并且只会被服务器执行一次。
+
+PostConstruct在构造函数之后执行，init（）方法之前执行。
+
+​     通常我们会是在Spring框架中使用到@PostConstruct注解 该注解的方法在整个Bean初始化中的执行顺序：
+
+**Constructor(构造方法) -> @Autowired(依赖注入) -> @PostConstruct(注释的方法)**
+
+
+
+```java
+
+@Component
+public class MyUtils {
+ 
+    private static MyUtils          staticInstance = new MyUtils();
+
+    @Autowired
+    private MyMethorClassService    myService;
+   // 必须是servelet，即必须注入spring容器ioc
+    @PostConstruct
+    public void init(){
+        staticInstance.myService = myService;
+    }
+
+    public static Integer invokeBean(){
+        return staticInstance.myService.add(10,20);
+    }
 }
 ```
 
@@ -1047,7 +1131,7 @@ mapper.setSerializationInclusion(Include.NON_NULL);
 
    
 
-#### Springboot JDK8自定义一个注解
+#### Springboot JDK8自定义注解
 
 ##### 元注解
 
@@ -1157,6 +1241,14 @@ public Annotation[] getAnnotations()
 }
 ```
 
+##### @FunctionalInterface的使用 函数式编程
+
+* 必须注解在接口上
+
+  被注解的接口有且只有一个抽象方法
+
+  被注解的接口可以有默认方法/静态方法，或者重写Object的方法
+
 
 
 ### jsonwebtoken的使用
@@ -1177,6 +1269,19 @@ https://www.jianshu.com/p/5858b2a9b509
 
 
 ### Node使用
+
+#### Node模块引入的加载顺序问题
+
+* ##### vue项目main.js文件下import router from ‘./router‘默认导入router文件夹下index.js的原因
+
+```
+1. 首先寻找目录下有没有router.js或者router.node,如果有就导入
+2. 如果没有看是否有router目录,如果没有就require失败,抛出异常"Cannot find module ‘./router’"
+3. 如果有router目录会在其下寻找package.json文件,如果有则按照package的配置来导入
+4. 如果没有package.json,看是否有index.js或者index.node,如果有就导入没有就失败
+```
+
+
 
 #### 创建一个新项目
 
@@ -1258,12 +1363,12 @@ npm run install
 ```js
 var detail = new Vue({
     el: '#app',
-    directives: {},//钩子函数的用法，需要知道一下怎么用
+    directives: {},//钩子函数的用法，自定义指令
     data: {
         #数据属性
     },
-    components:{},
-    props: {},
+    components:{}, #组件注册，自定义局部组件
+    props: {}, #父组件向子组件传递数据
     mounted: function () {
         #初始化
     },
@@ -1291,6 +1396,146 @@ var detail = new Vue({
  	}
 })
 ```
+
+##### Vue使用draggable实现拖拽
+
+##### Vue使用goJs实现绘制流程图
+
+##### Vue使用bpmn绘制流程图
+
+* https://blog.csdn.net/haoyanyu_/article/details/100702315
+
+```cmd
+#安装
+npm install bpmn-js
+npm install bpmn-js-properties-panel //节点信息编辑面板
+```
+
+
+
+```cmd
+#引用
+import BpmnModdle from 'bpmn-js'; //默认入口是Viewer.js文件，只有预览流程图的功能；
+import BpmnModdle from 'bpmn-js/lib/Modeler'; //如果手动引入bpmn-js/lib/Modeler，则具备左侧工具栏，可以编辑流程图
+```
+
+
+
+```vue
+<template>
+	<div style="">
+		<div id="js-canvas"></div>
+		<div id="js-properties-panel"></div>
+		<div>
+			<a-button @click="download">保存到本地</a-button>
+			<button @click="createNew">新建</button>
+		</div>
+		<!-- <a-modal></a-modal> -->
+	</div>
+</template>
+<script>
+import BpmnModdle from 'bpmn-js/lib/Modeler';
+import diagramXml from '../../../assets/diagram.bpmn'; //xml文件
+import propertiesProviderModule from 'bpmn-js-properties-panel/lib/provider/camunda';
+
+export default {
+	name: 'bpmn',
+	data() {
+		return {
+			viewer: null,
+			canvas: null,
+			bpmnText: '',
+		}
+	},
+	mounted() {
+		this.$nextTick().then(() => {
+
+			this.canvas = document.getElementById('js-canvas')
+
+			this.viewer = new BpmnModdle({
+				container: this.canvas,
+				keyboard: {
+					bindTo: window
+				},
+				propertiesPanel: {
+					parent: '#js-properties-panel'
+				},
+				additionalModules: [
+					propertiesProviderModule
+				]
+			})
+			this.create()
+		})
+	},
+	methods: {
+		download() {
+			this.viewer.saveXML({ format: true }, (err, xml) => {
+				if (xml) {
+					this.bpmnText = xml
+					var a = document.createElement('a');
+					a.href = 'data:application/bpmn20-xml;charset=UTF-8,' + encodeURIComponent(xml)
+					a.download = 'diagram.bpmn';
+					document.body.appendChild(a);
+					a.click();
+					document.body.removeChild(a);
+					a = null;
+				}
+
+			})
+		},
+		create() {
+			this.bpmnText = diagramXml
+			this.viewer.importXML(diagramXml, err => {
+				if (err) {
+					throw (err)
+				}
+				this.viewer.get('canvas').zoom('fit-viewport')
+				var eventBus = this.viewer.get('eventBus');
+
+				var events = [
+					'element.click',
+					'element.dblclick'
+				]
+				events.forEach(event => {
+					eventBus.on(event, (e) => {
+					})
+				})
+			})
+
+		},
+		createNew() {
+			this.viewer.createDiagram(err => {
+				if (err) {
+					throw (err)
+				}
+				this.viewer.get('canvas').zoom('fit-viewport')
+				var eventBus = this.viewer.get('eventBus');
+
+				var events = [
+					'element.click',
+					'element.dblclick'
+				]
+				events.forEach(event => {
+					eventBus.on(event, (e) => {
+						// console.log(event, 'on', e.element.id)
+					})
+				})
+			})
+		}
+	}
+}
+</script>
+<style>
+//引入样式，否则显示不出内容
+@import 'bpmn-js/dist/assets/diagram-js.css';
+@import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
+@import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-codes.css';
+@import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
+@import 'bpmn-js-properties-panel/dist/assets/bpmn-js-properties-panel.css';
+</style>
+```
+
+
 
 #### 路由和组件的懒加载
 
@@ -1336,6 +1581,51 @@ props:{
 }
 ```
 
+##### 全局自定义组件、指令
+
+```js
+export default {
+	install(Vue,option){
+		组件
+		指令
+		混入
+		挂载vue原型
+	}
+}
+```
+
+* 全局自定义组件
+
+* 全局自定义指令
+
+  ```js
+  export default{
+  	install(Vue){
+  		Vue.directive('pre',{
+  			inserted(button,bind){
+  				button.addEventListener('click',()=>{
+  					if(!button.disabled){
+  						button.disabled = true;
+  						setTimeout(()=>{
+  							button.disabled = false
+  						},1000)
+  					}
+  				})
+  			}
+  		})
+  	}
+  }
+  ```
+
+  在main.js中引用
+
+```js
+import pre from '@/aiqi'
+Vue.use(pre)
+```
+
+
+
 #### this.$的调用参数或方法
 
 * this.$refs //获取dom元素
@@ -1370,8 +1660,8 @@ closeMain(arguments){
 export default new Vuex.Store({
     state,
     getters,
-    actions,
-    mutations,
+    actions, //Action 提交的是 mutation，而不是直接变更状态。 Action 可以包含任意异步操作通过通过 store.dispatch 方法触发
+    mutations,  //mutations类似于事件注册，必须用 commit()方法调用
     modules,
 })
 
@@ -1472,11 +1762,17 @@ export default {
 
 我们在使用 npm install 安装模块的模块的时候 ，一般会使用下面这几种命令形式：
 
-```
-`npm ``install` `moduleName ``# 安装模块到项目目录下` 
-`npm ``install` `-g moduleName ``# -g 的意思是将模块安装到全局，具体安装到磁盘哪个位置，要看 npm config prefix 的位置。
-` `npm ``install` `-save moduleName ``# -save 的意思是将模块安装到项目目录下，并在package文件的dependencies节点写入依赖。
-` `npm ``install` `-save-dev moduleName ``# -save-dev 的意思是将模块安装到项目目录下，并在package文件的devDependencies节点写入依赖。`
+```shell
+npm install moduleName # 安装模块到项目目录下` 
+npm install -g moduleName # -g 的意思是将模块安装到全局，具体安装到磁盘哪个位置，要看 npm config prefix 的位置。
+npm install -save moduleName # -save 的意思是将模块安装到项目目录下，并在package文件的dependencies节点写入依赖
+npm install -save-dev moduleName # -save-dev 的意思是将模块安装到项目目录下，并在package文件的devDependencies节点写入依赖。`
+
+#安装指定版本
+npm install -g moduleName@Version
+#卸载
+npm uninstall moduleName
+
 ```
 
 那么问题来了，在项目中我们应该使用四个命令中的哪个呢？这个就要视情况而定了。下面对这四个命令进行对比，看完后你就不再这么问了。
@@ -1536,6 +1832,184 @@ devDependencies 节点下的模块是我们在开发时需要用的，比如项�
 
 
 
+> #### 需要安装`prettier`
+>
+> 首先肯定是需要安装`prettier`，并且你的项目中已经使用了ESLint，有`eslintrc.js`配置文件
+>
+> ```
+> npm i -D prettier
+> ```
+>
+> #### 配合ESLint检测代码风格
+>
+> 安装插件：
+>
+> ```
+> npm i -D eslint-plugin-prettier
+> ```
+>
+> 接下来，我们需要在rules中添加，`"prettier/prettier": "error"`，表示被prettier标记的地方抛出错误信息。
+>
+> ```
+> //.eslintrc.js
+> {
+>   "plugins": ["prettier"],
+>   "rules": {
+>     "prettier/prettier": "error"
+>   }
+> }
+> ```
+>
+> 如果你的eslint是直接通过cli方式启动的，那么只需要在后面加上fix即可，如：`eslint --fix`。
+>
+> #### 如果与已存在的插件冲突怎么办
+>
+> ```
+> npm i -D eslint-config-prettier
+> ```
+>
+> 通过使用eslint-config-prettier配置，能够关闭一些不必要的或者是与prettier冲突的lint选项。这样我们就不会看到一些error同时出现两次。**使用的时候需要确保，这个配置在extends的最后一项。**
+>
+> ```js
+> //.eslintrc.js
+> {
+>   extends: [
+>     'standard', //使用standard做代码规范
+>     "prettier",
+>   ],
+> }
+> 
+> //实际例子.eslintrc.js
+> module.exports = {
+>   root: true,
+>   env: {
+>     node: true
+>   },
+>   extends: ['plugin:vue/essential', 'plugin:prettier/recommended', 'eslint:recommended'],
+>   rules: {
+>     'no-console': ['error', { allow: ['warn', 'error'] }],
+>     'no-debugger': 'error',
+>     'space-before-function-paren': 0, // 函数（）前面是否必须要空格
+>     'no-multiple-empty-lines': [1, { max: 2 }], // 空行最多不能超过2行
+>     'no-tabs': 0,
+>     'no-multi-spaces': 2,
+>     'no-mixed-spaces-and-tabs': 0,
+>     'no-irregular-whitespace': 2,
+>     // indent: [2, 2],
+>     'vue/require-default-prop': 0,
+>     'vue/no-use-v-if-with-v-for': [
+>       'error',
+>       {
+>         allowUsingIterationVar: true
+>       }
+>     ],
+>     'vue/no-parsing-error': [
+>       'error',
+>       {
+>         'invalid-first-character-of-tag-name': false
+>       }
+>     ],
+>     'vue/html-self-closing': [
+>       'error',
+>       {
+>         html: {
+>           void: 'always',
+>           normal: 'always',
+>           component: 'always'
+>         },
+>         svg: 'always',
+>         math: 'always'
+>       }
+>     ],
+>     'prettier/prettier': 'error'
+>   },
+>   parserOptions: {
+>     parser: 'babel-eslint'
+>   }
+> }
+> 
+> ```
+>
+> #### 什么？你们项目没有启用ESLint
+>
+> 不要慌，没有ESLint也不要怕，可以通过[onchange](https://www.npmjs.com/package/onchange)进行代码的监听，然后自动格式化代码。只要在package.json的scripts下添加如下代码，然后使用`npm run format`，我们就能监听src目录下所有的js文件并进行格式化：
+>
+> ```
+> "scripts": {
+>   "format": "onchange 'src/**/*.js' -- prettier --write {{changed}}"
+> }
+> ```
+>
+> 当你想格式化的文件不止js文件时，也可以添加多个文件列表。
+>
+> ```
+> "scripts": {
+>   "format": "onchange 'test/**/*.js' 'src/**/*.js' 'src/**/*.vue' -- prettier --write {{changed}}"
+> }
+> ```
+
+#### 如何对Prettier进行配置
+
+一共有三种方式支持对Prettier进行配置：
+
+1. 根目录创建`.prettierrc `文件，能够写入YML、JSON的配置格式，并且支持`.yaml/.yml/.json/.js`后缀；
+2. 根目录创建`.prettier.config.js `文件，并对外export一个对象；
+3. 在`package.json`中新建`prettier`属性。
+
+下面我们使用`prettierrc.js`的方式对prettier进行配置，同时讲解下各个配置的作用。
+
+```js
+module.exports = {
+  "printWidth": 80, //一行的字符数，如果超过会进行换行，默认为80
+  "tabWidth": 2, //一个tab代表几个空格数，默认为80
+  "useTabs": false, //是否使用tab进行缩进，默认为false，表示用空格进行缩减
+  "singleQuote": false, //字符串是否使用单引号，默认为false，使用双引号
+  "semi": true, //行位是否使用分号，默认为true
+  "trailingComma": "none", //是否使用尾逗号，有三个可选值"<none|es5|all>"
+  "bracketSpacing": true, //对象大括号直接是否有空格，默认为true，效果：{ foo: bar }
+  "parser": "babylon" //代码的解析引擎，默认为babylon，与babel相同。
+}
+```
+
+配置大概列出了这些，还有一些其他配置可以在[官方文档](https://prettier.io/docs/en/options.html)进行查阅。
+
+最后贴一下我们项目中的完整配置，是在vue-cli生成的代码基础上修改的，并且使用standard做代码规范：
+
+```js
+module.exports = {
+  root: true,
+  parserOptions: {
+    parser: 'babel-eslint'
+  },
+  env: {
+    browser: true,
+    es6: true
+  },
+  extends: [
+    // https://github.com/standard/standard/blob/master/docs/RULES-en.md
+    'standard',
+    // https://github.com/vuejs/eslint-plugin-vue#priority-a-essential-error-prevention
+    // consider switching to `plugin:vue/strongly-recommended` or `plugin:vue/recommended` for stricter rules.
+    'plugin:vue/essential',
+    "plugin:prettier/recommended",
+  ],
+  // required to lint *.vue files
+  plugins: [
+    'vue'
+  ],
+  // add your custom rules here
+  rules: {
+    "prettier/prettier": "error",
+    // allow async-await
+    'generator-star-spacing': 'off',
+    // allow debugger during development
+    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off'
+  }
+}
+```
+
+
+
 #### Tomcat部署vue项目
 
 * tomcat部署
@@ -1552,6 +2026,45 @@ npm run build
 * linux部署
 
 利用nginx转发地址？
+
+#### nrm的使用
+
+nrm(npm registry manager )是npm的镜像源管理工具，有时候国外资源太慢，使用这个就可以快速地在 npm 源间切换
+
+```shell
+npm install -g nrm@1.1.0，#全局安装nrm
+nrm ls  #-- 查看所有镜像源 * 为当前使用源
+nrm use taobao #如果要切换到taobao源，执行命令
+nrm add group http://nexus-nc.fxnotary.com/repository/npmjs-group/   
+nrm add <registry> <url>，#其中reigstry为源名，url为源的路径。
+nrm del <registry> #删除对应的源。
+nrm test npm #测试相应源的响应时间
+```
+
+```shell
+#查看所有源
+方式1. npm config list
+方式2. npm get registry
+
+# [临时使用]
+npm install --registry=https://registry.npm.taobao.org
+
+# [一般永久使用]通过 config 配置指向国内镜像源
+# cnpmjs.org
+$ npm config set registry http://registry.cnpmjs.org
+# npm.taobao.org
+$ npm config set registry http://registry.npm.taobao.org
+
+如果有一天，换的源用不上了，用rm命令删掉它：npm config rm registry
+```
+
+
+
+
+
+------
+
+
 
 ### FreeMarker
 
@@ -2699,7 +3212,50 @@ firewall-cmd --reload # 重新加载
 iptables -A OUTPUT -s 192.168.88.94 -p tcp -m tcp --sport 15674 -j ACCEPT 
 ```
 
-#### 查看日志的一些linux命令
+## RocketMQ的使用
+
+### 1、集成
+
+```xml
+<!--springcloud alibaba集成rocketmq 引入依赖-->
+<dependency>
+    <groupId>com.alibaba.cloud</groupId>
+    <artifactId>spring-cloud-starter-stream-rocketmq</artifactId>
+</dependency>
+
+其它一些配置详解
+#https://github.com/alibaba/spring-cloud-alibaba/wiki/RocketMQ
+<dependency>
+  <groupId>com.alibaba.cloud</groupId>
+  <artifactId>spring-cloud-stream-binder-rocketmq</artifactId>
+</dependency>
+或者可以使用 Spring Cloud Stream RocketMQ Starter：
+<dependency>
+    <groupId>com.alibaba.cloud</groupId>
+    <artifactId>spring-cloud-starter-stream-rocketmq</artifactId>
+</dependency>
+
+```
+
+```java
+messageDelayLevel=1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h
+
+Message msg=new Message();
+msg.setTopic("TopicA");
+msg.setTags("Tag");
+msg.setBody("this is a delay message".getBytes());
+//设置延迟level为5，对应延迟1分钟
+msg.setDelayTimeLevel(5);
+producer.send(msg);
+```
+
+
+
+
+
+## LINUX
+
+### 查看日志的一些linux命令
 
 ```
 # 查看文件，实时显示最后一页
@@ -2753,6 +3309,84 @@ mv A B
 /+关键字 ，回车即可。此为从文档当前位置向下查找关键字，按n键查找关键字下一个位置；
 ?+关键字，回车即可。此为从文档挡圈位置向上查找关键字，按n键向上查找关键字；
 ```
+
+#### linux定时任务
+
+```shell
+#添加任务
+crontab -e
+* * * * * /usr/local/sbin/test.sh
+
+crontab -l #查看所有的定时任务
+
+
+#不输出内容
+*/5 * * * * /root/XXXX.sh &>/dev/null 2>&1
+#将正确和错误日志都输出到 /tmp/load.log
+*/1 * * * * /root/XXXX.sh > /tmp/load.log 2>&1 &
+```
+
+```shell
+#linux应该都有crontab，没有的话可以安装一下：
+yum install  vixie-cron
+yum install  crontabs
+
+安装完以后开启crontab服务
+service crond start
+用以下的方法启动、关闭这个cron服务： 
+service crond start //启动服务 
+service crond stop //关闭服务 
+service crond restart //重启服务 
+service crond reload //重新载入配置
+加入开机自动启动: 
+[root@CentOS ~]# chkconfig –level 35 crond on
+取消开机自动启动crond服务: 
+[root@CentOS ~]# chkconfig crond off
+
+chmod 755 hello.sh，否则没有执行权限
+新增调度任务可用两种方法： 
+1)、在命令行输入: crontab -e 然后添加相应的任务，wq存盘退出。 
+2)、直接编辑/etc/crontab 文件，即vi /etc/crontab，添加相应的任务。 
+*/5 * * * * /usr/local/sbin/test.sh >> /usr/local/sbin/hello.sh
+
+```
+
+编写第一个shell文件，
+
+```shell
+#!/bin/bash
+echo "hello world !!"
+
+#!/bin/bash是必须要写的，表示要是/bin/bash这个执行脚本的命令执行接下来写的脚本, 
+```
+
+
+
+#### 查看端口是否被占用
+
+```
+netstat -ano | findstr 8080
+```
+
+​	   杀死占用端口的进程
+
+```
+taskkill -pid 进程pid -f  //根据pid杀死的进程
+```
+
+#### 查看磁盘情况
+
+```sh
+#查看当前目录情况
+df -h
+df -i 查看inode使用情况 删除需慎重
+#查看指定目录情况
+df -h /usr/
+#计算当前目录的大小
+du -sh /usr/
+```
+
+
 
 
 
@@ -2809,18 +3443,6 @@ connection.disconnect();
 
 
 * CMD端口的问题
-
-#### 查看端口是否被占用
-
-```
-netstat -ano | findstr 8080
-```
-
-​	   杀死占用端口的进程
-
-```
-taskkill -pid 进程pid -f  //根据pid杀死的进程
-```
 
 
 
@@ -3062,14 +3684,14 @@ mvn dependency:tree -U -f notary-cloud-provider-order/pom.xml
 ```xml
 Maven Release Plugin插件
 1 设置新的版本号
-mvn versions:set -DnewVersion=1.7-SNAPSHOT
+mvn versions:set -DnewVersion=3.2.9-SNAPSHOT
 2 撤销设置
 mvn versions:revert
 3 提交设置
 mvn versions:commit
 
 Versions Maven Plugin插件
-mvn release:update-versions -DdevelopmentVersion=3.3.2-SNAPSHOT
+mvn release:update-versions -DdevelopmentVersion=3.5.2-SNAPSHOT
 
 
 //发布版本，添加tag
@@ -3081,7 +3703,55 @@ mvn release:update-versions -DdevelopmentVersion=3.3.2-SNAPSHOT
 //mvn release:perform 执行发布
 ```
 
+##### git打tag命令
 
+// 查看本地的所有Tag
+
+```
+git tag 可带上可选的 -l 选项 --list
+```
+
+创建tag命令
+
+```
+#轻量标签
+git tag v1.4-lw
+#带标注
+git tag -a v1.0 -m "对Tag的描述信息"
+```
+
+ 提交tag命令
+
+```
+git push origin v3.5.0
+#这个是推送所有标签
+git push origin --tags
+```
+
+删除tag命令
+
+```
+删除本地tag
+git tag -d v1.0
+要删除远程服务器上的tag，可以使用如下的命令：
+git push origin --delete tag v3.2.9
+```
+
+##### git 根据tag创建分支
+
+在项目中我们需要根据tag创建分支.现将创建步骤总结一下.在你的dev分支上有一个tag为v1.0
+
+1.执行:git origin fetch 获得最新.
+
+2.通过:git branch <new-branch-name> <tag-name> 会根据tag创建新的分支。
+
+例如:git branch newbranch v1.0 . 会以tag v1.0创建新的分支newbranch。
+
+3.可以通过git checkout newbranch 切换到新的分支。
+
+4.通过 git push origin newbranch 把本地创建的分支提交到远程仓库。
+
+现在远程仓库也会有新创建的分支了。
 
 #### Maven的脚本
 
@@ -3212,6 +3882,98 @@ docker run  -it -v  /usr/share/fonts:/usr/share/fonts  -d -p  $port:8080 --name 
 docker run  -d -p $port:8080 --name $serviceName  `docker images |grep $serviceName |awk '{print $2,$3}' |grep latest|awk '{print $2}'`  
 
 ```
+
+###### docker启动的命令详解
+
+```sh
+-v 本地目录:容器目录。挂载主机的本地目录 /usr/ToolsAPIDir 目录到容器的/ToolsAPIDir1 目录，本地目录的路径必须是绝对路径
+-a stdin: 指定标准输入输出内容类型，可选 STDIN/STDOUT/STDERR 三项；
+-d: 后台运行容器，并返回容器ID；
+-i: 以交互模式运行容器，通常与 -t 同时使用；
+-P: 随机端口映射，容器内部端口随机映射到主机的端口
+-p: 指定端口映射，格式为：主机(宿主)端口:容器端口
+-t: 为容器重新分配一个伪输入终端，通常与 -i 同时使用；
+-m :设置容器使用内存最大值；
+
+-–name=“容器新名字”: 为容器指定一个名称；
+--dns 8.8.8.8: 指定容器使用的DNS服务器，默认和宿主一致；
+--dns-search example.com: 指定容器DNS搜索域名，默认和宿主一致；
+-h "mars": 指定容器的hostname；
+-e username="ritchie": 设置环境变量；
+--env-file=[]: 从指定文件读入环境变量；
+--cpuset="0-2" or --cpuset="0,1,2": 绑定容器到指定CPU运行；
+--net="bridge": 指定容器的网络连接类型，支持 bridge/host/none/container: 四种类型；
+--link=[]: 添加链接到另一个容器；
+--expose=[]: 开放一个端口或一组端口；
+--volume , -v: 绑定一个卷
+volumes：Docker管理宿主机文件系统的一部分，默认位于 /var/lib/docker/volumes 目录中；（最常用的方式）
+```
+
+```shell
+# docker volume create edc-nginx-vol // 创建一个自定义容器卷
+# docker volume ls // 查看所有容器卷
+# docker volume inspect edc-nginx-vol // 查看指定容器卷详情信息
+```
+
+###### docker的例子
+
+1、pom.xml添加docker打包插件
+
+```
+ <plugin>
+	 <groupId>com.spotify</groupId>
+	 <artifactId>dockerfile-maven-plugin</artifactId>
+	 <version>1.3.6</version>
+	 <configuration>
+		 <repository>${project.artifactId}</repository>
+		 <buildArgs>
+	 		<JAR_FILE>target/${project.build.finalName}.jar</JAR_FILE>
+		 </buildArgs>
+	 </configuration>
+ </plugin>
+```
+
+2、在src同级目录下创建Dockerfile
+
+```dockerfile
+FROM openjdk:8-jdk-alpine
+或者FROM registry.k8s.ing:5000/notarycloud/notary-cloud-image-prometheus-java8
+VOLUME /tmp
+ARG JAR_FILE
+COPY ${JAR_FILE} app.jar
+ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
+
+如服务的配置
+FROM registry.k8s.ing:5000/notarycloud/notary-cloud-image-prometheus-openjdk
+ADD target/${project.artifactId}-${project.version}.${project.packaging} ${project.artifactId}.${project.packaging}
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime; echo "Asia/Shanghai" > /etc/timezone
+EXPOSE 8080
+EXPOSE 1234
+ENTRYPOINT java -javaagent:/prometheus/${jmx_prometheus_javaagent.name}=1234:/prometheus/jmx_exporter.yaml -jar  -Xmx1024m -Dspring.profiles.active=${PROFILES_ACTIVE} -Dserver.port=8080 ${project.artifactId}.${project.packaging}
+```
+
+3、构建步骤
+
+```
+3.1 编译打包成jar包 mvn package -Dmaven.test.skip=true
+3.2 将jar包打包成docker镜像：mvn dockerfile:build
+```
+
+4、运行命令：
+
+```
+docker run -d \
+    -p 8001:8001 \
+    -e "SPRING_PROFILES_ACTIVE=dev" \
+    --name auth \
+    -v /tmp/cloud-ac-service/auth/:/var/log/cloud-ac-service/auth \
+    auth:latest
+4.1 命令说明
+使用 -e "SPRING_PROFILES_ACTIVE=dev"  指定spring profile
+使用 -v /tmp/cloud-ac-service/auth/:/var/log/cloud-ac-service/auth  挂载日志目录
+```
+
+
 
 ##### springboot启动包选择环境
 
@@ -3376,7 +4138,7 @@ kubectl -n notarycloud set image deployment notary-cloud-consumer-order notary-c
 #kubectl -n notarycloud set image deployment 这句是在227执行，用新的镜像替换旧的镜像
 #
 #order-provider
-kubectl -n notarycloud get po -owide
+kubectl -n notarycloud get po -owide 
 docker tag registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:latest registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:20200717511
 #
 docker push registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:20200717511
@@ -3385,6 +4147,12 @@ kubectl -n notarycloud set image deployment notary-cloud-provider-order notary-c
 
 
 ```
+
+ kubectl -n notarycloud get po -owide 的命令展示列的信息
+
+| NAME    | READY | STATUS  | RESTARTS | AGE  | IP       | NODE   | NOMINATED NODE | READINESS GATES |
+| ------- | ----- | ------- | -------- | ---- | -------- | ------ | -------------- | --------------- |
+| nacos-0 | 1/1   | running | 0        | 27m  | 192.168. | k8s229 | <none>         | <none>          |
 
 
 
@@ -3396,11 +4164,27 @@ kubectl -n notarycloud scale deploy/mycat --replicas=1
 kubectl -n notarycloud scale deploy/mycat --replicas=2
 ```
 
+##### 删除所有被驱逐的容器Evicted 
 
+```cmd
+#删除所有的
+kubectl get pods --all-namespaces -o json | jq '.items[] | select(.status.reason!=null) | select(.status.reason | contains("Evicted")) | "kubectl delete pods \(.metadata.name) -n \(.metadata.namespace)"' | xargs -n 1 bash -c
 
-用k8s的构建
+#在命名空间中删除处于失败状态的Pod 
+kubectl -n default delete pods --field-selector=status.phase=Failed
+
+#
+kubectl delete pod {podName}
+#删除命名空间下的无效容器
+kubectl -n notarycloud delete po/mycat- -hmkm7
 
 ```
+
+
+
+##### 用k8s的构建
+
+```go
 def label = "jenkins-jnlp-slave-${UUID.randomUUID().toString()}"
 podTemplate(label: label, containers: [
 		containerTemplate(name: 'maven', image: 'maven:3-jdk-8-slim', ttyEnabled: true, command: 'cat'),
@@ -3591,52 +4375,6 @@ podTemplate(label: label, containers: [
 }
 
 ```
-
-## linux定时任务
-
-```shell
-crontab -e
-* * * * * /usr/local/sbin/test.sh
-
-crontab -l #查看所有的定时任务
-
-```
-
-```shell
-#linux应该都有crontab，没有的话可以安装一下：
-yum install  vixie-cron
-yum install  crontabs
-
-安装完以后开启crontab服务
-service crond start
-用以下的方法启动、关闭这个cron服务： 
-service crond start //启动服务 
-service crond stop //关闭服务 
-service crond restart //重启服务 
-service crond reload //重新载入配置
-加入开机自动启动: 
-[root@CentOS ~]# chkconfig –level 35 crond on
-取消开机自动启动crond服务: 
-[root@CentOS ~]# chkconfig crond off
-
-chmod 755 hello.sh，否则没有执行权限
-新增调度任务可用两种方法： 
-1)、在命令行输入: crontab -e 然后添加相应的任务，wq存盘退出。 
-2)、直接编辑/etc/crontab 文件，即vi /etc/crontab，添加相应的任务。 
-*/5 * * * * /usr/local/sbin/test.sh >> /usr/local/sbin/hello.sh
-
-```
-
-编写第一个shell文件，
-
-```shell
-#!/bin/bash
-echo "hello world !!"
-
-#!/bin/bash是必须要写的，表示要是/bin/bash这个执行脚本的命令执行接下来写的脚本, 
-```
-
-
 
 
 

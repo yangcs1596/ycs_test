@@ -7309,6 +7309,406 @@
             }
           ],
           "chnname": "订单受理公证员信息"
+        },
+        {
+          "title": "order_invoice",
+          "fields": [
+            {
+              "name": "id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "主键",
+              "pk": true,
+              "notNull": true
+            },
+            {
+              "name": "order_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "订单主键",
+              "notNull": true
+            },
+            {
+              "name": "invoice_status",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "发票状态"
+            },
+            {
+              "name": "invoice_status_name",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "发票状态名称",
+              "notNull": false
+            },
+            {
+              "name": "serial_number",
+              "type": "Name",
+              "remark": "",
+              "chnname": "发票流水号"
+            },
+            {
+              "name": "invoice_code",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "发票类型编码",
+              "notNull": true
+            },
+            {
+              "name": "invoice_code_name",
+              "type": "Name",
+              "remark": "",
+              "chnname": "发票类型名称",
+              "notNull": true
+            },
+            {
+              "name": "invoice_user_type",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "发票用户类型0个人1企业",
+              "defaultValue": "'0'"
+            },
+            {
+              "name": "invoice_title",
+              "type": "Name",
+              "remark": "",
+              "chnname": "发票抬头",
+              "defaultValue": "",
+              "notNull": true
+            },
+            {
+              "name": "taxpayer_num",
+              "type": "Name",
+              "remark": "",
+              "chnname": "纳税人识别号"
+            },
+            {
+              "name": "address",
+              "type": "Intro",
+              "remark": "",
+              "chnname": "地址"
+            },
+            {
+              "name": "phone",
+              "type": "Name",
+              "remark": "",
+              "chnname": "联系电话"
+            },
+            {
+              "name": "bank_account",
+              "type": "ShortString",
+              "remark": "",
+              "chnname": "开户行账号"
+            },
+            {
+              "name": "bank_deposit",
+              "type": "Name",
+              "remark": "",
+              "chnname": "开户银行"
+            },
+            {
+              "name": "invoice_amount",
+              "type": "Money",
+              "remark": "",
+              "chnname": "发票金额",
+              "notNull": true,
+              "defaultValue": "'0'"
+            },
+            {
+              "name": "invoice_remark",
+              "type": "Intro",
+              "remark": "",
+              "chnname": "发票备注"
+            },
+            {
+              "name": "invoice_apply_info",
+              "type": "JSON",
+              "remark": "",
+              "chnname": "开票申请详细信息"
+            },
+            {
+              "name": "invoice_apply_result",
+              "type": "JSON",
+              "remark": "",
+              "chnname": "开票申请结果返回"
+            },
+            {
+              "name": "business_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "开票订单号"
+            },
+            {
+              "name": "created_by_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "创建人",
+              "notNull": false
+            },
+            {
+              "name": "created_app_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建合作伙伴",
+              "notNull": false
+            },
+            {
+              "name": "created_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "创建时间",
+              "notNull": false
+            },
+            {
+              "name": "created_notary_office_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建的公证处"
+            },
+            {
+              "name": "updated_by_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "更新人"
+            },
+            {
+              "name": "updated_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "更新时间"
+            },
+            {
+              "name": "updated_app_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "更新伙伴"
+            },
+            {
+              "name": "deleted",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "删除标志",
+              "defaultValue": "0"
+            },
+            {
+              "name": "deleted_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "删除日期"
+            },
+            {
+              "name": "log_record",
+              "type": "ShortString",
+              "remark": "",
+              "chnname": "备注"
+            },
+            {
+              "name": "record_version",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "数据版本号"
+            }
+          ],
+          "indexs": [],
+          "headers": [
+            {
+              "fieldName": "chnname",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "name",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "type",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "dataType",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "remark",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "pk",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "notNull",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "autoIncrement",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "defaultValue",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "relationNoShow",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "uiHint",
+              "relationNoShow": true
+            }
+          ],
+          "chnname": "订单发票信息"
+        },
+        {
+          "title": "order_batch_task",
+          "fields": [
+            {
+              "name": "id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "主键",
+              "pk": true,
+              "notNull": true
+            },
+            {
+              "name": "batch_no",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "批次号",
+              "notNull": true
+            },
+            {
+              "name": "order_nums",
+              "type": "LongText",
+              "remark": "",
+              "chnname": "多订单，根据符号分隔",
+              "notNull": true
+            },
+            {
+              "name": "content",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "根据接口写入标识",
+              "notNull": true
+            },
+            {
+              "name": "created_by_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "创建人",
+              "notNull": false
+            },
+            {
+              "name": "created_app_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建合作伙伴",
+              "notNull": false
+            },
+            {
+              "name": "created_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "创建时间",
+              "notNull": false
+            },
+            {
+              "name": "created_notary_office_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建的公证处"
+            },
+            {
+              "name": "updated_by_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "更新人"
+            },
+            {
+              "name": "updated_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "更新时间"
+            },
+            {
+              "name": "updated_app_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "更新伙伴"
+            },
+            {
+              "name": "deleted",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "删除标志",
+              "defaultValue": "0"
+            },
+            {
+              "name": "deleted_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "删除日期"
+            },
+            {
+              "name": "log_record",
+              "type": "ShortString",
+              "remark": "",
+              "chnname": "备注"
+            },
+            {
+              "name": "record_version",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "数据版本号"
+            }
+          ],
+          "indexs": [],
+          "headers": [
+            {
+              "fieldName": "chnname",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "name",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "type",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "dataType",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "remark",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "pk",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "notNull",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "autoIncrement",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "defaultValue",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "relationNoShow",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "uiHint",
+              "relationNoShow": true
+            }
+          ],
+          "chnname": "订单批量处理列表"
         }
       ],
       "graphCanvas": {
@@ -7365,6 +7765,1079 @@
         "edges": []
       },
       "associations": []
+    },
+    {
+      "name": "template-module",
+      "chnname": "模板配置",
+      "entities": [
+        {
+          "title": "template_group",
+          "fields": [
+            {
+              "name": "id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "主键",
+              "pk": true,
+              "notNull": true
+            },
+            {
+              "name": "group_name",
+              "type": "Name",
+              "remark": "",
+              "chnname": "组名"
+            },
+            {
+              "name": "group_type",
+              "type": "VARCHAR(8)",
+              "remark": "",
+              "chnname": "分组类型0事项1固定2自定义",
+              "notNull": true,
+              "defaultValue": "0"
+            },
+            {
+              "name": "relation_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "关联0是中台，groupType为2时必填"
+            },
+            {
+              "name": "created_by_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "创建人",
+              "notNull": false
+            },
+            {
+              "name": "created_app_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建合作伙伴",
+              "notNull": false
+            },
+            {
+              "name": "created_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "创建时间",
+              "notNull": false
+            },
+            {
+              "name": "created_notary_office_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建的公证处"
+            },
+            {
+              "name": "updated_by_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "更新人"
+            },
+            {
+              "name": "updated_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "更新时间"
+            },
+            {
+              "name": "updated_app_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "更新伙伴"
+            },
+            {
+              "name": "deleted",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "删除标志",
+              "defaultValue": "0"
+            },
+            {
+              "name": "deleted_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "删除日期"
+            },
+            {
+              "name": "log_record",
+              "type": "ShortString",
+              "remark": "",
+              "chnname": "备注"
+            },
+            {
+              "name": "record_version",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "数据版本号"
+            }
+          ],
+          "indexs": [],
+          "headers": [
+            {
+              "fieldName": "chnname",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "name",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "type",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "dataType",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "remark",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "pk",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "notNull",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "autoIncrement",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "defaultValue",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "relationNoShow",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "uiHint",
+              "relationNoShow": true
+            }
+          ],
+          "chnname": "模板分组表"
+        },
+        {
+          "title": "template_group_level",
+          "fields": [
+            {
+              "name": "id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "主键",
+              "pk": true,
+              "notNull": true
+            },
+            {
+              "name": "pid",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "分组表主键",
+              "notNull": true
+            },
+            {
+              "name": "group_name",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "分组名称",
+              "notNull": true
+            },
+            {
+              "name": "relation_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "归属客户1是中台",
+              "notNull": true
+            },
+            {
+              "name": "created_by_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "创建人",
+              "notNull": false
+            },
+            {
+              "name": "created_app_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建合作伙伴",
+              "notNull": false
+            },
+            {
+              "name": "created_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "创建时间",
+              "notNull": false
+            },
+            {
+              "name": "created_notary_office_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建的公证处"
+            },
+            {
+              "name": "updated_by_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "更新人"
+            },
+            {
+              "name": "updated_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "更新时间"
+            },
+            {
+              "name": "updated_app_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "更新伙伴"
+            },
+            {
+              "name": "deleted",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "删除标志",
+              "defaultValue": "0"
+            },
+            {
+              "name": "deleted_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "删除日期"
+            },
+            {
+              "name": "log_record",
+              "type": "ShortString",
+              "remark": "",
+              "chnname": "备注"
+            },
+            {
+              "name": "record_version",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "数据版本号"
+            }
+          ],
+          "indexs": [],
+          "headers": [
+            {
+              "fieldName": "chnname",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "name",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "type",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "dataType",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "remark",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "pk",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "notNull",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "autoIncrement",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "defaultValue",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "relationNoShow",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "uiHint",
+              "relationNoShow": true
+            }
+          ],
+          "chnname": "分组内容表"
+        },
+        {
+          "title": "template_model",
+          "fields": [
+            {
+              "name": "id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "主键",
+              "pk": true,
+              "notNull": true
+            },
+            {
+              "name": "pid",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "模板包主id"
+            },
+            {
+              "name": "model_name",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "模板名称",
+              "notNull": true
+            },
+            {
+              "name": "model_type",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "类型",
+              "notNull": false
+            },
+            {
+              "name": "template_type",
+              "type": "YesNo",
+              "remark": "",
+              "chnname": "0基础模板，1模板包",
+              "notNull": true,
+              "defaultValue": "0"
+            },
+            {
+              "name": "source_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "源id"
+            },
+            {
+              "name": "source_name",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "源名称"
+            },
+            {
+              "name": "remark",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "备注"
+            },
+            {
+              "name": "is_store",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "是否收藏0否1是",
+              "defaultValue": "0",
+              "notNull": true
+            },
+            {
+              "name": "created_by_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "创建人",
+              "notNull": false
+            },
+            {
+              "name": "created_app_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建合作伙伴",
+              "notNull": false
+            },
+            {
+              "name": "created_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "创建时间",
+              "notNull": false
+            },
+            {
+              "name": "created_notary_office_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建的公证处"
+            },
+            {
+              "name": "updated_by_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "更新人"
+            },
+            {
+              "name": "updated_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "更新时间"
+            },
+            {
+              "name": "updated_app_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "更新伙伴"
+            },
+            {
+              "name": "deleted",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "删除标志",
+              "defaultValue": "0"
+            },
+            {
+              "name": "deleted_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "删除日期"
+            },
+            {
+              "name": "log_record",
+              "type": "ShortString",
+              "remark": "",
+              "chnname": "备注"
+            },
+            {
+              "name": "record_version",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "数据版本号"
+            }
+          ],
+          "indexs": [],
+          "headers": [
+            {
+              "fieldName": "chnname",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "name",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "type",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "dataType",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "remark",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "pk",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "notNull",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "autoIncrement",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "defaultValue",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "relationNoShow",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "uiHint",
+              "relationNoShow": true
+            }
+          ],
+          "chnname": "模板配置表"
+        },
+        {
+          "title": "template_group_model",
+          "fields": [
+            {
+              "name": "id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "主键",
+              "pk": true,
+              "notNull": true
+            },
+            {
+              "name": "group_level_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "分组内容主键",
+              "notNull": true
+            },
+            {
+              "name": "group_model_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "模板主键",
+              "notNull": true
+            },
+            {
+              "name": "relation_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "（事项必须有）归属客户1中台；其它",
+              "notNull": true
+            },
+            {
+              "name": "created_by_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "创建人",
+              "notNull": false
+            },
+            {
+              "name": "created_app_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建合作伙伴",
+              "notNull": false
+            },
+            {
+              "name": "created_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "创建时间",
+              "notNull": false
+            },
+            {
+              "name": "created_notary_office_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建的公证处"
+            },
+            {
+              "name": "updated_by_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "更新人"
+            },
+            {
+              "name": "updated_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "更新时间"
+            },
+            {
+              "name": "updated_app_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "更新伙伴"
+            },
+            {
+              "name": "deleted",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "删除标志",
+              "defaultValue": "0"
+            },
+            {
+              "name": "deleted_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "删除日期"
+            },
+            {
+              "name": "log_record",
+              "type": "ShortString",
+              "remark": "",
+              "chnname": "备注"
+            },
+            {
+              "name": "record_version",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "数据版本号"
+            }
+          ],
+          "indexs": [],
+          "headers": [
+            {
+              "fieldName": "chnname",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "name",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "type",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "dataType",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "remark",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "pk",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "notNull",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "autoIncrement",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "defaultValue",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "relationNoShow",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "uiHint",
+              "relationNoShow": true
+            }
+          ],
+          "chnname": "模板分组中间表"
+        },
+        {
+          "title": "template_package_model",
+          "fields": [
+            {
+              "name": "id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "主键",
+              "pk": true,
+              "notNull": true
+            },
+            {
+              "name": "pid",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "包名id"
+            },
+            {
+              "name": "model_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "模板id"
+            },
+            {
+              "name": "created_by_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "创建人",
+              "notNull": false
+            },
+            {
+              "name": "created_app_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建合作伙伴",
+              "notNull": false
+            },
+            {
+              "name": "created_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "创建时间",
+              "notNull": false
+            },
+            {
+              "name": "created_notary_office_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建的公证处"
+            },
+            {
+              "name": "updated_by_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "更新人"
+            },
+            {
+              "name": "updated_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "更新时间"
+            },
+            {
+              "name": "updated_app_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "更新伙伴"
+            },
+            {
+              "name": "deleted",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "删除标志",
+              "defaultValue": "0"
+            },
+            {
+              "name": "deleted_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "删除日期"
+            },
+            {
+              "name": "log_record",
+              "type": "ShortString",
+              "remark": "",
+              "chnname": "备注"
+            },
+            {
+              "name": "record_version",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "数据版本号"
+            }
+          ],
+          "indexs": [],
+          "headers": [
+            {
+              "fieldName": "chnname",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "name",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "type",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "dataType",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "remark",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "pk",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "notNull",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "autoIncrement",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "defaultValue",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "relationNoShow",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "uiHint",
+              "relationNoShow": true
+            }
+          ],
+          "chnname": "包模板"
+        },
+        {
+          "title": "template_model_collect",
+          "fields": [
+            {
+              "name": "id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "主键",
+              "pk": true,
+              "notNull": true
+            },
+            {
+              "name": "user_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "用户id",
+              "notNull": true
+            },
+            {
+              "name": "model_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "模板id",
+              "notNull": true
+            },
+            {
+              "name": "is_store",
+              "type": "YesNo",
+              "remark": "",
+              "chnname": "是否收藏",
+              "notNull": true,
+              "defaultValue": "'0'"
+            },
+            {
+              "name": "created_by_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "创建人",
+              "notNull": false
+            },
+            {
+              "name": "created_app_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建合作伙伴",
+              "notNull": false
+            },
+            {
+              "name": "created_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "创建时间",
+              "notNull": false
+            },
+            {
+              "name": "created_notary_office_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建的公证处"
+            },
+            {
+              "name": "updated_by_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "更新人"
+            },
+            {
+              "name": "updated_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "更新时间"
+            },
+            {
+              "name": "updated_app_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "更新伙伴"
+            },
+            {
+              "name": "deleted",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "删除标志",
+              "defaultValue": "0"
+            },
+            {
+              "name": "deleted_date",
+              "type": "timestamp(6)",
+              "remark": "",
+              "chnname": "删除日期"
+            },
+            {
+              "name": "log_record",
+              "type": "ShortString",
+              "remark": "",
+              "chnname": "备注"
+            },
+            {
+              "name": "record_version",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "数据版本号",
+              "autoIncrement": false
+            }
+          ],
+          "indexs": [],
+          "headers": [
+            {
+              "fieldName": "chnname",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "name",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "type",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "dataType",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "remark",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "pk",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "notNull",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "autoIncrement",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "defaultValue",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "relationNoShow",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "uiHint",
+              "relationNoShow": true
+            }
+          ],
+          "chnname": "模板的收藏功能"
+        }
+      ],
+      "graphCanvas": {
+        "nodes": [
+          {
+            "shape": "table",
+            "title": "template_group_model",
+            "moduleName": false,
+            "x": 1300,
+            "y": 490,
+            "id": "86e0928d"
+          },
+          {
+            "shape": "table",
+            "title": "template_group_level",
+            "moduleName": false,
+            "x": 770,
+            "y": 430,
+            "id": "6e464aa6"
+          },
+          {
+            "shape": "table",
+            "title": "template_group",
+            "moduleName": false,
+            "x": 240,
+            "y": 430,
+            "id": "9966fd0d"
+          },
+          {
+            "shape": "table",
+            "title": "template_model",
+            "moduleName": false,
+            "x": 770,
+            "y": 860,
+            "id": "61dda8ef"
+          }
+        ],
+        "edges": [
+          {
+            "shape": "erdRelation",
+            "relation": "0,n:1",
+            "source": "9966fd0d",
+            "target": "6e464aa6",
+            "id": "e20052f6",
+            "controlPoints": [
+              {
+                "x": 490.291015625,
+                "y": 302.1136363636364
+              },
+              {
+                "x": 569.958984375,
+                "y": 322.17424242424244
+              }
+            ],
+            "sourceAnchor": 1,
+            "targetAnchor": 2
+          },
+          {
+            "shape": "erdRelation",
+            "relation": "0,n:1",
+            "source": "6e464aa6",
+            "target": "86e0928d",
+            "id": "8db458dd",
+            "controlPoints": [
+              {
+                "x": 970.041015625,
+                "y": 302.1136363636364
+              },
+              {
+                "x": 1055.29296875,
+                "y": 382.17424242424244
+              }
+            ],
+            "sourceAnchor": 1,
+            "targetAnchor": 2
+          },
+          {
+            "shape": "erdRelation",
+            "relation": "0,n:1",
+            "source": "86e0928d",
+            "target": "61dda8ef",
+            "id": "4e43db39",
+            "controlPoints": [
+              {
+                "x": 1055.29296875,
+                "y": 402.2348484848485
+              },
+              {
+                "x": 970.0439453125,
+                "y": 682.0872093023256
+              }
+            ],
+            "sourceAnchor": 4,
+            "targetAnchor": 1
+          }
+        ]
+      },
+      "associations": [
+        {
+          "relation": "0,n:1",
+          "from": {
+            "entity": "template_group",
+            "field": "id"
+          },
+          "to": {
+            "entity": "template_group_level",
+            "field": "pid"
+          }
+        },
+        {
+          "relation": "0,n:1",
+          "from": {
+            "entity": "template_group_level",
+            "field": "id"
+          },
+          "to": {
+            "entity": "template_group_model",
+            "field": "group_level_id"
+          }
+        },
+        {
+          "relation": "0,n:1",
+          "from": {
+            "entity": "template_group_model",
+            "field": "group_model_id"
+          },
+          "to": {
+            "entity": "template_model",
+            "field": "id"
+          }
+        }
+      ]
     }
   ],
   "dataTypeDomains": {

@@ -85,6 +85,10 @@ COALESCE ( expression1, expression2, ... expression-n );
 
 **需注意：vertica中空字符串跟null值不一样**
 
+#### 3、不常用函数
+
+* CHAR_LENGTH(s) 、  CHARACTER_LENGTH(s) 返回字符数
+
 ###  数据库操作
 
 #### 1、建表
@@ -443,6 +447,12 @@ SELECT * FROM table WHERE id BETWEEN 1000000 AND 1000010;
 #完美写法？
 SELECT * FROM table WHERE id BETWEEN 1000000 AND 1000010; 
 #索引同样可以使用在 in 语句中
+```
+
+#### 3 查询列重复的个数
+
+```mysql
+select colum, count(1) as count from xx group by colum
 ```
 
 
