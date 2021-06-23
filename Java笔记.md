@@ -151,6 +151,8 @@ https://www.cnblogs.com/JavaHxm/p/11016315.html
 
 　　**行为型模式，**共十一种：**策略模式、模板方法模式、观察者模式、迭代子模式、责任链模式、命令模式、备忘录模式、状态模式、访问者模式、中介者模式、解释器模式。**
 
+状态模式：如抓娃娃
+
 **1、开闭原则（Open Close Principle）**
 
 　　开闭原则就是说**对扩展开放，对修改关闭**。在程序需要进行拓展的时候，不能去修改原有的代码，实现一个热插拔的效果。所以一句话概括就是：为了使程序的扩展性好，易于维护和升级。想要达到这样的效果，我们需要使用接口和抽象类，后面的具体设计中我们会提到这点。
@@ -646,6 +648,23 @@ https://www.cnblogs.com/againn/p/9512013.html
 ***private***    只能在本类中访问 
 
 ***static***      外部类是不允许static修饰的，但是内部类却允许，重要是this和super都无法出现在static 修饰的方法中
+
+#####  1-1-1 class反射方法
+
+```java
+//类名
+Class clazz=Class.forName(String classname);//通过类名获取Class
+
+String methodName=“方法名称”；
+Object[] methodparams=new Object[]{请求方法所需参数};
+//根据方法名获取方法
+Method method=clazz.getMethod(methodName,T.class);//T.class为该方法的参数类型多个使用数组Class[]{String.class,Integer.class}
+Object obj=method.invoke(clazz.newInstance(), methodparams);//obj为clazz类的methodName方法执行结束返回的对象
+```
+
+备注： 根据反射 对业务代码的统一处理
+
+
 
 #### 1-2 成员变量
 
@@ -1257,6 +1276,164 @@ public static void main(String[] args) {
     new Thread(() -> System.out.println("多线程任务执行中！")).start(); // 启动线程
 }
 ```
+
+#### 2-3 Java反应式框架Reactor中的Mono和Flux
+
+响应流的特点
+
+要搞清楚这两个概念，必须说一下响应流规范。它是响应式编程的基石。他具有以下特点：
+
+- 响应流必须是无阻塞的。
+
+- 响应流必须是一个数据流。
+
+- 它必须可以异步执行。
+
+- 并且它也应该能够处理背压
+
+- Publisher(发布者) 数据提供者,提供给订阅者使用
+
+  Subscription(订阅) 订阅者订阅的发布者提供的数据
+
+  Subscriber(订阅者) 订阅发布者的数据
+
+  Processor(处理器) 这个接口集成了发布者和订阅者接口,所以处理器是发布者和订阅者都可以使用处理器. 
+
+##### Flux
+
+`Flux` 是一个发出(emit)`0-N`个元素组成的异步序列的`Publisher<T>`,可以被`onComplete`信号或者`onError`信号所终止。在响应流规范中存在三种给下游消费者调用的方法 `onNext`, `onComplete`, 和`onError`
+
+```java
+public Flux<ClientUser> allUsers(){
+    return Flux.just(new ClientUser("felord.cn", "reactive"),
+            new ClientUser("Felordcn", "Reactor"));
+}
+```
+
+* just
+  可以指定序列中包含的全部元素。创建出来的 Flux 序列在发布这些元素之后会自动结束。
+
+* fromArray()，fromIterable()和 fromStream()
+  可以从一个数组、Iterable 对象或 Stream 对象中创建 Flux 对象。
+
+* empty()
+  创建一个不包含任何元素，只发布结束消息的序列,在响应式编程中，流的传递是基于元素的，empty表示没有任何元素，所以不会进行后续传递，需要用switchIfEmpty等处理
+
+* error(Throwable error)
+  创建一个只包含错误消息的序列。
+
+* never()
+  创建一个不包含任何消息通知的序列。使用示例：
+
+```java
+Flux.range(1, 10)
+    .timeout(Flux.never(), v -> Flux.never())
+    .subscribe(System.out::println);
+上面表示用不超时
+```
+
+* range(int start, int count)
+
+创建包含从 start 起始的 count 个数量的 Integer 对象的序列。
+
+
+
+##### Mono
+
+`Mono` 是一个发出(emit)`0-1`个元素的`Publisher<T>`,可以被`onComplete`信号或者`onError`信号所终止。
+
+```java
+public Mono<ClientUser> currentUser () {
+    return isAuthenticated ? Mono.just(new ClientUser("felord.cn", "reactive"))
+            : Mono.empty();
+}
+```
+
+
+
+实际例子
+
+```java
+@ResponseBody
+@RequestMapping("/global_error_code")
+public Mono<String> globalErrorCode() {
+
+    StringBuilder o = new StringBuilder();
+    o.append("<table>")
+        .append("<tr>").append("<th>代码</th>").append("<th>编码</th>").append("<th>说明</th>").append("</tr>");
+    Consumer<ResponseCode> append = e -> {
+        o.append("<tr>")
+            .append("<td>").append(e.getCode()).append("</td>")
+            .append("<td>").append(e.getMessage()).append("</td>")
+            .append("<td>").append(ResultBody.failed(e).getMessage()).append("</td>")
+            .append("</tr>");
+    };
+
+    return Mono.fromSupplier(() -> {
+        ErrorCode.ALL_RESPONSE_CODE.forEach(append);
+        o.append("</table>");
+        return o.toString();
+    });
+}
+```
+
+1、通过Mono静态方法创建：
+
+* empty()：创建一个不包含任何元素，只发布结束消息的序列。
+
+  ```
+   Mono. empty ().subscribe(System. out ::println);
+  ```
+
+  
+
+* just()：可以指定序列中包含的全部元素。创建出来的 Mono序列在发布这些元素之后会自动结束。 
+
+* justOrEmpty()：从一个 Optional 对象或可能为 null 的对象中创建 Mono。只有 Optional 对象中包含值或对象不为 null 时，Mono 序列才产生对应的元素。
+
+* error(Throwable error)：创建一个只包含错误消息的序列。
+
+```java
+Mono.error(new RuntimeException("error"))
+.subscribe(System.out::println, System.err::println);
+```
+
+
+
+* never()：创建一个不包含任何消息通知的序列。 
+
+```java
+Mono.never().subscribe(System.out::println);
+```
+
+
+
+* fromCallable()、fromCompletionStage()、fromFuture()、fromRunnable()和 fromSupplier()：分别从 Callable、CompletionStage、CompletableFuture、Runnable 和 Supplier 中创建 Mono。 
+
+  ```java
+  //通过fromRunnable创建，并实现异常处理
+  Mono.fromRunnable(() -> {
+  System.out.println("thread run");
+  throw new RuntimeException("thread run error");
+  }).subscribe(System.out::println, System.err::println);
+   
+  //通过fromCallable创建
+  Mono.fromCallable(() -> "callable run ").subscribe(System.out::println);
+   
+  //通过fromSupplier创建
+  Mono.fromSupplier(() -> "create from supplier").subscribe(System.out::println);
+  ```
+
+  
+
+* delay(Duration duration)和 delayMillis(long duration)：创建一个 Mono 序列，在指定的延迟时间之后，产生数字 0 作为唯一值。
+
+ 2、通过Mono动态方法创建：
+ 通过 create()方法来使用 MonoSink 来创建 Mono。
+
+
+
+------
 
 
 
@@ -2494,6 +2671,57 @@ tst(1,2,3);//3，1
 
 **XXX: + 说明**：
 如果代码中有该标识，说明标识处代码虽然实现了功能，但是实现的方法有待商榷，希望将来能改进，要改进的地方会在说明中简略说明。  
+
+##### 常用doc注释说明
+
+* 以下为javadoc 需要熟知的注释标签:
+  @see 引用类/方法。
+
+  @author: 作者。
+
+  @date：日期。
+
+  @version: 版本号。
+
+  @throws：异常信息。
+
+  @param：参数
+
+  @return： 方法返回值。
+
+  @since: 开源项目常用此标签用于创建日期 。
+
+  {@value}: 会使用该值，常用于常量。
+
+  {@link} 引用类/方法。
+
+  {@linkplain} 与@link功能一致。
+
+* 常用标签
+
+<p></p>: 表示一整段文字的描述，没有换行
+<b></b>: 表示文字用粗黑体
+
+{@link Class#Method}: 表示蓝色高亮显示，而且点击可以跳转到对应Class#Method
+
+{@link #Method}: 表示蓝色高亮显示，而且点击可以跳转到当前Class 的 Method
+
+<code></code>: 表示文字用代码的字体表示出来，没有高亮，但是字体跟普通注释不一样 
+
+{@see Class#Method}: 注释会自动添加“See Also xxxxx” 后面的Class#Method 也会高亮显示并且自动链接跳转
+
+Note : '#' 一般表示 '.' ，例如 Intent.getIntExtra(String name), 用注释文字写成 Intent#getIntExtra(String name)
+
+4、 {@link}与@see的简单使用以及区别
+
+@see 标签允许用户引用其他类的文档。具体使用方式如下：
+@see classname
+@see fully-qualified-classname
+@see fully-qualified-classname#方法名称
+@see fully-qualified-classname#属性名称
+我在使用的时候，发现这个只能单独一行顶头写，如果不顶头写就不管用了，没了链接的效果。
+但是，{@link}这个却可以随便放。
+具体使用方法和上面那个@see是一样的。
 
 ------
 

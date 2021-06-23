@@ -1381,6 +1381,20 @@ var detail = new Vue({
     		return "";
 		}
     },
+     #render渲染函数
+     render(h, context) {
+        const { icon, title } = context.props
+        const vnodes = []
+
+        if (icon) {
+          vnodes.push(<svg-icon icon-class={icon} />)
+        }
+
+        if (title) {
+          vnodes.push(<span slot="title">{title}</span>)
+        }
+        return vnodes
+      },
     /**使用场景
     computed 　　　　
         当一个属性受多个属性影响的时候就需要用到computed
@@ -1648,6 +1662,12 @@ this.$refs.aaa.value='20' //this.$refs['aaa']
 closeMain(arguments){
     ....
 },
+
+
+父组件调用子组件的方法
+this.$refs.child.method();
+this.$refs.child.$emit("childmethod")
+this.$refs.child.$on("childmethod")
 ```
 
 * this.$store //全局 
@@ -3289,6 +3309,15 @@ rm -rf '文件夹'
 　-i或–interactive 　删除既有文件或目录之前先询问用户。 
 　-r或-R或–recursive 　递归处理，将指定目录下的所有文件及子目录一并处理。 
 　-v或–verbose 　显示指令执行过程。 删除文件 不给出提示
+
+.tar
+打包语法：tar cvf newFileName.tar fileName || dirName 
+解包语法：tar xvf newFileName.tar fileName（-C dirName）
+
+打包成tar.gz格式压缩包
+# tar -zcvf renwolesshel.tar.gz /renwolesshel
+解压tar.gz格式压缩包
+# tar zxvf renwolesshel.tar.gz
 ```
 
 ```
@@ -3386,9 +3415,40 @@ df -h /usr/
 du -sh /usr/
 ```
 
+#### 修改时区
 
+```shell
+ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+echo "Asia/Shanghai" >/etc/timezone
 
+Linux ln命令是一个非常重要命令，它的功能是为某一个文件在另外一个位置建立一个同步的链接。
+当我们需要在不同的目录，用到相同的文件时，我们不需要在每一个需要的目录下都放一个必须相同的文件，我们只要在某个固定的目录，放上该文件，然后在 其它的目录下用ln命令链接（link）它就可以，不必重复的占用磁盘空间。 
+```
 
+ln 命令说明
+
+**软链接**
+
+- 1.软链接，以路径的形式存在。类似于Windows操作系统中的快捷方式
+- 2.软链接可以 跨文件系统 ，硬链接不可以
+- 3.软链接可以对一个不存在的文件名进行链接
+- 4.软链接可以对目录进行链接
+
+**硬链接**
+
+- 1.硬链接，以文件副本的形式存在。但不占用实际空间。
+- 2.不允许给目录创建硬链接
+- 3.硬链接只有在同一个文件系统中才能创建
+
+**必要参数**
+
+- -b 删除，覆盖以前建立的链接
+- -d 允许超级用户制作目录的硬链接
+- -f 强制执行
+- -i 交互模式，文件存在则提示用户是否覆盖
+- -n 把符号链接视为一般目录
+- -s 软链接(符号链接)
+- -v 显示详细的处理过程
 
 ------
 
@@ -3684,14 +3744,14 @@ mvn dependency:tree -U -f notary-cloud-provider-order/pom.xml
 ```xml
 Maven Release Plugin插件
 1 设置新的版本号
-mvn versions:set -DnewVersion=3.2.9-SNAPSHOT
+mvn versions:set -DnewVersion=3.2.11.1-SNAPSHOT
 2 撤销设置
 mvn versions:revert
 3 提交设置
 mvn versions:commit
 
 Versions Maven Plugin插件
-mvn release:update-versions -DdevelopmentVersion=3.5.2-SNAPSHOT
+mvn release:update-versions -DdevelopmentVersion=3.7.2-SNAPSHOT
 
 
 //发布版本，添加tag
@@ -3723,7 +3783,7 @@ git tag -a v1.0 -m "对Tag的描述信息"
  提交tag命令
 
 ```
-git push origin v3.5.0
+git push origin v3.6.0
 #这个是推送所有标签
 git push origin --tags
 ```
@@ -3732,9 +3792,9 @@ git push origin --tags
 
 ```
 删除本地tag
-git tag -d v1.0
+git tag -d v3.7.0
 要删除远程服务器上的tag，可以使用如下的命令：
-git push origin --delete tag v3.2.9
+git push origin --delete tag v3.7.0
 ```
 
 ##### git 根据tag创建分支
@@ -3752,6 +3812,25 @@ git push origin --delete tag v3.2.9
 4.通过 git push origin newbranch 把本地创建的分支提交到远程仓库。
 
 现在远程仓库也会有新创建的分支了。
+
+```shell
+#删除本地分支
+git branch -d  branch-name
+#强制删除
+git branch -D branch-name
+#删除远程分支(慎用)：
+git push origin --delete dev20181018
+```
+
+##### 强制git push命令慎用
+
+```shell
+#慎用
+git push -f origin development 
+#注释： origin远程仓库名，master分支名，-f为force，意为：强行、强制
+```
+
+
 
 #### Maven的脚本
 
@@ -3961,7 +4040,7 @@ ENTRYPOINT java -javaagent:/prometheus/${jmx_prometheus_javaagent.name}=1234:/pr
 
 4、运行命令：
 
-```
+```shell
 docker run -d \
     -p 8001:8001 \
     -e "SPRING_PROFILES_ACTIVE=dev" \
@@ -3971,6 +4050,9 @@ docker run -d \
 4.1 命令说明
 使用 -e "SPRING_PROFILES_ACTIVE=dev"  指定spring profile
 使用 -v /tmp/cloud-ac-service/auth/:/var/log/cloud-ac-service/auth  挂载日志目录
+
+#sonarqube例子
+docker run -d --name sonarqube -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true -p 9000:9000 sonarqube:latest
 ```
 
 
@@ -4116,6 +4198,11 @@ java -jar *.jar（*替换为需启动的jar包名称)
 #### K8S的命令服务构建
 
 ```shell
+#查看已经建的命名空间namespace
+kubectl get ns
+
+#跑java服务很简单，只需要写一个deloyment的yaml来制作pod，再写一个制作service的yaml来制作service，就ok了。 运行
+kubectl apply -f xxx.yaml
 #查看
 docker images
 #查看部分docker images|grep order
@@ -4178,6 +4265,18 @@ kubectl delete pod {podName}
 #删除命名空间下的无效容器
 kubectl -n notarycloud delete po/mycat- -hmkm7
 
+```
+
+```cmd
+#更多详细信息
+kubectl -n notarycloud describe  pod/postgresql-etcd-k8s229
+# 伸缩 pod 副本
+# 可用于将Deployment及其Pod缩小为零个副本，实际上杀死了所有副本。当您将其缩放回1/1时，将创建一个新的Pod，重新启动您的应用程序。
+kubectl scale deploy/nginx-1 --replicas=0
+kubectl scale deploy/nginx-1 --replicas=1
+
+# 查看前一个 pod 的日志，logs -p 选项 
+kubectl logs --tail 100 -p user-klvchen-v1.0-6f67dcc46b-5b4qb > pre.log
 ```
 
 
@@ -4271,6 +4370,8 @@ https://www.w3cschool.cn/jenkins/jenkins-jg9528pb.html
 
 https://www.jianshu.com/p/f1167e8850cd
 
+https://testerhome.com/wiki/pipelinedoccn
+
 ```groovy
 pipeline{
     agent any  //全局必须带有agent表明此pipeline执行节点
@@ -4287,6 +4388,32 @@ pipeline{
     }
 }
 ```
+
+```go
+#!groovy
+pipeline {
+  agent any
+  tools {
+    jdk 'java'
+    maven 'maven'
+  }
+  stages {
+    stage('git') {
+      steps {
+        git branch: '3.2.2', credentialsId: 'bbbc7963-0bb7-4b15-95a0-9d8e2c5c2b15', url: 'http://gitlab-sc.fxnotary.com/notary-cloud/notary-cloud-root.git'
+      }
+    }
+    stage('build-deploy') {
+      steps {
+        sh 'mvn clean deploy -DskipTests'
+      }
+    }
+  }
+}
+
+```
+
+
 
 ## Jenkis pipeline构建项目实践-编写podTemplate实现和k8s对接
 
@@ -4377,6 +4504,223 @@ podTemplate(label: label, containers: [
 ```
 
 
+
+### 例子2
+
+```groovy
+#!groovy
+def label = "jenkins-jnlp-slave-${UUID.randomUUID().toString()}"
+
+properties([
+        parameters([
+                string(
+                        name: "gitRepositoryUrl",
+                        description: "库地址",
+                        defaultValue: "ssh://git@notarycloud-gitlab-ce/notary-cloud/notary-cloud-settlement.git"
+                ),
+                string(
+                        name: "gitBranchName",
+                        description: "分支名称",
+                        defaultValue: "release"
+                ),
+                text(
+                        name: "services",
+                        description: "需要发布的服务名称(换行分割)",
+                        defaultValue: "consumer-settlement\nprovider-settlement"
+                )
+        ]),
+])
+
+class BuildCli {
+
+    def services = []
+    def pom
+    def version
+    def originVersion
+
+    BuildCli(serviceText, pom) {
+        this.services = serviceText.split("\n").collect { it.trim() }
+        this.pom = pom
+        this.originVersion = pom.getVersion()
+        this.version = pom.getVersion().replace("-SNAPSHOT", "")
+    }
+
+    def tag() {
+        def o = ""
+        services.each {
+            o += """
+            docker tag registry.k8s.ing:5000/notarycloud/notary-cloud-${it}:latest registry.k8s.ing:5000/notarycloud/notary-cloud-${it}:${version};
+            docker push registry.k8s.ing:5000/notarycloud/notary-cloud-${it}:latest;
+            docker push registry.k8s.ing:5000/notarycloud/notary-cloud-${it}:${version};
+        """
+        }
+        return o
+    }
+
+    def deploy() {
+        def o = ""
+        services.each {
+            o += """
+                kubectl -n notarycloud set image deployment notary-cloud-${it} notary-cloud-${it}=registry.k8s.ing:5000/notarycloud/notary-cloud-${it}:${version} --record;
+                kubectl -n notarycloud patch deployment notary-cloud-${it} -p "{\\"spec\\":{\\"template\\":{\\"metadata\\":{\\"labels\\":{\\"date\\":\\"`date +'%s'`\\"}}}}}"
+            """
+        }
+        return o
+    }
+
+    @Override
+    String toString() {
+        return "${pom.getName()}-${originVersion}"
+    }
+
+}
+
+podTemplate(
+        label: label,
+        containers: [
+                containerTemplate(
+                        name: "maven-docker-kubectl",
+                        image: "registry.k8s.ing:5000/jenkins/maven-docker-kubectl:3",
+                        ttyEnabled: true,
+                        command: "cat"
+                )
+        ],
+        nodeSelector: "ci=jenkins",
+        volumes: [
+                nfsVolume(mountPath: "/home/jenkins/agent", serverAddress: "192.168.88.225", serverPath: "/mnt/file", readOnly: false),
+                nfsVolume(mountPath: "/root/.m2", serverAddress: "192.168.88.225", serverPath: "/mnt/file/.m2", readOnly: false),
+                hostPathVolume(mountPath: "/var/run/docker.sock", hostPath: "/var/run/docker.sock")
+        ])
+
+{
+    node(label) {
+        stage("代码检出") {
+            git branch: params.gitBranchName,
+                credentialsId: "e71846ca-cbc1-4122-9f4f-5ea617666617",
+                url: params.gitRepositoryUrl
+        }
+        def buildCli = new BuildCli(params.services, readMavenPom())
+        stage("Build") {
+            echo "########## Build ${buildCli.toString()} ##########"
+            container("maven-docker-kubectl") {
+                stage("Maven构建") {
+                    sh "mvn clean -Dmaven.test.skip=true install deploy -f pom.xml -U"
+                }
+                stage("Image构建") {
+                    sh "mvn dockerfile:build -f pom.xml"
+                }
+                stage("Tag & Push Image") {
+                    echo buildCli.tag()
+                    sh buildCli.tag()
+                }
+                stage("K8S Deploy") {
+                    echo buildCli.deploy()
+                    sh buildCli.deploy()
+                }
+            }
+        }
+    }
+}
+
+```
+
+例子三
+
+```groovy
+def label = "jenkins-jnlp-slave-${UUID.randomUUID().toString()}"
+podTemplate(
+    label: label, 
+    containers: [
+		containerTemplate(
+            name: 'node', 
+            image: 'node:lts-slim', 
+            ttyEnabled: true, 
+            command: 'cat'),
+		containerTemplate(name: 'docker', 
+                          image: 'docker:18', ttyEnabled: true, command: 'cat'),
+		containerTemplate(name: 'kubectl', 
+                          image: 'registry.k8s.ing:5000/jenkins/maven-docker-kubectl:3', ttyEnabled: true, command: 'cat')
+	],
+	nodeSelector:'ci=jenkins',
+	volumes: [
+		nfsVolume(mountPath: '/home/jenkins/agent', serverAddress: '192.168.88.225', serverPath: '/mnt/file', readOnly: false),
+		hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock')
+	])
+{
+    node (label) {
+		stage('CI') {
+			stage('Checkout scm'){
+				git branch: '3.5.0', credentialsId: 'e71846ca-cbc1-4122-9f4f-5ea617666617', url: 'ssh://git@notarycloud-gitlab-ce/fxnotary/notary-cloud-admin.git'
+			}
+			
+			def BUILD_RELEASE_VERSION = readMavenPom().getVersion().replace("-SNAPSHOT", "")
+			
+			stage('Build artifics') {
+				container('node') {
+					sh """
+					    yarn --registry http://nexus-nc.fxnotary.com/repository/npmjs-group/;
+						yarn install;
+						yarn build;
+					"""
+				}
+			}
+			
+			stage('Push Docker image') {
+				container('docker') {
+					parallel (
+						"front image": {
+							stage('front image') {
+								sh """
+								docker build -t registry.k8s.ing:5000/notarycloud/notary-cloud-admin-front:latest .
+								docker tag registry.k8s.ing:5000/notarycloud/notary-cloud-admin-front:latest registry.k8s.ing:5000/notarycloud/notary-cloud-admin-front:${BUILD_RELEASE_VERSION};
+								docker push registry.k8s.ing:5000/notarycloud/notary-cloud-admin-front:latest;
+								docker push registry.k8s.ing:5000/notarycloud/notary-cloud-admin-front:${BUILD_RELEASE_VERSION};
+								"""
+							}
+						}
+					)
+				}
+			}
+			
+			stage('Deploy to K8S') {
+				container('kubectl') {
+					sh """
+						kubectl -n notarycloud set image deployment notary-cloud-admin-front notary-cloud-admin-front=registry.k8s.ing:5000/notarycloud/notary-cloud-admin-front:${BUILD_RELEASE_VERSION} --record;
+						kubectl -n notarycloud patch deployment notary-cloud-admin-front -p "{\\"spec\\":{\\"template\\":{\\"metadata\\":{\\"labels\\":{\\"date\\":\\"`date +'%s'`\\"}}}}}"
+					"""
+				}
+			}
+			
+        }
+    }
+}
+
+```
+
+
+
+3、脚本释义
+podTemplate节指定创建pod的模板和环境
+
+> Name：为pod的名称前缀
+> Cloud：为构建pod的云环境，需要和前面新建的云环境名称一样
+> Namespace：创建pod所在的namespace
+> Label: 创建pod对应的标签
+> serviceAccount：pod使用sa，这里使用default, 所以前文创建jenkins master deployment的时候多创建了一个default-role,这样自动创建出来的的jenkins-slave具有对应的api权限
+
+containerTemplate节
+
+> 指定创建容器的模板，当云环境里面配置pod模板后，容器模板以云环境的配置为准。
+
+Volumes节
+
+> 配置jenkins-slave pod挂载的卷，当云环境里面配置pod模板后，挂载卷以云环境配置为准
+
+stage节为具体的pipeline步骤
+
+> 这里第一步进行svn代码迁出；
+> 第二步进行编译，并把包传到共享卷上面；
+> 第三步对pod进行删除，因为应用采用deployment方式部署，所以可以实现重新创建pod，达到更新的效果。
 
 # kubectl常用示例
 
@@ -4536,7 +4880,7 @@ sonar.sources=./
 #sonar.java.binaries=./
 ```
 
-```
+```shell
 sonar.projectKey=songer
 sonar.projectName=songer
 sonar.projectVersion=1.0
@@ -4575,7 +4919,8 @@ C:\Users\Administrator\.jenkins\plugins
 </profile>
 ```
 
-* 执行 mvn clean install  sonar:sonar
+* 执行 **mvn clean install  sonar:sonar**
+* 或者**mvn install -Dmaven.test.skip=true sonar:sonar**
 
 #### skywalking
 
