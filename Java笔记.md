@@ -26,9 +26,39 @@
 
 模版引擎: FreeMarker  
 
-服务注册中心、配置中心: nacos
+服务注册中心、配置中心: nacos,   springcloud config
 
 服务的熔断降级： Netflix的开源组件Hystrix
+
+网关技术： springcloud Gateway技术  Zuul网关
+
+客服端负载均衡： Netflix Ribbon
+
+ **Feign**旨在使编写Java Http客户端变得更容易。 
+
+```shell
+Zuul：
+
+使用的是阻塞式的 API，不支持长连接，比如 websockets。
+
+底层是servlet，Zuul处理的是http请求
+
+没有提供异步支持，流控等均由hystrix支持。
+
+依赖包spring-cloud-starter-netflix-zuul。
+
+Gateway：
+
+Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servlet容器一起使用，也不能打包成一个WAR包。
+
+依赖spring-boot-starter-webflux和/ spring-cloud-starter-gateway
+
+提供了异步支持，提供了抽象负载均衡，提供了抽象流控，并默认实现了RedisRateLimiter。
+```
+
+
+
+
 
 #### 软件备注
 
@@ -1016,6 +1046,8 @@ public void method();
 
 ### 2 创建线程都用实现接口 Runnable
 
+ 	线程的创建方式中有两种，一种是实现Runnable接口，另一种是继承Thread，但是这两种方式都有个缺点，那就是在任务执行完成之后无法获取返回结果，于是就有了Callable接口，Future接口与FutureTask类的配和取得返回的结果。 
+
 ```java
 class XX implements Runnable
 {
@@ -1105,7 +1137,17 @@ finally{
 
 *栈  代码运行区  *栈  存放数据  *方法区
 
-#### 2-1 多线程java多线程之Future和FutureTask
+#### 2-1 多线程java多线程之Future和FutureTask 实现Callable
+
+而Callable的接口定义如下
+
+```html
+ public interface Callable<V> {      
+     V   call()   throws Exception;   
+   }
+```
+
+ 该接口声明了一个名称为call()的方法，同时这个方法可以有返回值V，也可以抛出异常。 
 
 ```dart
 Future<List> future = getDataFromRemoteByFuture();
@@ -1436,6 +1478,218 @@ Mono.never().subscribe(System.out::println);
 ------
 
 
+
+### 重要：一些面试基础问题
+
+#### 什么是ThreadLocal变量？
+
+ThreadLocal是Java里一种特殊的变量。每个线程都有一个ThreadLocal就是每个线程都拥有了自己独立的一个变量，竞争条件被 彻底消除了。它是为创建代价高昂的对象获取线程安全的好方法，比如你可以用ThreadLocal让SimpleDateFormat变成线程安全的，因 为那个类创建代价高昂且每次调用都需要创建不同的实例所以不值得在局部范围使用它，如果为每个线程提供一个自己独有的变量拷贝，将大大提高效率。首先，通 过复用减少了代价高昂的对象的创建个数。其次，你在没有使用高代价的同步或者不变性的情况下获得了线程安全。线程局部变量的另一个不错的例子是 ThreadLocalRandom类，它在多线程环境中减少了创建代价高昂的Random对象的个数。
+
+#### Java中堆和栈有什么不同？
+
+为什么把这个问题归类在多线程和并发面试题里？因为栈是一块和线程紧密相关的内存区域。每个线程都有自己的栈内存，用于存储本地变量，方法参数和栈 调用，一个线程中存储的变量对其它线程是不可见的。而堆是所有线程共享的一片公用内存区域。对象都在堆里创建，为了提升效率线程会从堆中弄一个缓存到自己 的栈，如果多个线程使用该变量就可能引发问题，这时volatile 变量就可以发挥作用了，它要求线程从主存中读取变量的值。
+
+####  有三个线程T1，T2，T3，怎么确保它们按顺序执行？
+
+在多线程中有多种方法让线程按特定顺序执行，你可以用线程类的**join()方**法在一个线程中启动另一个线程，另外一个线程完成该线程继续执行。为了确保三个线程的顺序你应该先启动最后一个(T3调用T2，T2调用T1)，这样T1就会先完成而T3最后完成。
+
+#### 如果你提交任务时，线程池队列已满。会时发会生什么？
+
+这个问题问得很狡猾，许多程序员会认为该任务会阻塞直到线程池队列有空位。事实上如果一个任务不能被调度执行那么ThreadPoolExecutor’s submit()方法将会抛出一个RejectedExecutionException异常。
+
+#### Java多线程中调用wait() 和 sleep()方法有什么不同？
+
+Java程序中wait 和 sleep都会造成某种形式的暂停，它们可以满足不同的需要。wait()方法用于线程间通信，如果等待条件为真且其它线程被唤醒时它会释放锁，而 sleep()方法仅仅释放CPU资源或者让当前线程停止执行一段时间，但不会释放锁。
+
+#### Java的start()和 run()方法区别
+
+ 调用 `start()` 方法方可启动线程并使线程进入就绪状态，直接执行 `run()` 方法的话不会以多线程的方式执行。
+
+run()只会当做一个方法，还在主线程里面执行，并不是多线程。
+
+#### 什么时候会死锁
+
+- **互斥**：资源必须处于非共享模式，即一次只有一个进程可以使用。如果另一进程申请该资源，那么必须等待直到该资源被释放为止。
+- **占有并等待**：一个进程至少应该占有一个资源，并等待另一资源，而该资源被其他进程所占有。
+- **非抢占**：资源不能被抢占。只能在持有资源的进程完成任务后，该资源才会被释放。
+- **循环等待**：有一组等待进程 `{P0, P1,..., Pn}`， `P0` 等待的资源被 `P1` 占有，`P1` 等待的资源被 `P2` 占有，......，`Pn-1` 等待的资源被 `Pn` 占有，`Pn` 等待的资源被 `P0` 占有。
+
+注意，只有四个条件同时成立时，死锁才会出现。
+
+#### MQ如何防止消息丢失
+
+a. 生产者端
+
+```java
+可以开启confirm模式。在生产者哪里设置开启了confirm模式之后，每次写的消息都会分配一个唯一的id，然后如何写入了rabbitmq之中，rabbitmq会给你回传一个ack消息，告诉你这个消息发送OK了；如果rabbitmq没能处理这个消息，会回调你一个nack接口，告诉你这个消息失败了，你可以进行重试。而且你可以结合这个机制知道自己在内存里维护每个消息的id，如果超过一定时间还没接收到这个消息的回调，那么你可以进行重发
+//开启confirm
+channel.confirm();
+//发送成功回调
+public void ack(String messageId){
+  
+}
+
+// 发送失败回调
+public void nack(String messageId){
+    //重发该消息
+}
+```
+
+b. mq端 
+
+设置持久化 到磁盘 
+
+①创建queue的时候将其设置为持久化的，这样就可以保证rabbitmq持久化queue的元数据，但是不会持久化queue里面的数据。
+②发送消息的时候讲消息的deliveryMode设置为2，这样消息就会被设为持久化方式，此时rabbitmq就会将消息持久化到磁盘上。
+必须要同时开启这两个才可以。
+
+```java
+而且持久化可以跟生产的confirm机制配合起来，只有消息持久化到了磁盘之后，才会通知生产者ack，这样就算是在持久化之前rabbitmq挂了，数据丢了，生产者收不到ack回调也会进行消息重发。
+```
+
+c. 消费端
+
+ 关闭rabbitmq的自动ack，然后每次在确保处理完这个消息之后，在代码里手动调用ack 。
+
+#### 什么是缓存雪崩
+
+ 缓存雪崩是指缓存中数据大批量到过期时间，而查询数据量巨大，引起数据库压力过大甚至down机。和缓存击穿不同的是，    缓存击穿指并发查同一条数据，缓存雪崩是不同数据都过期了，很多数据都查不到从而查数据库。 
+
+* 缓存数据的过期时间设置随机，防止同一时间大量数据过期现象发生。
+* 如果缓存数据库是分布式部署，将热点数据均匀分布在不同搞得缓存数据库中。
+* 设置热点数据永远不过期。
+
+#### 什么是缓存击穿
+
+  缓存击穿是指缓存中没有但数据库中有的数据（一般是缓存时间到期），这时由于并发用户特别多，同时读缓存没读到数据，又同时去数据库去取数据，引起数据库压力瞬间增大，造成过大压力 
+
+* 设置热点数据永远不过期
+*  加互斥锁  如 synchronized 与ReentrantLock都用于线程同步锁，都是互斥锁 
+
+#### 什么是缓存穿透
+
+ 缓存穿透是指**查询一个根本不存在的数据** ， 当并发流量大时，会很容易把DB打垮。
+
+ 缓存穿透将导致不存在的数据每次请求都要到存储层去查询，失去了缓存保护后端存储的意义。  
+
+解决方法：
+
+1. 缓存一个空对象（设置个有效期）
+
+2. 布隆过滤器
+
+    布隆过滤器可以用于检索一个元素是否在一个集合中。它的优点是空间效率和查询时间都远远超过一般的算法，**缺点是有一定的误识别率和删除困难。** 
+
+   https://blog.csdn.net/weixin_43748936/article/details/110225696
+
+    google guava包下有对布隆过滤器的封装，BloomFilter。 
+
+   ```xml
+   <!--使用Redis-->
+   <dependency>
+       <groupId>org.springframework.boot</groupId>
+       <artifactId>spring-boot-starter-data-redis</artifactId>
+   </dependency>
+   <!--借助guava的布隆过滤器-->
+   <dependency>
+       <groupId>com.google.guava</groupId>
+       <artifactId>guava</artifactId>
+       <version>22.0</version>
+   </dependency>
+   ```
+
+   
+
+   ```java
+   /**
+    * 防缓存穿透的：布隆过滤器
+    *
+    * @param id
+    * @return
+    */
+   public Object getObjectByBloom(Integer id) {
+       // 判断是否为合法id
+       if (!bloomFilter.mightContain(id)) {
+           // 非法id,则不允许继续查库
+           return null;
+       } else {
+           // 从缓存中获取数据
+           Object cacheValue = cache.get(id);
+           // 缓存为空
+           if (cacheValue == null) {
+               // 从数据库中获取
+               Object storageValue = storage.get(id);
+               // 缓存空对象
+               cache.set(id, storageValue);
+           }
+           return cacheValue;
+       }
+   } 
+   ```
+
+   
+
+####  java实现线程几种方式 
+
+1. 继承Thread类
+
+   ```java
+   public class MyThread extends Thread {
+       @Override
+       public void run(){
+           super.run();
+           System.out.println("执行子线程...");
+       }
+   }
+   //使用
+   MyThread myThread = new MyThread();
+   myThread.start();
+   ```
+
+2. 实现Runnable接口
+
+   ```java
+   public class MyRunnable implements Runnable {
+       @Override
+       public void run() {
+           System.out.println("执行子线程...");
+       }
+   }
+   //使用
+   Runnable runnable = new MyRunnable();
+   Thread thread = new Thread(runnable);
+   thread.start();
+   ```
+
+3. 实现Callable和Future创建线程
+
+   线程有返回结果
+
+   ```java
+   import java.util.concurrent.Callable;
+   public class MyCallable implements Callable {
+       int i = 0;
+       @Override
+       public Object call() throws Exception {
+           System.out.println(Thread.currentThread().getName()+"  i的值："+ i);
+           return i++; //call方法可以有返回值
+       }
+   }
+   //使用
+    Callable callable = new MyCallable();
+   for (int i = 0; i < 10; i++) {
+       FutureTask task = new FutureTask(callable);
+       new Thread(task,"子线程"+ i).start();
+       try {
+           //获取子线程的返回值
+           System.out.println("子线程返回值："+task.get() + "\n");
+       }  catch (Exception e) {
+           e.printStackTrace();
+       }
+   }  
+   ```
+
+4. 通过线程池创建，线程池接口ExecutorService结合callable、feture实现有返回结果的多线程
 
 ### 3 IO流功能对象
 
@@ -1854,11 +2108,11 @@ String.split("分割1|分割2");
 * 迭代器  Iterator。hasnext()   next()  remove()
 * List<E> 存入的顺序和取出的顺序一致    List集合特有的迭代器 ListIterator
 
-  * Listd的具体子类
+  * Listd的具体子类 
 
-  * Vector 数组 可变长度
-  *  ArrayList   数组结构，长度可变
-  * LinkList   链表结构，线程不同步
+  * Vector 数组 可变长度， 线程安全的 
+  *  ArrayList   数组结构，长度可变，线程不安全的
+  * LinkList   链表结构，线程不同步，线程不安全
 * Set  不允许重复元素
 
   * HashSet集合  不允许重复元素
@@ -1936,8 +2190,8 @@ String idsTxt = users.stream().map(User::getId).map(String::valueOf).collect(Col
 #### 2、Map 接口
 
 * 键值  key -Value 存储     保证键的唯一性
-  * 子类  HashTable  同步的，不允许null键  null值
-  *  HashMap   同步的  允许null值 null键
+  *  HashTable  Dictionary 线程安全, 同步的，不允许null键  null值
+  *  HashMap   线程不安全，方法不同步的  允许null值 null键
   * TreeMap   不同步的，可以对map排序
 
 ```java
@@ -1988,6 +2242,35 @@ for(Object m:map.values()){
 //map转list java8新特性
 List<Value> values = map.values().stream().collect(Collectors.toList());
 //for循环去转
+```
+
+##### 2-3 put的源代码
+
+ HashMap 采用一种所谓的“Hash 算法”来决定每个元素的存储位置。当程序执行 map.put(String,Obect)方法 时，系统将调用String的 hashCode() 方法得到其 hashCode 值——每个 Java 对象都有 hashCode() 方法，都可通过该方法获得它的 hashCode 值。得到这个对象的 hashCode 值之后，系统会根据该 hashCode 值来决定该元素的存储位置。 
+
+ 值得注意的是**HashMap不是线程安全**的，如果想要线程安全的HashMap，可以通过Collections类的静态方法synchronizedMap获得线程安全的HashMap。
+
+```java
+Map map = Collections.synchronizedMap(new HashMap());
+```
+
+ **ConcurrentHashMap** 是线程安全的
+
+```java
+public V put(K key, V value) {  
+        if (key == null)  
+            return putForNullKey(value);  
+        int hash = hash(key.hashCode());  
+        int i = indexFor(hash, table.length);  
+        for (Entry e = table[i]; e != null; e = e.next) {  
+            Object k;  //判断当前确定的索引位置是否存在相同hashcode和相同key的元素，如果存在相同的hashcode和相同的key的元素，那么新值覆盖原来的旧值，并返回旧值。  //如果存在相同的hashcode，那么他们确定的索引位置就相同，这时判断他们的key是否相同，如果不相同，这时就是产生了hash冲突。  //Hash冲突后，那么HashMap的单个bucket里存储的不是一个 Entry，而是一个 Entry 链。  //系统只能必须按顺序遍历每个 Entry，直到找到想搜索的 Entry 为止——如果恰好要搜索的 Entry 位于该 Entry 链的最末端(该 Entry 是最早放入该 bucket 中)，  //那系统必须循环到最后才能找到该元素。  if (e.hash == hash && ((k = e.key) == key || key.equals(k))) {  
+                V oldValue = e.value;  
+                e.value = value;  return oldValue;  
+            }  
+        }  
+        modCount++;  
+        addEntry(hash, key, value, i);  return null;  
+    }  
 ```
 
 
@@ -2876,6 +3159,42 @@ StreamUtils.copy(in, out);
 5、aspose等其他组件。
 
 ------
+
+## Spring 获取bean容器的五种方法
+
+```java
+#1
+ApplicationContext ac = new FileSystemXmlApplicationContext("applicationContext.xml");
+ac.getBean("beanId");
+```
+
+方法二：通过Spring提供的工具类获取ApplicationContext对象
+
+```java
+import org.springframework.web.context.support.WebApplicationContextUtils;
+ApplicationContext ac1 = WebApplicationContextUtils.getRequiredWebApplicationContext(ServletContext sc);
+ApplicationContext ac2 = WebApplicationContextUtils.getWebApplicationContext(ServletContext sc);
+ac1.getBean("beanId");
+ac2.getBean("beanId");
+说明：
+这种方式适合于采用Spring框架的B/S系统，通过ServletContext对象获取ApplicationContext对象，然后在通过它获取需要的类实例。
+
+上面两个工具方式的区别是，前者在获取失败时抛出异常，后者返回null。
+```
+
+ 方法三：继承自抽象类ApplicationObjectSupport
+方法四：继承自抽象类WebApplicationObjectSupport
+方法五：实现接口ApplicationContextAware 
+
+```java
+@Component
+public class SpringUtil implements ApplicationContextAware {
+
+    private static ApplicationContext applicationContext;
+}
+```
+
+
 
 ## Mybatis
 

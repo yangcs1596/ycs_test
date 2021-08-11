@@ -1320,7 +1320,7 @@ $ cnpm run dev
 #### Vue的语法
 
 ```js
-	#vue的一些语法用法 模板
+#vue的一些语法用法 模板
 <p>{{ message }}</p>
 <div v-html="message"></div>
 	# v-model 指令来实现双向数据绑定：
@@ -3075,23 +3075,33 @@ void basicPublish(String exchange, String routingKey, boolean mandatory, boolean
 进入用户组目录
 # cd usr/local/src
 下载组件
-# wget http://nginx.org/download/nginx-1.10.2.tar.gz
-
-# wget http://www.openssl.org/source/openssl-fips-2.0.10.tar.gz
-# wget http://zlib.net/zlib-1.2.11.tar.gz
-# wget ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.40.tar.gz
-安装C++编译环境
-# yum install gcc-c++
 安装顺序 openssl安装  pcre安装 zlib安装 nginx安装
-解压
-# tar zxvf openssl-fips-2.0.10.tar.gz
-# cd openssl-fips-2.0.10
-# ./config && make && make install
-其它安装同理
+
+1.安装gcc、g++，用来编译源码；
+$ yum install -y gcc gcc-c++
+2.PCRE，Perl正则表达式；
+$ yum install pcre pcre-devel
+3.zlib，gzip压缩；
+$ yum install zlib zlib-devel
+4.OpenSSL，SSL协议。
+$ yum install openssl openssl-devel
+安装nginx
+# 下载源码
+$ wget http://nginx.org/download/nginx-1.13.0.tar.gz
+# 解压源码
+$ tar xvf nginx-1.13.0.tar.gz
+# 进入源码目录
+$ cd nginx-1.13.0
+# 配置、编译、安装
+$ ./configure
+$ make
+$ make install
 
 找一下nginx安装到什么位置上了
 # whereis nginx
 # cd user/local/nginx
+
+vim /usr/local/nginx/conf/nginx.conf 
 启动
 # user/local/nginx/sbin/nginx
 ```
@@ -3177,7 +3187,32 @@ http {
         } 
     }
 }
+
 ```
+
+#### 其它说明配置
+
+**1、nginx作为静态资源服务器配置**
+
+```
+`location ^~/ceng/ {``   ``alias F:/html/html2/;``   ``#add_header Cache-Control no-store;``   ``#add_header expire -1;``}``location ^~/hehe/ {``   ``alias F:/html/;``  ``#add_header Cache-Control no-store;``  ``#add_header expire -1;``}`
+```
+
+ **强调** location 后的 "^~" 顺序不能反了
+
+ 
+
+**2、nginx作为反向代理服务器配置**
+
+```
+`location ~ ^/test/{``   ``proxy_pass http:``//hello;``   ``proxy_read_timeout 180;``   ``client_max_body_size  1000m;``   ``proxy_redirect http:``//hello http://127.0.0.1:8001;` `}`
+```
+
+proxy_redirect参数说明：
+
+   这个参数只在发生重定向时生效，
+
+ 前提：proxy_redirect http://hello http://127.0.0.1:8001; 其中 http://hello 为param1，http://127.0.0.1:8001为param2， host为http/https+IP+端口号
 
 ## RabbitMQ的和前端消息交互
 
@@ -3395,6 +3430,10 @@ echo "hello world !!"
 
 ```
 netstat -ano | findstr 8080
+
+或者 lsof -i:端口号
+#查找进程
+ps -ef|grep xxx
 ```
 
 ​	   杀死占用端口的进程
@@ -5398,7 +5437,16 @@ git checkout -- aaa.html
 
 
 
+# 工具总结
+
 pdman
 
 onlyOffice开源文档编辑器
 
+**前端：** Vue.js  React.js  微信小程序、 ElementUI 、BootStrap、TOPUI、LayUI
+
+**后端：**Redis、MQ、SringBoot、Dubbo、SringCloud、Nacos、Mycat、Mybatis-PLUS、
+
+**Linux：**Nginx、Docker、Kubernetes、Jenkins、kibana、elasticsearch、fastDFS、Portainer
+
+**代码管理：** SVNtortoise、Git、GitLable、私服Nexus
