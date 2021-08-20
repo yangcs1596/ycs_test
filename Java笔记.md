@@ -6,13 +6,13 @@
 
 消息中间件：ActiveMQ ,kafka
 
-分布式文件：FastDFS
+分布式文件：FastDFS(小文件快)， HDFS(基于hdoop, 大文件数据处理好点)
 
 安全框架：Apache shiro
 
-任务调度：quartz 
+任务调度：quartz ， xxl-job项目
 
-持久层框架：mybatis 
+持久层框架：mybatis， mybatis-plus, hibernate 
 
 日志 : log4j，slf4j
 
@@ -33,6 +33,8 @@
 网关技术： springcloud Gateway技术  Zuul网关
 
 客服端负载均衡： Netflix Ribbon
+
+代码规范： sonarqube、 审查 upsource
 
  **Feign**旨在使编写Java Http客户端变得更容易。 
 

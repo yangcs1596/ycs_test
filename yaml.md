@@ -1249,9 +1249,13 @@ public Annotation[] getAnnotations()
 
   被注解的接口可以有默认方法/静态方法，或者重写Object的方法
 
+### 单点登录的实现
 
+* **jsonwebtoken跨域登录**
 
-### jsonwebtoken的使用
+由于**多终端跨域**的出现，很多的站点通过 `web api restful` 的形式对外提供服务，采用了前后端分离模式进行开发，因而在身份验证的方式上可能与传统的基于 `cookie` 的 `Session Id` 的做法有所不同，除了面临跨域提交 `cookie` 的问题外，更重要的是，有些终端可能根本不支持 `cookie`。
+
+`JWT（JSON Web Token）` 是一种身份验证及授权方案，简单的说就是调用端调用 `api` 时，附带上一个由 `api` 端颁发的 `token`，以此来验证调用者的授权信息。
 
 ```xml
 <!-- JWT相关 -->
@@ -1264,6 +1268,19 @@ public Annotation[] getAnnotations()
 
 ```java
 https://www.jianshu.com/p/5858b2a9b509
+```
+
+* **cas单点登录系统**
+
+  https://www.cnblogs.com/wlwl/p/10056067.html
+
+```xml
+<!-- CAS依赖包 -->
+<dependency>
+    <groupId>net.unicon.cas</groupId>
+    <artifactId>cas-client-autoconfig-support</artifactId>
+    <version>1.5.0-GA</version>
+</dependency>
 ```
 
 
@@ -3702,6 +3719,18 @@ public <T> T postForObject(String url, @Nullable Object request, Class<T> respon
 
 Nexus搭建私有仓库
 
+Nexus的type说明
+
+| type   | 具体说明                                   |
+| :----- | :----------------------------------------- |
+| hosted | 本地存储。像官方仓库一样提供本地私库功能   |
+| proxy  | 提供代理其它仓库的类型                     |
+| group  | 组类型，能够组合多个仓库为一个地址提供服务 |
+
+注意只有类型为hosted才可以上传jar包，其它都不行
+
+pom的仓库配置
+
 ```xml
 <repositories>
     <repository>
@@ -3905,14 +3934,27 @@ mvn deploy:deploy-file -DgroupId=com.xy.oracle -DartifactId=ojdbc14 -Dversion=10
 ```
 compile:默认值，表示当前依赖包，要参与当前项目的编译，后续测试，运行时，打包
 provided:代表在编译和测试的时候用，运行，打包的时候不会打包进去
-test：表示当前依赖包只参与测试时的工作：比如Junit
+test：表示当前依赖包只参与测试时的工作：比如Junit,只在test目录生效
 runtime：表示当前依赖包只参与运行周期，其他跳过了
 system：从参与度和provided一致，不过被依赖项不会从maven远程仓库下载，而是从本地的系统拿。需要
 systemPath属性来定义路径
 #特殊
-import只能用在dependencyManagement块中，它将spring-boot-dependencies 中dependencyManagement下的dependencies插入到当前工程的dependencyManagement中，所以不存在依赖传递。 
+import 只能用在dependencyManagement块中，它将spring-boot-dependencies 中dependencyManagement下的dependencies插入到当前工程的dependencyManagement中，所以不存在依赖传递。 
 当没有<scope>import</scope>时，意思是将spring-boot-dependencies 的dependencies全部插入到当前工程的dependencies中，并且会依赖传递。
 ```
+
+#### maven中的各种打包类型
+
+```xml
+<packaging>pom</packaging>
+packing默认是jar类型，
+pom ---------> 父类型都为pom类型
+jar ---------> 内部调用或者是作服务使用（一般只有class编译后文件）
+war ---------> 需要部署的项目（war是一个web模块，其中需要包括WEB-INF）
+
+```
+
+
 
 #### maven的内置属性
 
@@ -3964,7 +4006,127 @@ maven 默认的打包类型为 jar，
 我们执行的maven命令的时候将首先对父项目执行，而后当 父项目 的packing 类型为 pom 时，将对所有的子模块执行同样的命令，否则将无法执行同样的命令，那么依赖的传递将无法由maven 编译或者打包命令 得以执行。
 ```
 
+* mvn的私服仓库配置
 
+  ```xml
+  <build>
+      <plugins>
+          <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-compiler-plugin</artifactId>
+              <version>3.6.1</version>
+              <configuration>
+                  <source>1.8</source>
+                  <target>1.8</target>
+                  <encoding>UTF-8</encoding>
+                  <optimize>true</optimize>
+                  <showDeprecation>true</showDeprecation>
+                  <showWarnings>true</showWarnings>
+                  <compilerArgument>-Xlint:all,-serial,-path,-rawtypes,-unchecked</compilerArgument>
+                  <!-- 跳过main-->
+                  <skip>true</skip>
+              </configuration>
+          </plugin>
+      </plugins>
+     #静态文件的打包
+      <resources>
+          <resource>
+              <directory>src/main/resources</directory>
+              <includes>
+                  <!-- 此处设置打成jar包后保留的静态资源文件 .txt .xml等-->
+                  <include>**/*.md</include>
+              </includes>
+          </resource>
+      </resources>
+  </build>
+  #需要package打包发到私服时，配置私服仓库
+  然后在本地maven的settings.xml中加入配置server id要一致
+  <!-- 使用分发管理将本项目打成jar包，直接上传到指定服务器 -->
+  <distributionManagement>
+      <!--正式版本-->
+      <repository>
+          <!-- nexus服务器中用户名：在settings.xml中<server>的id-->
+          <id>yang</id>
+          <!-- 这个名称自己定义 -->
+          <name>Release repository</name>
+          <url>http://192.168.1.105:8081/repository/yang/</url>
+      </repository>
+  	<!--快照
+  	<snapshotRepository>
+  		<id>nexus-snapshots</id>
+  		<name>Snapshots repository</name>
+  		<url>http://192.168.1.105/repository/yang/</url>
+  	</snapshotRepository>-->
+  </distributionManagement>
+  ```
+
+#### mvn命令jar包发到私服命
+
+```shell
+mvn deploy:deploy-file 
+-Dfile=jar包 
+-Dmaven.test.skip=true  
+-DgroupId=groupID 
+-DartifactId=artifacid 
+-Dversion=版本号 
+-Dpackaging=jar 
+-Durl=http://ip:port/nexus/content/repositories/thirdparty/ 
+-DrepositoryId=nexus
+这个是为了避免打包多时间戳
+-DuseUniqueVersions=false
+
+说明：
+DrepositoryId : 身份信息。可能是setting里的配置
+```
+
+**备注： 注意不要换行和多余空格**
+
+```shell
+mvn install:install-file 
+-Dfile=D:\\asciidoctorj-pdf-1.5.0-alpha-zh.16.jar 
+-DgroupId=org.asciidoctor 
+-DartifactId=asciidoctorj-pdf 
+-Dversion=1.5.0-alpha-zh.16 
+-Dpackaging=jar
+--------
+然后再执行 mvn install
+
+```
+
+**用Maven属性渲染application.yml**
+
+在pom文件build中配置
+
+```xml
+<build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <includes>
+          <include>**/*</include>
+        </includes>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+</build>
+
+```
+
+```xml
+deploy去掉时间戳
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-war-plugin</artifactId>
+    <version>3.1.0</version>
+    <configuration>
+        <archive>
+            <manifest>
+                <useUniqueVersions>false</useUniqueVersions>
+            </manifest>
+        </archive>
+    </configuration>
+</plugin>
+```
 
 ### JenKins项目管理工具
 

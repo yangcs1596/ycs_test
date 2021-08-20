@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS `tb_message` (
   `is_deleted` int(1) DEFAULT NULL COMMENT '删除状态(0:正常,1:删除)',
   `deleted_time` datetime DEFAULT NULL COMMENT '删除时间',
    `gmt_create` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 默认时间
-    PRIMARY KEY (`id`) USING BTREE,
+    PRIMARY KEY (`id`) USING BTREE,-- 下面对BTREE索引说明，创建索引时使用的索引方式,有btree和hash两种
     KEY `user_id` (`user_id`) USING BTREE  -- 建表时添加索引
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT COMMENT='消息';
 
@@ -149,6 +149,8 @@ CREATE TABLE IF NOT EXISTS `tb_message` (
 
 ##### 1-1 索引
 
+MYISAM和INNODB引擎默认的索引是BTREE
+
 **MYSQL 索引有四种**
 
 * PRIMARY（**唯一且不能为空**；**一张表只能有一个主键索引**）、
@@ -161,10 +163,12 @@ CREATE TABLE IF NOT EXISTS `tb_message` (
 
 ```mysql
 ALTER TABLE t_user ADD INDEX name_city_phone(USERNAME,CITY,PHONE) USING BTREE //普通复合索引
-
 ALTER TABLE t_user ADD UNIQUE name_city_phone(USERNAME,CITY,PHONE) USING BTREE //唯一复合索引
 
+创建索引时使用的索引方式,有btree和hash两种
 #drop index name
+查看表索引的命令
+show index from tableName
 ```
 
 **BTREE索引最左前缀匹配原则使用注意事项：**
@@ -172,7 +176,9 @@ ALTER TABLE t_user ADD UNIQUE name_city_phone(USERNAME,CITY,PHONE) USING BTREE /
 - 最左前缀匹配原则，非常重要的原则，mysql会一直向右匹配直到遇到范围查询(>、<、between、like)就停止匹配，比如a = 1 and b = 2 and c > 3 and d = 4 如果建立(a,b,c,d)顺序的索引，d是用不到索引的，如果建立(a,b,d,c)的索引则都可以用到，a,b,d的顺序可以任意调整。【范围查询的字段，在建立复合索引一定要置后】
 - =和in可以乱序，比如a = 1 and b = 2 and c = 3 建立(a,b,c)索引可以任意顺序，mysql的查询优化器会帮你优化成索引可以识别的形式
 
-###### 1- 1-1 USING B-TREE索引使用场景
+###### 1- 1-1 建表时 USING B-TREE索引使用场景
+
+<span style="color:red">适用于范围查询</span>
 
 - 全值匹配的查询SQL，如 where act_id= '1111_act'
 
@@ -194,9 +200,11 @@ ALTER TABLE t_user ADD UNIQUE name_city_phone(USERNAME,CITY,PHONE) USING BTREE /
 
 - 覆盖索引的SQL查询，就是说select出来的字段都建立了索引 
 
-###### 1-1-2 HASH索引
+###### 1-1-2  建表时 USING HASH索引
 
-- Hash索引基于Hash表实现，只有查询条件精确匹配Hash索引中的所有列才会用到hash索引
+<span style="color:red">如果存储的数据重复度很低（也就是说基数很大），对该列数据以等值查询为主，没有范围查询、没有排序的时候，特别适合采用哈希索引</span>
+
+- Hash索引基于Hash表实现，只有查询条件**精确匹配Hash索引中的所有列**才会用到hash索引
 - 存储引擎会为Hash索引中的每一列都计算hash码，Hash索引中存储的即hash码，所以每次读取都会进行两次查询
 - Hash索引无法用于排序
 - Hash不适用于区分度小的列上，如性别字段
@@ -310,6 +318,8 @@ call insert_emp(1,500)
 
 
 ### LEFT JOIN
+
+（可以替代 **in**的条件语句）
 
 ​	**注意点：** 查询时需要判断是否是  根据主表的关联。  
 
