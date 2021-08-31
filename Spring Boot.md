@@ -870,7 +870,7 @@ java -jar spring-boot-02-config-02-0.0.1-SNAPSHOT.jar --spring.config.location=G
     扫描所有jar包类路径下  META-INF/spring.factories
     把扫描到的这些文件的内容包装成properties对象
     从properties中获取到EnableAutoConfiguration.class类（类名）对应的值，然后把他们添加在容器中
-
+    
     ```
 
     
@@ -2276,6 +2276,12 @@ spring.thymeleaf.cache=false
 
 
 ### 4）、拦截器进行登陆检查
+
+拦截器的实现方式有两种：
+
+* 拦截器实现**HandlerInterceptor**接口，重写三个方法：preHandle，postHandle，afterCompletion
+* 使用@WebFilter注解添加拦截路径， 实现**Filter**接口重写doFilter方法
+* Aop配置，并使用**自定义注解annotation**， 根据切面去拦截
 
 拦截器
 

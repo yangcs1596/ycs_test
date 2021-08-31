@@ -727,7 +727,11 @@ public class MyGlobalExceptionHandler {
 >
 > 2、加入IOC容器的方式有很多种，@Import注解就相对很牛皮了，<span style="color:red">**@Import注解可以用于导入第三方包**</span> ，当然@Bean注解也可以，但是@Import注解快速导入的方式更加便捷
 >
-> 3、@Import注解有三种用法
+> 3、@Import注解导入配置的三种类型
+> @Import支持 三种方式
+> 1.带有@Configuration的配置类(4.2 版本之前只可以导入配置类，4.2版本之后 也可以导入 普通类)
+> 2.ImportSelector 的实现
+> 3.ImportBeanDefinitionRegistrar 的实现
 
 * #### 第一种用法：直接填class数组
 
@@ -1129,7 +1133,30 @@ mapper.setSerializationInclusion(Include.NON_NULL);
    public List<Person> getPersonByTagid(Long tagId,String zz)
    ```
 
-   
+#### @Modelattribute注解
+
+* 注解在参数上，会将客户端传递过来的参数按名称注入到指定对象中
+
+```java
+public String register(@ModelAttribute User user,Model model) {
+    System.out.println(user.getBirthday());
+    model.addAttribute("user", user);
+    return "success";
+}
+```
+
+* 注解在方法上，如果有返回值，则自动将该返回值加入到ModelMap中
+
+```java
+@ModelAttribute
+public User getUser(Model model) {
+    User user=new User("吕蒙","123",new Address("江苏","南京"));
+    model.addAttribute("user", user);
+    return user;
+}
+```
+
+
 
 #### Springboot JDK8自定义注解
 
@@ -3323,7 +3350,109 @@ producer.send(msg);
 
 
 
+## Spark 
 
+spark通用数据处理引擎， 通用内存并行计算框架
+
+Hadoop 已经成了大数据技术的事实标,  I/O 成本很高
+
+学习地址： https://github.com/vector4wang/quick-spark-process
+
+```java
+//例子地址  
+//https://github.com/ZhuXS/Spring-Shiro-Spark/blob/master/Server/src/main/java/com/zhuxs/result/service/impl/WordCountServiceImpl.java
+@Bean
+public SparkSession sparkSession(){
+        return SparkSession
+                .builder()
+                .sparkContext(javaSparkContext().sc())
+                .appName("Java Spark SQL basic example")
+                .getOrCreate();
+}
+
+-----------------------------------------------
+#调用
+@Autowired
+private SparkSession sparkSession;
+
+// WordCount示例
+List<Word> wordList = Arrays.stream(tempWords).map(Word::new).collect(Collectors.toList());
+dataFrame = sparkSession.createDataFrame(wordList, Word.class);
+dataFrame.show();
+```
+
+```java
+创建DataFrame
+
+RelationalGroupedDataset groupedDataset = dataFrame.groupBy(col("word"));
+List<Row> rows = groupedDataset.count().collectAsList();
+return rows.stream().map(new Function<Row, Count>() {
+                @Override
+                public Count apply(Row row) {
+                    return new Count(row.getString(0),row.getLong(1));
+                }
+            }).sorted(new CountComparator()).collect(Collectors.toList());
+```
+
+### Hadoop
+
+总结一句话：Hadoop就是存储海量数据和分析海量数据的工具。
+
+
+
+```
+hadoop配置完成，hdfs负责分布式存储，mapreduce负责分布式计算,yarn负责资源调度，基本的（伪）分布式环境
+```
+
+
+
+* **关键技术**
+
+**HDFS（Hadoop Distributed File System）：**
+
+既可以是Hadoop 集群的一部分，也可以是一个独立的分布式文件系统，是开源免费的大数据处理文件存储系统。
+
+* **能干什么**
+
+大数据存储：分布式存储
+
+日志处理：擅长日志分析
+
+ETL:数据抽取到oracle、mysql、DB2、mongdb及主流数据库
+
+机器学习: 比如Apache Mahout项目
+
+搜索引擎:Hadoop + lucene实现
+
+数据挖掘：目前比较流行的广告推荐，个性化广告推荐
+
+Hadoop是专为离线和大规模数据分析而设计的，并不适合那种对几个记录随机读写的在线事务处理模式。
+
+### Hbase
+
+```
+HBase和Redis的区别有哪些？
+HBase和Redis的功能上比较相似。都是nosql类型的数据库。但是在适用场景上，两者还是有比较明显的区别的。
+
+1）读写性能
+HBase写快读慢，HBase的读取时长通常是几毫秒，而Redis的读取时长通常是几十微秒。性能相差非常大。
+2）数据类型
+HBase和Redis都支持KV类型。但是Redis支持List、Set等更丰富的类型。
+3）数据量
+Redis支持的数据量通常受内存限制，而HBase没有这个限制，可以存储远超内存大小的数据
+4）部署难易
+HBase部署需要依赖hadoop、zookeeper等服务，而Redis的部署非常简单。
+5）数据可靠性
+HBase采用WAL，先记录日志再写入数据，理论上不会丢失数据。而Redis采用的是异步复制数据，在failover时可能会丢失数据。
+6）应用场景
+HBase适合做大数据的持久存储，而Redis比较适合做缓存。如果数据丢失是不能容忍的，那就用只能用HBase；如果需要一个高性能的环境，而且能够容忍一定的数据丢失，那完全可以考虑使用Redis。
+
+HBase可以用来做数据的固化，也就是数据存储，做这个他非常合适。Redis适合做cache。可以用HBase+Redis实现数据仓库加缓存数据库，速度和扩展性都兼顾。
+```
+
+
+
+------
 
 ## LINUX
 
@@ -4393,6 +4522,33 @@ java -jar  spring-boot-demo-0.0.1-SNAPSHOT.jar --SOME_ENV=always --spring.profil
 ```
 java -jar *.jar（*替换为需启动的jar包名称)
 ```
+
+命令详解
+
+```shell
+SpringBoot 启动参数设置环境变量、JVM参数、tomcat远程调试
+java命令的模版：java [-options] -jar jarfile [args...]
+
+先贴一下我的简单的启动命令：
+
+java -Xms128m -Xmx256m -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=8081,suspend=n -jar /data/app/test.jar --spring.profiles.active=dev &
+
+其中：
+
+-Xms128m 设置的是JVM堆最小内存为128m
+-Xmx256m 设置的是JVM堆最大内存为256m
+这里有个问题是-Xmx指定的内存不包括jvm运行中使用的本地内存，所以如果有NIO等涉及到本地内存的情况时，该java进程占用的总内存会超过-Xmx设定的数值
+-Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=8081,suspend=n
+设置debug模式，允许tomcat远程连接服务器调试，调试端口可指定，此处为8081
+/data/app/test.jar 指定需要执行的jar包的路径
+--spring.profiles.active=dev 设定SpringBoot运行环境为dev环境
+
+& 后台模式执行
+```
+
+
+
+
 
 
 

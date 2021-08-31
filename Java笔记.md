@@ -1485,7 +1485,11 @@ Mono.never().subscribe(System.out::println);
 
 #### 什么是ThreadLocal变量？
 
-ThreadLocal是Java里一种特殊的变量。每个线程都有一个ThreadLocal就是每个线程都拥有了自己独立的一个变量，竞争条件被 彻底消除了。它是为创建代价高昂的对象获取线程安全的好方法，比如你可以用ThreadLocal让SimpleDateFormat变成线程安全的，因 为那个类创建代价高昂且每次调用都需要创建不同的实例所以不值得在局部范围使用它，如果为每个线程提供一个自己独有的变量拷贝，将大大提高效率。首先，通 过复用减少了代价高昂的对象的创建个数。其次，你在没有使用高代价的同步或者不变性的情况下获得了线程安全。线程局部变量的另一个不错的例子是 ThreadLocalRandom类，它在多线程环境中减少了创建代价高昂的Random对象的个数。
+ThreadLocal<T>是Java里一种特殊的变量。每个线程都有一个ThreadLocal就是每个线程都拥有了自己独立的一个变量，竞争条件被 彻底消除了。它是为创建代价高昂的对象获取线程安全的好方法，比如你可以用ThreadLocal让SimpleDateFormat变成线程安全的，因 为那个类创建代价高昂且每次调用都需要创建不同的实例所以不值得在局部范围使用它，如果为每个线程提供一个自己独有的变量拷贝，将大大提高效率。首先，通 过复用减少了代价高昂的对象的创建个数。其次，你在没有使用高代价的同步或者不变性的情况下获得了线程安全。线程局部变量的另一个不错的例子是 ThreadLocalRandom类，它在多线程环境中减少了创建代价高昂的Random对象的个数。
+
+常用的方法 get,  set ,remove
+
+备注：threadLocal每次取值之后，是为了避免内存溢出。
 
 #### Java中堆和栈有什么不同？
 
@@ -2104,6 +2108,42 @@ String.split("分割1|分割2");
 
 ### 5 集合 
 
+#### 基础数据结构介绍
+
+<span style="color:red">介绍下基础数据结构</span>
+
+- 枚举（Enumeration）
+
+- 位集合（BitSet）
+
+- 向量（Vector） 
+
+  是同步的，所以线程安全
+
+- 栈（Stack） 
+
+  vector的一个子类 ， 后进先出
+
+  推荐用Deque替代stack 堆栈操作方法：push()、pop()、peek()。
+
+  `Queue`是队列，只能一头进，另一头出
+
+  `Deque`是双向队列
+
+  ```java
+  Queue queue = new LinkedList()`或`Deque deque = new LinkedList()
+  ```
+
+- 字典（Dictionary）
+
+  已过期，业务实际用map
+
+- 哈希表（Hashtable） 支持同步，线程安全
+
+- 属性（Properties） 继承hashTable
+
+
+
 #### 1、List,Set继承接口Collection
 
 * 存储对象，集合长度可变，可存储不同类型对象
@@ -2274,6 +2314,16 @@ public V put(K key, V value) {
         addEntry(hash, key, value, i);  return null;  
     }  
 ```
+
+
+
+### 5-1 Deque双向队列 和栈stack
+
+```java
+
+```
+
+
 
 
 
@@ -2577,6 +2627,12 @@ spring-boot-configuration-processor依赖就可以做到，它的基本原理是
 相当于/*只有后面一级
 
 /** 可以包含多级
+
+------
+
+
+
+
 
 ------
 
@@ -2906,6 +2962,44 @@ public class XX(){
     }
 }
 ```
+
+##### `@SneakyThrows` 异常包装用法
+
+```java
+public class SneakyThrowsExample implements Runnable {
+  //用法1
+  @SneakyThrows(UnsupportedEncodingException.class)
+  public String utf8ToString(byte[] bytes) {
+    return new String(bytes, "UTF-8");
+  }
+  //用法二
+  @SneakyThrows
+  public void run() {
+    throw new Throwable();
+  }
+}
+```
+
+##### `@Cleanup` 清理流对象,不用手动去关闭流
+
+```java
+@Cleanup
+OutputStream outStream = new FileOutputStream(new File("text.txt"));
+@Cleanup
+InputStream inStream = new FileInputStream(new File("text2.txt"));
+byte[] b = new byte[65536];
+while (true) {
+   int r = inStream.read(b);
+   if (r == -1) break;
+   outStream.write(b, 0, r); 
+}
+```
+
+##### `@FieldDefaults` 设置属性的使用范围，如private、public等，也可以设置属性是否被final修饰。
+
+##### `@UtilityClass`工具类再也不用定义static的方法了，直接就可以Class.Method 使用
+
+
 
 
 
