@@ -5338,6 +5338,278 @@
             }
           ],
           "chnname": "sys_role_permission"
+        },
+        {
+          "title": "sys_dict",
+          "fields": [
+            {
+              "name": "id",
+              "type": "DefaultString",
+              "remark": "主键",
+              "chnname": "主键",
+              "notNull": true,
+              "pk": true
+            },
+            {
+              "name": "parent_id",
+              "type": "DefaultString",
+              "remark": "父级编号",
+              "chnname": "父级编号",
+              "notNull": true,
+              "defaultValue": "'0'"
+            },
+            {
+              "name": "dict_code",
+              "type": "DefaultString",
+              "remark": "字典编码",
+              "chnname": "字典编码",
+              "notNull": true
+            },
+            {
+              "name": "dict_name",
+              "type": "Name",
+              "remark": "字典描述",
+              "chnname": "字典描述",
+              "notNull": true
+            },
+            {
+              "name": "enable",
+              "type": "YesNo",
+              "remark": "0否1是",
+              "chnname": "是否启用",
+              "notNull": true
+            },
+            {
+              "name": "sort_num",
+              "type": "Integer",
+              "remark": "排序",
+              "chnname": "排序",
+              "notNull": true,
+              "defaultValue": "0"
+            },
+            {
+              "name": "record_version",
+              "type": "Integer",
+              "remark": "乐观锁",
+              "chnname": "乐观锁"
+            },
+            {
+              "name": "created_user",
+              "type": "IdOrKey",
+              "remark": "创建人",
+              "chnname": "创建人"
+            },
+            {
+              "name": "created_date",
+              "type": "DateTime",
+              "remark": "",
+              "chnname": "创建时间"
+            },
+            {
+              "name": "created_appId",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建应用"
+            },
+            {
+              "name": "updated_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "更新人"
+            },
+            {
+              "name": "updated_date",
+              "type": "DateTime",
+              "remark": "",
+              "chnname": "更新时间"
+            },
+            {
+              "name": "updated_appId",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "更新应用"
+            },
+            {
+              "name": "deleted",
+              "type": "YesNo",
+              "remark": "",
+              "chnname": "删除标记"
+            }
+          ],
+          "indexs": [],
+          "headers": [
+            {
+              "fieldName": "chnname",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "name",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "type",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "dataType",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "remark",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "pk",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "notNull",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "autoIncrement",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "defaultValue",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "relationNoShow",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "uiHint",
+              "relationNoShow": true
+            }
+          ],
+          "chnname": "数据字典单表设计"
+        }
+      ],
+      "graphCanvas": {
+        "nodes": [],
+        "edges": []
+      },
+      "associations": []
+    },
+    {
+      "name": "generate",
+      "chnname": "代码生成器",
+      "entities": [
+        {
+          "title": "gen_database_config",
+          "fields": [
+            {
+              "name": "id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "主键",
+              "notNull": true,
+              "pk": true
+            },
+            {
+              "name": "sort_num",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "排序"
+            },
+            {
+              "name": "record_version",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "乐观锁"
+            },
+            {
+              "name": "created_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "创建人"
+            },
+            {
+              "name": "created_date",
+              "type": "DateTime",
+              "remark": "",
+              "chnname": "创建时间"
+            },
+            {
+              "name": "created_appId",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建应用"
+            },
+            {
+              "name": "updated_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "更新人"
+            },
+            {
+              "name": "updated_date",
+              "type": "DateTime",
+              "remark": "",
+              "chnname": "更新时间"
+            },
+            {
+              "name": "updated_appId",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "更新应用"
+            },
+            {
+              "name": "deleted",
+              "type": "YesNo",
+              "remark": "",
+              "chnname": "删除标记"
+            }
+          ],
+          "indexs": [],
+          "headers": [
+            {
+              "fieldName": "chnname",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "name",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "type",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "dataType",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "remark",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "pk",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "notNull",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "autoIncrement",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "defaultValue",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "relationNoShow",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "uiHint",
+              "relationNoShow": true
+            }
+          ],
+          "chnname": "数据库配置"
         }
       ],
       "graphCanvas": {
@@ -5940,40 +6212,58 @@
         "pk": true
       },
       {
-        "name": "sort",
+        "name": "sort_num",
         "type": "Integer",
         "remark": "",
         "chnname": "排序"
       },
       {
-        "name": "version",
+        "name": "record_version",
         "type": "Integer",
         "remark": "",
         "chnname": "乐观锁"
       },
       {
-        "name": "created_by",
+        "name": "created_user",
         "type": "IdOrKey",
         "remark": "",
         "chnname": "创建人"
       },
       {
-        "name": "created_time",
+        "name": "created_date",
         "type": "DateTime",
         "remark": "",
         "chnname": "创建时间"
       },
       {
-        "name": "updated_by",
+        "name": "created_appId",
+        "type": "DefaultString",
+        "remark": "",
+        "chnname": "创建应用"
+      },
+      {
+        "name": "updated_user",
         "type": "IdOrKey",
         "remark": "",
         "chnname": "更新人"
       },
       {
-        "name": "updated_time",
+        "name": "updated_date",
         "type": "DateTime",
         "remark": "",
         "chnname": "更新时间"
+      },
+      {
+        "name": "updated_appId",
+        "type": "DefaultString",
+        "remark": "",
+        "chnname": "更新应用"
+      },
+      {
+        "name": "deleted",
+        "type": "YesNo",
+        "remark": "",
+        "chnname": "删除标记"
       }
     ],
     "defaultFieldsType": "1",

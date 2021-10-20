@@ -1,22 +1,22 @@
-*互联网技术
+### 互联网技术
 
-服务框架：Dubbo, zookeeper, Rest 服务
+服务框架：Dubbo, Rest 服务
 
-缓存：Redis, ehcache
+内存缓存：Redis, ehcache
 
-消息中间件：ActiveMQ ,kafka
+消息中间件：ActiveMQ ,kafka，rabbitmq, RocketMq
 
 分布式文件：FastDFS(小文件快)， HDFS(基于hdoop, 大文件数据处理好点)
 
-安全框架：Apache shiro
+安全框架：Apache shiro, spring-secutity, JWT Token, OAuth
 
 任务调度：quartz ， xxl-job项目
 
-持久层框架：mybatis， mybatis-plus, hibernate 
+持久层框架：mybatis， mybatis-plus,  hibernate 
 
 日志 : log4j，slf4j
 
-项目基础搭建：spring, springmvc
+项目基础搭建：spring, springmvc, springboot, springcloud
 
 环境搭建：linux
 
@@ -24,11 +24,11 @@
 
 高并发分流技术: Nginx
 
-模版引擎: FreeMarker  
+模版引擎: FreeMarker ,  
 
-服务注册中心、配置中心: nacos,   springcloud config
+服务注册中心、配置中心: nacos,   springcloud config, zookeeper
 
-服务的熔断降级： Netflix的开源组件Hystrix
+服务的熔断降级： Netflix的开源组件Hystrix, feign
 
 网关技术： springcloud Gateway技术  Zuul网关
 
@@ -37,6 +37,8 @@
 代码规范： sonarqube、 审查 upsource
 
  **Feign**旨在使编写Java Http客户端变得更容易。 
+
+**其它中间件工具**：  Logstash ， ElasticSearch ，
 
 ```shell
 Zuul：
@@ -696,6 +698,14 @@ Object obj=method.invoke(clazz.newInstance(), methodparams);//obj为clazz类的m
 
 备注： 根据反射 对业务代码的统一处理
 
+##### <span style="color:red">1-1-2 知识点 被忽略的null异常</span>
+
+```java
+1、java switch 参数不能是null，swicth(null)会报java.lang.NullPointerException异常
+2、变量==1 如果变量为null, 则会抛出 java.lang.NullPointerException异常
+3、equals 一般常量放在前面比较
+```
+
 
 
 #### 1-2 成员变量
@@ -1141,6 +1151,23 @@ finally{
 
 #### 2-1 多线程java多线程之Future和FutureTask 实现Callable
 
+* #### newCachedThreadPool
+
+  一句话说清：动态创建线程和移除60s不用的老线程。
+  适合的场景：拥有大量执行时间短的异步任务。
+
+* #### newFixedThreadPool
+
+  一句话说清：创建固定数量的线程，如果全部线程被占用，新进的任务需进入阻塞队列等待。
+
+* #### newScheduledThreadPool
+
+  一句话说清：可以安排任务延迟多少时间后执行或周期执行
+
+* #### newSingleThreadExecutor
+
+  一句话说清：创建有且只有一个线程的线程池，除非遇到意外终止，否则一直都是这个线程在工作，并保证等待线程顺序执行。
+
 而Callable的接口定义如下
 
 ```html
@@ -1210,7 +1237,29 @@ try {
     log.error("生成签名失败", e);
     throw new BaseException(ERROR, "生成签名失败", e);
 }
+
 ```
+
+
+
+```java
+/**线程方式 这个方式不好，需要手动创建线程池**/
+Executor threadPool = Executors.newFixedThreadPool(5);
+for(int i = 0 ;i < 10 ; i++) {
+    threadPool.execute(new Runnable() {
+        public void run() {
+            System.out.println(Thread.currentThread().getName()+" is running");
+        }
+    });
+}
+
+ExecutorService pool = new ThreadPoolExecutor(1, 2, 1000, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<Runnable>(),Executors.defaultThreadFactory(),new ThreadPoolExecutor.AbortPolicy());
+for(int i=0;i<20;i++) {
+    pool.execute(new ThreadTask(i));
+}  
+```
+
+
 
 #### 2-2 函数式接口
 
@@ -2068,7 +2117,7 @@ System.getProperty("java.io.tmpdir")
 
 ### 4 StringBuffer
 
-* 能使用StringBuffer就使用这个   线程同步  不安全
+* 能使用StringBuffer就使用这个   线程同步,支持并发  安全
 * StringBuilder   可变的字符序列  比StringBuilder快，线程不同步的
 * 一般建议使用StringBuilder   
 
@@ -2627,6 +2676,21 @@ spring-boot-configuration-processor依赖就可以做到，它的基本原理是
 相当于/*只有后面一级
 
 /** 可以包含多级
+
+
+
+### 15 classpath:和classpath\*:的含义
+
+```java
+1、classpath：表示从类路径中加载资源，classpath:和classpath:/是等价的，都是相对于类的根路径。资源文件库标准的在文件系统中，也可以在JAR或ZIP的类包中。
+
+2、classpath*：假设多个JAR包或文件系统类路径都有一个相同的配置文件，
+classpath:只会在第一个加载的类路径下查找，而classpath*:会扫描所有这些JAR包及类路径下出现的同名文件。
+  注意：用classpath*:需要遍历所有的classpath，所以加载速度是很慢的；因此，在规划的时候，应该尽可能规划好资源文件所在的路径，
+尽量避免使用classpath*。
+```
+
+
 
 ------
 
@@ -3290,6 +3354,42 @@ public class SpringUtil implements ApplicationContextAware {
 }
 ```
 
+## Spring的扩展接口了解（启动只执行一次）
+
+```java
+BeanPostProcessor  ---对象初始化触发
+BeanFactoryPostProcessor   --在spring容器初始化之后触发，而且只会触发一次.
+BeanDefinitionRegistryPostProcessor    
+
+```
+
+## Springboot的使用gizp 压缩配置
+
+### 1. 配置
+
+SpringBoot 默认是不开启 gzip 压缩的，需要我们手动开启，在配置文件中添加两行
+
+```yml
+server:
+  compression:
+    enabled: true
+    min-response-size: 1024
+    mime-types: application/json,application/xml,text/html,text/plain,text/css,application/x-javascript
+#注意下上面配置中的mime-types，在 spring2.0+的版本中，默认值如下，所以一般我们不需要特意添加这个配置
+```
+
+Nginx开启gzip压缩
+
+```nginx
+gzip on; #开启Gzip
+gzip_min_length 1k; #不压缩临界值，大于1K的才压缩，一般不用改
+gzip_buffers 4 16k;
+#gzip_http_version 1.0;
+gzip_comp_level 2; #压缩级别，1-10，数字越大压缩的越好，时间也越长
+gzip_types text/plain application/x-javascript text/css application/xml text/javascript application/x-httpd-php image/jpeg image/gif image/png;
+gzip_vary off;
+```
+
 
 
 ## Mybatis
@@ -3839,6 +3939,61 @@ public class FileExportParams implements Serializable{
 }
 ```
 
+## Spring的xml的一些配置详解
+
+
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.3.xsd">
+
+    <import resource="引入其他bean xml配置文件" />
+    <bean id="bean标识" class="玩转类型名称"/>
+    <alias name="bean标识" alias="别名" />
+</beans>
+
+bean配置
+格式
+<bean id="bean唯一标识" name="bean名称" class="完整类型名称" factory-bean="工厂bean名称" factory-method="工厂方法"/>
+<!-- bean名称：user4，多个别名：[user4_1,user4_2,user4_3,user4_4] -->
+<bean id="user4" name="user4_1,user4_2;user4_3 user4_4" class="com.javacode2018.lesson001.demo2.UserModel"/>
+
+scop的说明https://www.itdaan.com/blog/2014/05/08/461c414960ac472bcff63dd95c19dee5.html
+<!--
+constructor-arg：通过构造函数注入。 
+property：通过setter对应的方法注入。-->
+使用方式一：
+<bean id="student" class="com.rc.sp.Student">
+    <constructor-arg name="id" value="1"/>
+    <constructor-arg name="name" value="student"/>
+    <constructor-arg name="dream">
+        <list>
+            <value>soldier</value>
+            <value>scientist</value>
+            <value>pilot</value>
+        </list>
+    </constructor-arg>
+    <constructor-arg name="score">
+        <map>
+            <entry key="math" value="90"/>
+            <entry key="english" value="85"/>
+        </map>
+    </constructor-arg>
+    <constructor-arg name="graduation" value="false"/>
+</bean>
+说明：
+<constructor-arg name="id" value="1"/>也可以改成<constructor-arg index="0" value="1"/>方式；boolean的值既可以用0/1填充，也可以用true/false填充。
+
+使用方式二：
+<constructor-arg type="java.lang.String" value="classpath:application.properties" />
+使用方式三：
+<constructor-arg ref="spellChecker"/> ref指向另一个bean
+
+```
+
 
 
 ## 附录
@@ -4144,6 +4299,10 @@ public class InitComponent implements ServletContextListener,ApplicationContextA
     <property name="prefix" value="/WEB-INF/jsp/" />
     <property name="suffix" value=".jsp"/>
 </bean>
+
+<!--
+constructor-arg：通过构造函数注入。 
+property：通过setter对应的方法注入。-->
 
 <!--3 文件上传配置 -->
 <bean id="multipartResolver" 		  class="org.springframework.web.multipart.commons.CommonsMultipartResolver">

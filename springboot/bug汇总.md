@@ -361,22 +361,5 @@ public class MyLogoutSuccessHandler implements LogoutSuccessHandler {
 
 
 
-# 前端小知识
-
-## span的编辑
-
-使div，span等标签变为可以编辑里面的内容，只需要设置属性contenteditable=”true”就可以了。
-如
-`<span contenteditable="true">昵称</span>`
-
-## vue表头居中，内容居左/居右等
-
-```vue
-统一设置设置表头居中【:header-cell-style="{'text-align':'center'}"】
-统一设置设置内容列居中【:cell-style="{'text-align':'center'}"】
-
-<el-table :header-cell-style="{'text-align': 'center'}">
-```
-
 
 

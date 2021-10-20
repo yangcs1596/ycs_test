@@ -299,7 +299,7 @@ vim .git/config
 
 #### git的cherry pick功能
 
-###### 合并分支有两种操作:
+合并分支有两种操作:
 
 一种情况是你需要将你分支的所有代码变动,此时可以采用分支合并
 merge
@@ -359,6 +359,17 @@ merge
 ### IDEA里SVN配置
 
 - https://blog.csdn.net/hello__word__/article/details/81773815
+
+checkout depth的几个含义
+
+```
+1、Fully recursive							——全递归：检出完整的目录树，包含所有的文件或子目录。
+2、Immediate children,including folders		——直接子节点，包含文件夹：检出目录，包含其中的文件或子目录，但是不递归展开子目录。
+3、Only file chlidren						——仅文件子节点：检出指定目录，包含所有文件，但是不检出任何子目录。
+4、Only this item							——仅此项：只检出目录。不包含其中的文件或子目录
+```
+
+
 
 ### Dubbo 
 
@@ -434,11 +445,30 @@ spring:
 * **可视化工具的控制台语法**
 
 ```cmd
+连接redis命令 /bin/redis-cli
+>> redis-cli -h 127.0.0.1 -p 6379 -a 密码 -u 用户名
+或者后续输入密码
+>>auth <password>
+
 》get key 查询返回对应的值，否则返回null
-》set key value 增加键值对
+》set key value 增加键值对 set key value ex 300 设置过期时间或者单独 expire key 300
+》ttl key 查看过期时间
 》exists key 判断对应的key是否存在 存在返回1，否则返回0
 》type key 查看key的类型
 》del key 删除对应的key
+
+
+hset key field value   单个设置  
+ hget key field   获取map中指定key的值 
+HMSET key field value [field value ...]   多个设置 
+HMGET key field [field ...]  获取map中多个key的值 
+HGETALL key   获取map中所有的数据 
+hdel key field [field ...]  删除map中指定key的数据 
+HINCRBY key field increment   对map中 指定key值进行加法计算 
+ hlen key     获取map的大小 
+hkeys key    获取map中所有的key值 
+ HVALS key   获取map中所有的value值 
+HEXISTS key field  判断map中指定key是否存在
 ```
 
 * java的opsForValue().的方法说明
@@ -962,12 +992,12 @@ public class TokenCheckInterceptor {
     public TokenCheckInterceptor() {
         System.out.println("===>check start");
     }
-
+//@Pointcut("execution( * com.zyxx.*.controller.*.*(..))")
     @Pointcut("@annotation(com.xf.harbor.config.TokenCheck)")
     private void anyMethod() {
     }
 
-    @Around("anyMethod()")
+    @Around("anyMethod()") //环绕通知 @Around  ， 当然也可以使用 @Before (前置通知)  @After (后置通知)
     public Object checkRequestHead(ProceedingJoinPoint joinPoint) throws Throwable {
         logger.debug("===>check access token start:{}", joinPoint.getArgs());
         long begin = System.nanoTime();
@@ -3109,7 +3139,7 @@ void basicPublish(String exchange, String routingKey, boolean mandatory, boolean
         private String clusterId;
 ```
 
-### nginx笔记
+## nginx笔记
 
 #### 安装
 
@@ -3152,9 +3182,9 @@ vim /usr/local/nginx/conf/nginx.conf
 
 报错了，error while loading shared libraries: libpcre.so.1: cannot open shared object file: No such file or directory，按照下面方式解决
 
-```
+```shell
 1.用whereis libpcre.so.1命令找到libpcre.so.1在哪里
-2.用ln -s /usr/local/lib/libpcre.so.1 /lib64命令做个软连接就可以了
+2.用ln -s /usr/local/lib/libpcre.so.1 /lib64命令做个 软连接就可以了
 3.用sbin/nginx启动Nginx
 4.用ps -aux | grep nginx查看状态
 # whereis libpcre.so.1
@@ -3226,6 +3256,9 @@ http {
            #root path;  #根目录
            #index vv.txt;  #设置默认页
            proxy_pass  http://mysvr;  #请求转向mysvr 定义的服务器列表
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr
+           proxy_read_timeout 3600;
            deny 127.0.0.1;  #拒绝的ip
            allow 172.18.5.54; #允许的ip           
         } 
@@ -3248,8 +3281,36 @@ http {
 
 **2、nginx作为反向代理服务器配置**
 
-```
-`location ~ ^/test/{``   ``proxy_pass http:``//hello;``   ``proxy_read_timeout 180;``   ``client_max_body_size  1000m;``   ``proxy_redirect http:``//hello http://127.0.0.1:8001;` `}`
+```json
+#反向代理示例
+upstream test {
+   server 192.168.10.20;
+}
+
+server {
+   listen   80;
+   server_name  192.168.10.20;
+   index  index.html index.htm;
+   location / {
+         proxy_pass http://test;
+	}
+}
+#正向代理实例
+server {
+
+    resolver 114.114.114.114;       #指定DNS服务器IP地址 
+    listen 80;
+    location / {
+        proxy_pass http://$host$request_uri;     #设定代理服务器的协议和地址 
+        proxy_set_header HOST $host;
+        proxy_buffers 256 4k;
+        proxy_max_temp_file_size 0k;
+        proxy_connect_timeout 30;
+        proxy_send_timeout 60;
+        proxy_read_timeout 60;
+        proxy_next_upstream error timeout invalid_header http_502;
+    }
+}
 ```
 
 proxy_redirect参数说明：
@@ -3281,17 +3342,17 @@ rabbitmqctl start_app
 rabbitmqctl cluster_status
 ```
 
-开放防火墙端口号
+### Linux开放防火墙端口号
 
-```
-firewall-cmd --zone=public --add-port=15672/tcp --permanent #网页端口
+```shell
+firewall-cmd --zone=public --add-port=2181/tcp --permanent #网页端口
 firewall-cmd --zone=public --add-port=5672/tcp --permanent  #AMQP端口,java使用
 firewall-cmd --reload # 重新加载
 //关闭某个端口
 "sudo iptables -A INPUT -p tcp --dport $PORT -j DROP"
 "sudo iptables -A OUTPUT -p tcp --dport $PORT -j DROP" 
 //linux或者
-/sbin/iptables -I INPUT -p tcp --dport 5672 -j ACCEPT  
+/sbin/iptables -I INPUT -p tcp --dport 39807 -j ACCEPT  
 /sbin/iptables -I INPUT -p tcp --dport 15672 -j ACCEPT
 备注一下
 /sbin/iptables -I INPUT -p tcp --dport 8011 -j ACCEPT #开启8011端口 
@@ -3304,11 +3365,29 @@ firewall-cmd --reload # 重新加载
 可以通过"netstat -anp" 来查看哪些端口被打开
 
 //添加入站规则
+service iptables status
 启动指令:service iptables start   
 重启指令:service iptables restart   
 关闭指令:service iptables stop 
 
 iptables -A OUTPUT -s 192.168.88.94 -p tcp -m tcp --sport 15674 -j ACCEPT 
+```
+
+* 防火墙端口访问限制
+
+编辑`/etc/sysconfig/iptables`，添加
+
+```js
+-A INPUT -m state --state NEW -m tcp -p tcp -s 127.0.0.1 --dport 6379 -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp -s 126.212.173.185 --dport 6379 -j ACCEPT
+#如果访问ip没有限制，就不需要添加-s ip地址了
+#对了，一定要在最后添加
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+
+COMMIT
+#防火墙重启命令
+ service iptables start
 ```
 
 ## RocketMQ的使用
@@ -3396,6 +3475,17 @@ return rows.stream().map(new Function<Row, Count>() {
 
 ### Hadoop
 
+hadoop能干什么
+
+* 大数据存储：分布式存储 利用的hdfs
+
+* 日志处理：擅长日志分析
+* ETL:数据抽取到oracle、mysql、DB2、mongdb及主流数据库
+* 机器学习: 比如Apache Mahout项目
+* 搜索引擎:Hadoop + lucene实现
+* 数据挖掘：目前比较流行的广告推荐，个性化广告推荐
+* Hadoop是专为离线和大规模数据分析而设计的，并不适合那种对几个记录随机读写的在线事务处理模式。
+
 总结一句话：Hadoop就是存储海量数据和分析海量数据的工具。
 
 
@@ -3450,15 +3540,212 @@ HBase适合做大数据的持久存储，而Redis比较适合做缓存。如果�
 HBase可以用来做数据的固化，也就是数据存储，做这个他非常合适。Redis适合做cache。可以用HBase+Redis实现数据仓库加缓存数据库，速度和扩展性都兼顾。
 ```
 
+**用法：** springboot集成phoenix操作HBASE
+
+* 1、需要将原有 HBase 中的表做映射才能后使用 Phoenix 操作。
+  2、Phoenix 区分大小写，切默认情况下会将小写转成大写，所以表名、列簇、列名需要用双引号。
+  3、Phoenix 4.10 版本之后，在创建表映射时需要将 COLUMN_ENCODED_BYTES 置为 0。
+  4、删除映射表，会同时删除原有 HBase 表。所以如果只做查询炒作，建议做视图映射。
+
+
+#### phoenix命令
+
+https://www.jianshu.com/p/b7ec14a67a06?from=groupmessage@
+
+```mysql
+#登录./sqlline.py
+./sqlline.py localhost:2181:/hbase-unsecure
+#退出
+!quit
+!exit
+#查看当前存在的表
+!tables
+select * from SYSTEM.CATALOG;
+!desc SYSTEM.CATALOG
+#建表语句
+通过Phoenix创建的表,必须指定primary key(对应Hbase的rowkey)
+//设置联合主键
+drop table if exist <tableName>
+create table xx
+ ....
+CONSTRAINT PK PRIMARY KEY (EMAIL,id,name));
+#添加字段
+ALTER TABLE <tableNmae> ADD <column>  <columnType>;
+
+#更新upsert  (实际含义为 update + insert)
+在upsert语句中制定存在的idcardnum即可实现更新
+Phoenix中不存在update的语法关键字，而是upsert
+upsert into table (column1...) values(value1....)
+查询更新
+uppsert into table (colunm1...) select value1... from table where condition
+
+#删除表
+drop table ljc.student;
+
+#分页 offset + limit
+SELECT * FROM TEST LIMIT pageSize OFFSET (pageNum - 1)*pageSize;
+
+#视图
+cteate table ***
+```
+
+
+
+#### HBase命令操作
+
+分区概念： https://www.cnblogs.com/frankdeng/p/9310356.html
+
+```bash
+#列举命名空间
+list_namespace
+#获取命名空间描述 describe_namespace ‘空间名’
+#查看命名空间下的所有表 list_namespace_tables '空间'
+#创建命名空间create_namespace ‘空间’
+#删除命名空间drop_namespace ‘空间’
+
+#建表
+create '表名', '列名1', '列名2', '列名3'
+create '表名', {NAME=>'列名', VERSIONs=>版本号, TTL=>过期时间, BLOCKACHE=true}
+#创建region预分区存储数据
+create 'table3','f1', { NUMREGIONS => 10, SPLITALGO => 'HexStringSplit' } 
+#指定命名空间
+create 'ns_school:tbl_student','info'
+#删除表drop '表名'
+#删除满足正则表达式 drop_all 'ns:t.*'
+
+#添加列
+alter '表名','列名'
+#删除列
+delete '表名',  {NAME=>'列名', METHOD=>'delete'}
+#异步修改
+alter_async ....
+alter_status '表名' #查看异步执行状态
+#获取表描述
+describe '表名'
+
+#全表扫描scan '表名'
+ get 't1','rowkey001', 'f1:col1'
+scan '表名', {COLUMN=> 列名}
+分页
+ scan  'stu2',{COLUMNS => 'cf1:age', LIMMIT 10, STARTROW => 'xx'}
+#清空整个表的数据truncate,先disable表，然后再drop表，最后重新create表
+truncate '表名'
+#查询表中有多少行count
+count '表名'
+
+#linux列举所有表
+base>> list
+#是否存在表明
+exists '表名'
+#启用表和禁用表
+enable '表名' ;  disable '表名'
+is_disabled '表名' #查看状态
+#禁用和启用满足正则表达式
+enable_all  disable_all 't.8'
+
+#进入hbase shell
+#退出exit
+```
+
+
+
+### Kafka 
+
+springboot集成
+
+```xml
+<!--引入kafak和spring整合的jar-->
+<dependency>
+    <groupId>org.springframework.kafka</groupId>
+    <artifactId>spring-kafka</artifactId>
+    <version>2.2.7.RELEASE</version>
+</dependency>
+```
+
+```java
+//生产者
+@Component
+public class Product {
+      @Autowired
+      private KafkaTemplate kafkaTemplate;
+
+      public void send(String name){
+            User u=new User();
+            u.setName(name);
+            u.setAge(11);
+            kafkaTemplate.send("user", JSON.toJSONString(u));
+      }
+}
+
+//消费者
+@Component
+public class Consumer {
+    @KafkaListener(topics = "user")
+    public void consumer(ConsumerRecord consumerRecord){
+        Optional<Object> kafkaMassage = Optional.ofNullable(consumerRecord.value());
+        if(kafkaMassage.isPresent()){
+            Object o = kafkaMassage.get();
+            System.out.println(o);
+        }
+
+    }
+}
+```
+
+
+
+
+
 
 
 ------
 
 ## LINUX
 
-### 查看日志的一些linux命令
+### 文件操作
 
+```shell
+#新增文件
+touch fileName
+#查看当前路径
+pwd
+#创建目录
+mkdir /tmp/test
+#删除文件
+rm -rf '文件夹'  //千万注意不能使用【 rm -rf /* 】会导致系统瘫痪
+#复制文件
+cp /root/a.txt  /tmp/
+#移动文件或者修改文件名
+mv source target
 ```
+
+### 全局环境变量设置
+
+```shell
+#一种全局默认的路径为/etc/profile在profile中，它默认会再加载/etc/bash.bashrc。
+#另一种用户自己的就是$HOME目录下的.profile它默认会载加载.bashrc文件。
+#
+view /etc/profile
+export PATH="变量路径"
+
+#修改.bashrc
+ vim /root/.bashrc
+export PATH="变量路径"
+
+#关键字
+nohup 表示不关闭，后台运行进程
+kill -9  进程号
+
+#直接在shell下用export命令修改
+#export PATH="$var_PATH"
+#export 可查看当前系统下的所有环境变量.
+```
+
+
+
+### 一些linux命令
+
+```shell
 # 查看文件，实时显示最后一页
 tail  -f  filename        
 # 实时查看日志文件 后一百行
@@ -3490,7 +3777,11 @@ rm -rf '文件夹'
 　-i或–interactive 　删除既有文件或目录之前先询问用户。 
 　-r或-R或–recursive 　递归处理，将指定目录下的所有文件及子目录一并处理。 
 　-v或–verbose 　显示指令执行过程。 删除文件 不给出提示
+rm -rf * 删除当前目录的所有文件
 
+#切换用户命令
+su - username #切换后则完全切换到了目标用户的环境
+su username   #切换后的环境变量大部分还是切换前用户的环境
 .tar
 打包语法：tar cvf newFileName.tar fileName || dirName 
 解包语法：tar xvf newFileName.tar fileName（-C dirName）
@@ -3499,6 +3790,17 @@ rm -rf '文件夹'
 # tar -zcvf renwolesshel.tar.gz /renwolesshel
 解压tar.gz格式压缩包
 # tar zxvf renwolesshel.tar.gz
+.war
+解压
+#jar -xvf file.war
+打包
+#jar -cvfM0 file2.war <目标目录>
+参数说明
+    -c  创建war包
+    -v  显示过程信息
+    -f  指定 JAR 文件名，通常这个参数是必须的
+    -M  不产生所有项的清单（MANIFEST〕文件，此参数会忽略 -m 参数
+    -0  这个是阿拉伯数字，只打包不压缩的意思
 ```
 
 ```
@@ -3586,7 +3888,21 @@ ps -ef|grep xxx
 
 ```
 taskkill -pid 进程pid -f  //根据pid杀死的进程
+
 ```
+
+#### Windowns的操作
+
+```cmd
+tasklist | findstr 端口号
+或者
+netstat -ano |findstr 端口号
+
+杀死进程
+taskill -PID 进程号 -F
+```
+
+
 
 #### 查看磁盘情况
 
@@ -3842,7 +4158,7 @@ public <T> T postForObject(String url, @Nullable Object request, Class<T> respon
 }
 ```
 
-
+## MAVEN
 
 ### POM配置私服maven地址
 
@@ -3914,7 +4230,7 @@ pom的仓库配置
 ##### 在项目所在文件夹根目录使用maven命令打包时：
 
 ```
-<!-- 不执行单元测试，也不编译测试类 -->
+<!--安装到本地仓库 不执行单元测试，也不编译测试类 -->
 mvn install -Dmaven.test.skip=true
 
 ```
@@ -3926,6 +4242,7 @@ mvn install -Dmaven.test.skip=true
 mvn install -DskipTests=true
 <!--不执行测试用例，但编译测试用例类生成相应的class文件至target/test-classes下。 -->
 mvn clean package -DskipTests -U  //删除再打包，跳过测试 --常用
+<!--指定环境 增加 -P test 例：mvn clean package -DskipTests -U -P prod -->
 
 mvn package   // 生成target目录，编译、测试代码，生成测试报告，生成jar/war文件
 <!-- -U 强制刷新本地仓库不存在release版和所有的snapshots版本。-->
@@ -4071,6 +4388,28 @@ systemPath属性来定义路径
 import 只能用在dependencyManagement块中，它将spring-boot-dependencies 中dependencyManagement下的dependencies插入到当前工程的dependencyManagement中，所以不存在依赖传递。 
 当没有<scope>import</scope>时，意思是将spring-boot-dependencies 的dependencies全部插入到当前工程的dependencies中，并且会依赖传递。
 ```
+
+#### maven依赖的传递性ABC
+
+```xml
+3.传递性依赖
+A依赖B，B依赖C。当前项目为A，只当B在A项目中的scope，那么c在A中的scope是如何得知呢？
+
+当C是test或者provided时，C直接被丢弃，A不依赖C；（排除传递依赖）
+
+否则A依赖C，C的scope继承与B的scope。maven会解析各个依赖的pom，将那些必要的间接依赖，一传递性依赖的形式引入到当前的项目中。
+
+
+<dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-swagger2</artifactId>
+    <optional>true</optional>
+</dependency>
+
+当C有<optional>true</optional>  A不依赖C 
+```
+
+
 
 #### maven中的各种打包类型
 
@@ -5083,10 +5422,30 @@ stage节为具体的pipeline步骤
 
 * http://zhangblog.com/2020/08/09/kubernetes05/ 帮助文档地址
 
+## 几个关系
+
+```
+├──构成说明
+├──namespace
+	├──物理机 master,节点 node
+       ├── node 下有 pod
+```
+
+![QQ图片20210901145951](E:\开发笔记\ycs_test\image\QQ图片20210901145951.png)
+
+![20190515213137878](E:\开发笔记\ycs_test\image\20190515213137878.png)
+
+
+
 ## 查看类命令
 
 ```shell
+#k8s获取登录token
+kubectl describe secrets -n safedog $(kubectl -n safedog get secret | awk '/dashboard-admin/{print $1}')
+#k8s集群获取ca证书
+kubectl get secret $(kubectl get secrets | grep default-token | awk '{print $1}') -o jsonpath="{['data']['ca\.crt']}" | base64 --decode
 # 获取节点和服务版本信息
+kubectl get namespaces
 kubectl get nodes
 # 获取节点和服务版本信息，并查看附加信息
 kubectl get nodes -o wide
@@ -5099,7 +5458,7 @@ kubectl get pod -o wide
 kubectl get pod -n kube-system
 # 获取指定名称空间中的指定pod
 kubectl get pod -n kube-system podName
-# 获取所有名称空间的pod
+# 获取所有名称空间的资源pod
 kubectl get pod -A 
 # 查看pod的详细信息，以yaml格式或json格式显示
 kubectl get pods -o yaml
@@ -5151,6 +5510,7 @@ kubectl describe deploy -n kube-system coredns
 # 需要heapster 或metrics-server支持
 kubectl top node
 kubectl top pod 
+kubectl get nodes
 
 # 查看集群信息
 kubectl cluster-info   或  kubectl cluster-info dump
@@ -5212,7 +5572,311 @@ kubectl scale deploy myapp-deployment --replicas=5  # 动态伸缩
 kubectl scale --replicas=8 -f myapp-deployment-v2.yaml  #动态伸缩【根据资源类型和名称伸缩，其他配置「如：镜像版本不同」不生效】
 ```
 
-# 
+### 1-1节点的隔离和恢复
+
+```shell
+#node节点隔离
+#方法一 修改配置文件 创建配置文件unschedule_node.yaml,在spec部分指定unschedulable为true:
+apiVersion:  V1
+kind:  Node
+metadata:
+    name:  kube-node1
+    lables:
+        kubernetes.io/hostname:  kubernetes-minion1
+spec:
+   unschedulable:  true
+#kubectl replace 命令完成对 Node 状态的修改  
+kubectl replace -f unschedule_node.yaml nodes kube-node1 replaced
+
+#方法二 命令直接修改
+kubectl patch node kube-node1 -p '{"spec":{"unschedulable":true}}'
+```
+
+kubectl的子命令cordon和uncordon也用于实现将Node进行隔离和恢复调度的操作。
+
+例如，使用kubectl cordon对某个Node进行隔离调度操作。
+
+```shell
+kubectl cordon k8s-node1  
+#k8s-node1 节点状态会变成schedule disable 不可调度的状态
+```
+
+恢复
+
+```shell
+kubectl uncordon k8s-node1  
+```
+
+**特殊注意：将某个 Node 脱离调度范围时,在其上运行的pod并不会自动停止，管理员需要手动停止在该 Node 上运行的 Pod。
+同样,如果需要将某个 Node 重新纳入集群调度范围,则将 unschedulable 设置为 false，再次执行 kubectl replace 或 kubectl patch 命令就能恢复系统对改 Node 的调度。**
+
+```shell
+# 确定要排空的节点的名称
+kubectl get nodes 
+# 查看获取pod名字
+kubectl get po 
+先设置node为cordon不可调度状态，然后驱逐Pod
+kubectl cordon [node-name]
+# 命令node节点开始释放所有pod，并且不接收新的pod进程
+kubectl drain [node-name] --force --ignore-daemonsets --delete-local-data 
+# 这时候把需要做的事情做一下。比如上面说的更改docker文件daemon.json或者说node节点故障需要进行的处理操作 
+# 然后恢复node，恢复接收新的pod进程
+kubectl uncordon [node-name]
+
+
+#查看所有名称空间内资源
+kubectl get pods -A
+```
+
+### 1-2 pod驱逐出某个节点
+
+```shell
+#命令
+kubectl drain ip --force --ignore-daemonsets --delete-local-data 
+
+默认情况下，kubectl drain 会忽略那些不能杀死的系统类型的 pod。drain命令中需要添加三个参数：--force、--ignore-daemonsets、--delete-local-data
+--force 当一些pod不是经 ReplicationController, ReplicaSet, Job, DaemonSet 或者 StatefulSet 管理的时候就需要用--force来强制执行 (例如:kube-proxy)
+--ignore-daemonsets 无视DaemonSet管理下的Pod。即--ignore-daemonsets往往需要指定的,这是因为deamonset会忽略unschedulable标签(使用kubectl drain时会自动给节点打上不可调度标签),因此deamonset控制器控制的pod被删除后可能马上又在此节点上启动起来,这样就会成为死循环.因此这里忽略daemonset。
+--delete-local-data 如果有mount local volumn的pod，会强制杀掉该pod。
+
+
+```
+
+
+
+```
+节点说明、集群雪崩，pod没有合理的limit, cpu系统资源不足,进程OOM, 节点变成no ready
+1.资源预留：为系统进程和 k8s 进程预留资源
+2.pod 驱逐：节点资源到达一定使用量，开始驱逐 pod
+```
+
+
+
+```shell
+kubectl get nodes -o wide
+kubectl get pod -o wide
+
+```
+
+### 1-3 生成新节点
+
+```shell
+#生成token
+kubeadm token create --print-join-command
+#查看token
+kubeadm token list
+默认token的有效期为24小时，当过期之后，该token就不可用了
+#方式二生成
+openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'
+#新增节点
+kubeadm join --token  {k8s生成的token}  {k8s-master-ip-port} --discovery-token-ca-cert-hash  {ca证书sha256编码hash值}
+#删除节点
+kubectl delete node {nodename}
+```
+
+### 1-4 创建token
+
+```
+#创建一个test账号
+kubectl create sa test -n kube-system
+#查看test的secret
+kubectl get sa test -n kube-system -o yaml
+#根据secret获取token
+kubectl describe secret [test-token-m9qzv] -n kube-system
+```
+
+### 1-5 pod指定节点方式
+
+```yaml
+准备工作
+#创建label命令 
+ kubectl label nodes <ndoe-name> <label-key>=<label-value>
+ #删除label
+ kubectl label node k8s-node1 disktype-node/k8s-node1 labeled
+ #查看
+ kubectl get nodes --show-labels
+ 
+开始新增pod
+#强制约束Pod调度到指定Node节点上 pod.yaml
+spec:
+	nodeName: 192.168.88.25
+#通过label指定到node节点
+spec:
+	nodeSelector:
+		key: key
+     
+```
+
+*  pod的常见操作以及输出
+
+```shell
+[root@k8s-master test]# pwd
+/root/k8s_practice/test
+[root@k8s-master test]# ll
+total 4
+-rw-r--r-- 1 root root 1317 Jul 29 16:42 nginx_demo.yaml
+# 创建pod
+[root@k8s-master test]# kubectl apply -f nginx_demo.yaml
+pod/nginx-demo created
+# 查看pod。根据结果可见被调度到了 k8s-node02 节点
+[root@k8s-master test]# kubectl get pod -o wide   # 或者 kubectl get pod -n default -o wide  因为名称空间为default
+NAME                READY   STATUS    RESTARTS   AGE   IP            NODE         NOMINATED NODE   READINESS GATES
+nginx-demo          1/1     Running   0          10s   10.244.2.16   k8s-node02   <none>           <none>
+# 查看pod描述
+[root@k8s-master test]# kubectl describe pod -n default nginx-demo   # 由于是默认名称空间，因此可以省略 -n default
+…………
+# 查看指定pod的基本信息，并显示标签信息
+[root@k8s-master test]# kubectl get pod nginx-demo -o wide --show-labels
+NAME          READY   STATUS    RESTARTS   AGE   IP            NODE         NOMINATED NODE   READINESS GATES   LABELS
+nginx-demo    1/1     Running   0          61s   10.244.2.16   k8s-node02   <none>           <none>            environment=dev,k8s-app=nginx
+# 删除pod
+[root@k8s-master test]# kubectl delete -f nginx_demo.yaml   # 或者 kubectl delete pod nginx-demo
+pod "nginx-demo" deleted
+```
+
+
+
+yaml示例
+
+* https://www.jianshu.com/p/32042a744d1c 查看pod的配置详解
+
+```yaml
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: rc-nginx
+spec:
+  replicas: 2
+  selector:
+  app: rc-nginx
+  template:
+    metadata:
+      labels:
+        app: rc-nginx
+    spec:
+      containers:
+        - name: nginx
+        image: nginx
+        imagePullPolicy: IfNotPresent ##镜像下拉策略，如果本地有从本地创建
+# Always 总是拉取镜像
+# IfNotPresent 本地有则使用本地镜像,不拉取
+# Never 只使用本地镜像，从不拉取，即使本地没有
+# 如果省略imagePullPolicy 镜像tag为 :latest 策略为always ，否则 策略为 IfNotPresent
+
+
+```
+
+nginx的yaml的demo
+
+```yaml
+apiVersion: extensions/v1beta1 #api的版本
+kind: Deployment          #资源的类型
+metadata:                 #资源的元数据
+  name: nginx-deployment  #资源的名称
+spec:                     #资源的说明
+  replicas: 2             #副本2个，缺省为1
+  template:               #pod模板
+    metadata:             #pod元数据
+      labels:            #标签
+        app: web_server    #标签选择器
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.79
+```
+
+
+
+两种启动方式
+
+```shell
+#方式一
+kubectl run nginx-deployment --image=nginx:1.16-alpine --replicas=2
+#方式二
+ kubectl apply -f nginx.yaml
+ #指定删除
+ kubectl delete -f  nginx.yaml 
+
+ #删除命令若是用run启动的
+ kubectl delete deployment <pod-name> 
+ kubectl delete pods <node-name> 
+ 
+  #扩缩容命令
+  kubectl scale deploy 控制器名 --replicas=副本数量 -n namespace
+  #查看deploy
+  kubectl get deploy -o wide
+```
+
+#### 1-5-1暴露80端口服务
+
+```shell
+kubectl expose deployment nginx-app --port=80 --type=LoadBalancer
+```
+
+#### 1-5-1导出pod的yaml模板
+
+```shell
+kubectl get pod myweb-5f8b88984c-nhmt9 -o yaml --export ##也可以使用--export将pod的配置导出作为模板。
+#
+#explain 可查看核心资源类型定义字段
+kubectl explain pods
+```
+
+#### 1-5-3 k8s几种资源控制器
+
+```yaml
+#1 RC 主要的作用就是用来确保容器应用的副本数始终保持在用户定义的副本数 。
+# 删除rc:  kubectl delete rs/frontend
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+  name: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: myapp
+        image: wangyanglinux/myapp:v2
+        env:
+        - name: GET_HOSTS_FROM
+          value: dns
+        ports:
+        - containerPort: 80
+#2 deploy
+apiVersion: extensions/v1beta1
+kind: Deployment
+#扩容： kubectl scale deployment nginx-deployment --replicas 10
+#更新镜像：kubectl set image  deployment/nginx-deployment nginx=wangyanglinux/myapp:v3
+#编辑 kubectl edit deployment/nginx-deployment
+#回滚上个版本 kubectl rollout undo deployment/nginx
+#回滚指定版本 kubectl rollout undo deployment/nginx --torevesion=2
+#查看回滚版本 kubectl describe pod <podname>
+#删除项目 kubectl delete deploy/nginx 
+#kubectl delete service/nginx-service
+
+#3 DaemonSet 确保全部（或者一些）Node 上运行一个 Pod 的副本。当有 Node 加入集群时，也会为他们新增一个 Pod 。当有 Node 从集群移除时，这些 Pod 也会被回收。删除 DaemonSet 将会删除它创建的所有 Pod
+
+#4 Job 负责批处理任务，即仅执行一次的任务，它保证批处理任务的一个或多个 Pod 成功结束
+#删除job的pod kubectl delete pod  pi-w7sr8
+```
+
+
+
+## api调用
+
+```shell
+#查看暴露的api
+kubectl api-versions 
+```
+
+
 
 #### 自动化构建一些插件
 
@@ -5336,6 +6000,7 @@ ApiParam
 ApiResponse
 ApiResponses
 ResponseHeader
+ApiImplicitParams
 #常用注解
 @Api(value="用户controller",tags={"用户操作接口"})
 @Api(value = "/user", description = "Operations about user")
@@ -5350,14 +6015,29 @@ ResponseHeader
   @ApiModelProperty(value="用户名",name="username",example="xingguo")
 
 @ApiResponses({ @ApiResponse(code = 400, message = "Invalid Order") })
+     
 
 ```
 
+| 作用范围                         API                                            使用位置<br/><br/>对象属性                        @ApiModelProperty             用在参数对象的字段上<br/><br/>协议集描述                    @Api                                           用在Conntroller类上<br/><br/>协议描述                        @ApiOperation                        用在controller方法上<br/><br/>Response集                   @ApiResponses                      用在controller方法上<br/><br/>Response                      @ApiResponse                         用在@ApiResponses里面<br/><br/>非对象参数集                 @ApilmplicitParams                用在controller方法上 |
+| ------------------------------------------------------------ |
 
+实例
+
+```java
+  @ApiOperation("信息软删除")
+  @ApiResponses({ @ApiResponse(code = CommonStatus.OK, message = "操作成功"),
+  @ApiResponse(code = CommonStatus.EXCEPTION, message = "服务器内部异常"),
+  @ApiResponse(code = CommonStatus.FORBIDDEN, message = "权限不足") })
+  @ApiImplicitParams({ @ApiImplicitParam(paramType = "query", dataType = "Long", name = "id", value = "信息id", required = true) })
+  @RequestMapping(value = "/remove.json", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+  public RestfulProtocol remove(Long id) {
+```
 
 参考文档：
 
 * https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner+for+Jenkins
+* https://www.jianshu.com/p/b0b19368e4a8
 
 ### springboot 整合 sitemesh3
 
@@ -5466,7 +6146,7 @@ public String index(HttpServletResponse response) {
     return "index";
 }
 ```
-ThreadLocal使用场景
+### ThreadLocal使用场景
 
 ```java
 public final class SysSession {
@@ -5727,7 +6407,20 @@ input {
   reload @@config_all;
   ```
 
-  
+
+### 数据库中hql(hibernate)与sql的区别
+
+```
+1.sql 面向数据库表查询。
+
+2.hql 面向对象查询。
+
+3.hql : from 后面跟的 类名+类对象 where 后 用 对象的属性做条件。
+
+4.sql: from 后面跟的是表名 where 后 用表中字段做条件查询。
+```
+
+
 
 ### 其它
 
@@ -5757,9 +6450,9 @@ git checkout -- aaa.html
 
 # 工具总结
 
-pdman
+pdman 数据库设计
 
-onlyOffice开源文档编辑器
+onlyOffice开源文档编辑器  [kkFileView](https://gitee.com/kekingcn/file-online-preview)-openOffice
 
 **前端：** Vue.js  React.js  微信小程序、 ElementUI 、BootStrap、TOPUI、LayUI
 

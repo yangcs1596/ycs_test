@@ -31,6 +31,33 @@
 对索引字段中文本的搜索进行优化
 ```
 
+### 连接命令
+
+```shell
+》mysql -h+IP -u+root -p+password 注意不需要空格
+例如： mysql -uroot -p123 -h192.168.203.33 -P3306
+或者： mysql -ucloudpassport -pCtx1ytxA@3zdj
+
+命令：create user ‘qiangqiang’@’%’ identified by ‘123’;
+命令：管理员 mysqladmin -uroot password 123 
+命令：root普通用户 set password for ‘root’@’%’=password(“123456”);
+
+备份表命令
+》mysqldump -u root -h host -p dbname tbname1, tbname2 > backdb.sql
+备份数据库
+》mysqldump -u root -h host -p dbname > backdb.sql
+```
+
+```mysql
+#常用命令
+》show databases;
+》use database;
+》show tables;
+》describe tableName;
+```
+
+
+
 ### mysql日志记录慢查询
 
 使用该命令只能查看慢查询次数，但是我们没有办法知道是哪些查询产生了慢查询，如果想要知道是哪些查询导致的慢查询，那么我们必须修改mysql的配置文件。打开mysql的配置文件（windows系统是my.ini,linux系统是my.cnf），在[mysqld]下面加上以下代码：
@@ -296,7 +323,7 @@ begin
   end
 ```
 
-7、创建一个存储过程并执行
+#### 7、创建一个存储过程并执行
 
 ```mysql
 create procedure insert_emp(in start int(10),in max_num int(10))
@@ -315,9 +342,31 @@ declare i int default 0;
 call insert_emp(1,500)
 ```
 
+#### 8、查看详细信息
 
+```mysql
+show tables或show tables from database_name;
+-- 显示当前数据库中所有表的名称
+show databases;
+-- 显示mysql中所有数据库的名称
+show columns from table_name from database_name; 或show columns from database_name.table_name;
+-- 解释：显示表中列名称
+show index from table_name; -- 显示表的索引
+
+desc table_name -- 显示表的字段信息
+show create table table_name; -- 显示建表语句
+
+```
+
+
+
+### INNER JOIN
+
+* 用法： 左右两边有匹配则显示， 没有匹配则不显示
 
 ### LEFT JOIN
+
+* 用法：左边有则显示，右边没有则显示 null
 
 （可以替代 **in**的条件语句）
 
@@ -328,6 +377,10 @@ call insert_emp(1,500)
 正确的是：一对多 关联查询
 
 多对多查询（left join 可以实现吗？ 只能用普通的where关联成多对多吧）
+
+### HAVING
+
+HAVING语句通常与GROUP BY语句联合使用，用来过滤由GROUP BY语句返回的记录集。
 
 ### 时间默认值
 

@@ -884,98 +884,7 @@ org.springframework.boot.autoconfigure.admin.SpringApplicationAdminJmxAutoConfig
 org.springframework.boot.autoconfigure.aop.AopAutoConfiguration,\
 org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration,\
 org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration,\
-org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration,\
-org.springframework.boot.autoconfigure.cassandra.CassandraAutoConfiguration,\
-org.springframework.boot.autoconfigure.cloud.CloudAutoConfiguration,\
-org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration,\
-org.springframework.boot.autoconfigure.context.MessageSourceAutoConfiguration,\
-org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration,\
-org.springframework.boot.autoconfigure.couchbase.CouchbaseAutoConfiguration,\
-org.springframework.boot.autoconfigure.dao.PersistenceExceptionTranslationAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.cassandra.CassandraDataAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.cassandra.CassandraRepositoriesAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.couchbase.CouchbaseDataAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.couchbase.CouchbaseRepositoriesAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.ldap.LdapDataAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.ldap.LdapRepositoriesAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.neo4j.Neo4jDataAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.neo4j.Neo4jRepositoriesAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.solr.SolrRepositoriesAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.rest.RepositoryRestMvcAutoConfiguration,\
-org.springframework.boot.autoconfigure.data.web.SpringDataWebAutoConfiguration,\
-org.springframework.boot.autoconfigure.elasticsearch.jest.JestAutoConfiguration,\
-org.springframework.boot.autoconfigure.freemarker.FreeMarkerAutoConfiguration,\
-org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration,\
-org.springframework.boot.autoconfigure.h2.H2ConsoleAutoConfiguration,\
-org.springframework.boot.autoconfigure.hateoas.HypermediaAutoConfiguration,\
-org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfiguration,\
-org.springframework.boot.autoconfigure.hazelcast.HazelcastJpaDependencyAutoConfiguration,\
-org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration,\
-org.springframework.boot.autoconfigure.integration.IntegrationAutoConfiguration,\
-org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration,\
-org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,\
-org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration,\
-org.springframework.boot.autoconfigure.jdbc.JndiDataSourceAutoConfiguration,\
-org.springframework.boot.autoconfigure.jdbc.XADataSourceAutoConfiguration,\
-org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration,\
-org.springframework.boot.autoconfigure.jms.JmsAutoConfiguration,\
-org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration,\
-org.springframework.boot.autoconfigure.jms.JndiConnectionFactoryAutoConfiguration,\
-org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration,\
-org.springframework.boot.autoconfigure.jms.artemis.ArtemisAutoConfiguration,\
-org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration,\
-org.springframework.boot.autoconfigure.groovy.template.GroovyTemplateAutoConfiguration,\
-org.springframework.boot.autoconfigure.jersey.JerseyAutoConfiguration,\
-org.springframework.boot.autoconfigure.jooq.JooqAutoConfiguration,\
-org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration,\
-org.springframework.boot.autoconfigure.ldap.embedded.EmbeddedLdapAutoConfiguration,\
-org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration,\
-org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration,\
-org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration,\
-org.springframework.boot.autoconfigure.mail.MailSenderValidatorAutoConfiguration,\
-org.springframework.boot.autoconfigure.mobile.DeviceResolverAutoConfiguration,\
-org.springframework.boot.autoconfigure.mobile.DeviceDelegatingViewResolverAutoConfiguration,\
-org.springframework.boot.autoconfigure.mobile.SitePreferenceAutoConfiguration,\
-org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration,\
-org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration,\
-org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration,\
-org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,\
-org.springframework.boot.autoconfigure.reactor.ReactorAutoConfiguration,\
-org.springframework.boot.autoconfigure.security.SecurityAutoConfiguration,\
-org.springframework.boot.autoconfigure.security.SecurityFilterAutoConfiguration,\
-org.springframework.boot.autoconfigure.security.FallbackWebSecurityAutoConfiguration,\
-org.springframework.boot.autoconfigure.security.oauth2.OAuth2AutoConfiguration,\
-org.springframework.boot.autoconfigure.sendgrid.SendGridAutoConfiguration,\
-org.springframework.boot.autoconfigure.session.SessionAutoConfiguration,\
-org.springframework.boot.autoconfigure.social.SocialWebAutoConfiguration,\
-org.springframework.boot.autoconfigure.social.FacebookAutoConfiguration,\
-org.springframework.boot.autoconfigure.social.LinkedInAutoConfiguration,\
-org.springframework.boot.autoconfigure.social.TwitterAutoConfiguration,\
-org.springframework.boot.autoconfigure.solr.SolrAutoConfiguration,\
-org.springframework.boot.autoconfigure.thymeleaf.ThymeleafAutoConfiguration,\
-org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration,\
-org.springframework.boot.autoconfigure.transaction.jta.JtaAutoConfiguration,\
-org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration,\
-org.springframework.boot.autoconfigure.web.DispatcherServletAutoConfiguration,\
-org.springframework.boot.autoconfigure.web.EmbeddedServletContainerAutoConfiguration,\
-org.springframework.boot.autoconfigure.web.ErrorMvcAutoConfiguration,\
-org.springframework.boot.autoconfigure.web.HttpEncodingAutoConfiguration,\
-org.springframework.boot.autoconfigure.web.HttpMessageConvertersAutoConfiguration,\
-org.springframework.boot.autoconfigure.web.MultipartAutoConfiguration,\
-org.springframework.boot.autoconfigure.web.ServerPropertiesAutoConfiguration,\
-org.springframework.boot.autoconfigure.web.WebClientAutoConfiguration,\
-org.springframework.boot.autoconfigure.web.WebMvcAutoConfiguration,\
-org.springframework.boot.autoconfigure.websocket.WebSocketAutoConfiguration,\
-org.springframework.boot.autoconfigure.websocket.WebSocketMessagingAutoConfiguration,\
-org.springframework.boot.autoconfigure.webservices.WebServicesAutoConfiguration
+org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration
 ```
 
 每一个这样的  xxxAutoConfiguration类都是容器中的一个组件，都加入到容器中；用他们来做自动配置；
@@ -2329,6 +2238,7 @@ public class LoginHandlerInterceptor implements HandlerInterceptor {
     @Bean //将组件注册在容器
     public WebMvcConfigurerAdapter webMvcConfigurerAdapter(){
         WebMvcConfigurerAdapter adapter = new WebMvcConfigurerAdapter() {
+            //url视图跳转
             @Override
             public void addViewControllers(ViewControllerRegistry registry) {
                 registry.addViewController("/").setViewName("login");
@@ -3581,7 +3491,7 @@ docker logs container-name/container-id
 docker-enter 80bbd5d7c8b2
 
 13、根据容器id进入到对应文件夹  docker attach 容器ID 或者
-docker exec -it 镜像id /bin/bash
+docker exec -it 镜像id /bin/bash  #常用
 1）Ctrl + d 退出并停止容器；
 2）Ctrl + p + q 退出并在后台运行容器；或者 exit
 更多命令参看
