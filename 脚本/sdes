@@ -1,0 +1,74 @@
+#!/bin/bash
+# Copyright www.safedog.cn @ 2017
+# by 1057 (lvxj@safedog.cn)
+
+# Check if user is mybk
+[ $(whoami) != "mybk" ] && { echo "ERROR: This script must be run as mybk"; exit 1; }
+
+# Default
+es_instances="elasticsearch1 elasticsearch2"
+# Config File
+. /home/mybk/mybk.cfg &> /dev/null
+#[[ $es_enable != 1 ]] || [ "$loganalyze" == "n" ] && exit
+cluster_name=ts-application
+node_name=${2:-es_node1}
+ES_HOME=/opt/elasticsearch
+ES_OPTS="-p $ES_HOME/${node_name}.pid -Enode.name=${node_name}"
+ES_OPTS="$ES_OPTS -Epath.data=/mybk/esdata/${node_name}/data"
+ES_OPTS="$ES_OPTS -Epath.logs=/mybk/esdata/${node_name}/logs"
+
+start() {
+    if [[ -f $ES_HOME/${node_name}.pid ]]; then
+        echo "Elasticsearch node [${node_name}] is running."
+    else
+        echo "Starting Elasticsearch node [${node_name}]..."
+        $ES_HOME/bin/elasticsearch -d $ES_OPTS
+        until [ -f /mybk/esdata/${node_name}/logs/${cluster_name}.log ]; do
+            sleep 1
+        done
+        logexpect /mybk/esdata/${node_name}/logs/${cluster_name}.log "started" 4
+    fi
+}
+
+stop() {
+    if [[ -f $ES_HOME/${node_name}.pid ]]; then
+        kill $(cat $ES_HOME/${node_name}.pid) 2> /dev/null || rm -f $ES_HOME/${node_name}.pid
+        echo "Stopping Elasticsearch node [${node_name}]..."
+        sleep 1
+    else
+        echo "Elasticsearch node [${node_name}] is not running."
+    fi
+}
+
+restart() {
+    stop
+    start
+}
+
+status() {
+    ps aux | grep -v awk | awk '/bootstrap.Elasticsearch/ {for(i=1;i<=NF;i++) if($i ~ /-Enode.name=/) {sub(/.*=/,"",$i); print "["$i"] is running: "$2}}'
+}
+
+usage() {
+    echo "Usage: $(basename $0) {start|stop|restart|status}"
+}
+
+[ $# -eq 0 ] && usage
+
+case "$1" in
+    "start")
+        start
+        ;;
+    "stop")
+        stop
+        ;;
+    "restart")
+        restart
+        ;;
+    "status")
+        status
+        ;;
+    "-h")
+        usage
+        ;;
+esac

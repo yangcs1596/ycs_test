@@ -1,0 +1,89 @@
+#!/bin/bash
+# Copyright www.safedog.cn @ 2017
+# by 1057 (lvxj@safedog.cn)
+
+# Check if user is mybk
+[ $(whoami) != "mybk" ] && { echo "ERROR: This script must be run as mybk"; exit 1; }
+
+. /home/mybk/mybk.cfg &> /dev/null
+[ "$loganalyze" == "0" ] && exit
+
+start() {
+    if [ -z "$1" -o "$1" = "zookeeper" ]; then
+        # 存在独立的 ZooKeeper 时不再启动内置的
+        if [[ ! -d /opt/zookeeper ]]; then
+            echo "Starting ZooKeeper."
+            nohup /opt/kafka/bin/zookeeper-server-start.sh /opt/kafka/config/zookeeper.properties &>> /opt/kafka/zookeeper.log &
+            logexpect /opt/kafka/zookeeper.log "binding to port" | grep "binding to port"
+            portexpect 3181
+        fi
+    fi
+    if [ -z "$1" -o "$1" = "kafka" ]; then
+        echo "Starting Kafka."
+        nohup /opt/kafka/bin/kafka-server-start.sh /opt/kafka/config/server.properties &>> /opt/kafka/kafka.log &
+        logexpect /opt/kafka/kafka.log "started" 10 10 | egrep "\bstarted\b"
+        portexpect 9092 10
+    fi
+}
+
+stop() {
+    if [ -z "$1" -o "$1" = "kafka" ]; then
+        #pid=$(ps aux | grep -v grep | egrep "\bkafka.Kafka\b" | awk '{print $2}')
+        #for j in $pid; do
+        #    echo "Shutting down kafka.Kafka ($j)"
+        #    [[ $j -gt 0 ]] && kill -SIGTERM $j
+            #logexpect /opt/kafka/zookeeper.log "Closed socket" 2 | grep "Closed socket"
+        #    sleep 2
+        #done
+        bash /opt/kafka/bin/kafka-server-stop.sh &>> /opt/kafka/kafka.log &
+        echo "Stopping Kafka."
+    fi
+    if [ -z "$1" -o "$1" = "zookeeper" ]; then
+        if [[ ! -d /opt/zookeeper ]]; then
+            pid=$(ps aux | grep -v grep | egrep "\bQuorumPeerMain\b" | awk '{print $2}')
+            for j in $pid; do
+                echo "Shutting down QuorumPeerMain ($j)"
+                [[ $j -gt 0 ]] && kill -SIGTERM $j
+                sleep 1
+            done
+        fi
+    fi
+}
+
+restart() {
+    stop $1
+    start $1
+}
+
+status() {
+    if [[ ! -d /opt/zookeeper ]]; then
+        for i in QuorumPeerMain Kafka; do jps | grep "[0-9]\+ $i$" || echo Not Found: $i; done
+    else
+        for i in Kafka; do jps | grep "[0-9]\+ $i$" || echo Not Found: $i; done
+    fi
+}
+
+usage() {
+    echo "Usage: $(basename $0) {start|stop|restart} [kafka|zookeeper]"
+    echo "Usage: $(basename $0) {status}"
+}
+
+[ $# -eq 0 ] && usage
+
+case "$1" in
+    "start")
+        start $2
+        ;;
+    "stop")
+        stop $2
+        ;;
+    "restart")
+        restart $2
+        ;;
+    "status")
+        status
+        ;;
+    "-h")
+        usage
+        ;;
+esac

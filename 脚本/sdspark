@@ -1,0 +1,90 @@
+#!/bin/bash
+# Copyright www.safedog.cn @ 2017
+# by 1057 (lvxj@safedog.cn)
+
+# Check if user is mybk
+[ $(whoami) != "mybk" ] && { echo "ERROR: This script must be run as mybk"; exit 1; }
+
+. /home/mybk/mybk.cfg &> /dev/null
+[ "$loganalyze" == "0" ] && exit
+
+start() {
+    case "$yunlei_version" in
+        2*)
+            echo "Starting LogAnalyzeMain."
+            nohup java -Xmx1024m -Xms1024m -classpath /opt/spark-kafka-job/logAnalyze.jar \
+                -Djava.ext.dirs=/opt/spark-kafka-job/apark-log-lib \
+                com.safedog.cloud.logger.main.LogAnalyzeMain &>> /opt/spark-kafka-job/LogAnalyzeMain.log &
+            sleep 2
+            echo "Starting RsysLogAnalyzeMain."
+            nohup java -Xmx512m -Xms512m   -classpath /opt/spark-kafka-job/logAnalyze.jar \
+                -Djava.ext.dirs=/opt/spark-kafka-job/apark-log-lib \
+                com.safedog.cloud.logger.main.RsysLogAnalyzeMain &>> /opt/spark-kafka-job/RsysLogAnalyzeMain.log &
+            sleep 2
+            echo "Starting UploadLogAnalyzeMain."
+            nohup java -Xmx512m -Xms512m   -classpath /opt/spark-kafka-job/logAnalyze.jar \
+                -Djava.ext.dirs=/opt/spark-kafka-job/apark-log-lib \
+                com.safedog.cloud.logger.main.UploadLogAnalyzeMain &>> /opt/spark-kafka-job/UploadLogAnalyzeMain.log &
+            ;;
+        3*)
+            /opt/spark/sbin/start-all.sh
+            ;;
+    esac
+}
+
+stop() {
+    case "$yunlei_version" in
+        2*)
+            for i in LogAnalyzeMain UploadLogAnalyzeMain RsysLogAnalyzeMain; do
+                pid=$(ps aux | grep -v grep | egrep "\b$i\b" | awk '{print $2}')
+                for j in $pid; do
+                    echo "Shutting down $i ($j)"
+                    [[ $j -gt 0 ]] && kill -9 $j
+                done
+            done
+            ;;
+        3*)
+            /opt/spark/sbin/stop-all.sh
+            ;;
+    esac
+}
+
+restart() {
+    stop
+    start
+}
+
+status() {
+    case "$yunlei_version" in
+        2*)
+            for i in LogAnalyzeMain UploadLogAnalyzeMain RsysLogAnalyzeMain; do jps | grep "[0-9]\+ $i$" || echo Not Found: $i; done
+            ;;
+        3*)
+            for i in Master Worker; do jps | grep "[0-9]\+ $i$" || echo Not Found: $i; done
+            ;;
+    esac
+}
+
+usage() {
+    echo "Usage: $(basename $0) {start|stop|restart|status}"
+}
+
+[ $# -eq 0 ] && usage
+
+case "$1" in
+    "start")
+        start
+        ;;
+    "stop")
+        stop
+        ;;
+    "restart")
+        restart
+        ;;
+    "status")
+        status
+        ;;
+    "-h")
+        usage
+        ;;
+esac

@@ -1,0 +1,130 @@
+#!/bin/bash
+# Copyright www.safedog.cn @ 2017
+# by 1057 (lvxj@safedog.cn)
+
+# Check if user is mybk
+[ $(whoami) != "mybk" ] && { echo "ERROR: This script must be run as mybk"; exit 1; }
+
+. /home/mybk/mybk.cfg &> /dev/null
+[[ $mysql_yn == "y" ]] && mysqld_yn="y"
+
+# 获取服务列表，需要确保 mybk.cfg 配置文件中对应的配置项设置为 `y`
+getlist() {
+    local t
+    list=
+    for i in "$@"; do
+        eval t="\$${i}_yn"
+        if [[ $t == "y" ]]; then
+            list="$list $i"
+        fi
+    done
+}
+
+# 注意启动顺序
+# 以下顺序无关，但建议优先启动
+list="nginx mysqld activemq memcached redis"
+# 是否独立部署 ZooKeeper
+if [[ ${zookeeper_yn:-n} == y ]]; then
+    list="$list zookeeper"
+fi
+# 云眼 3.3 之后增加 Kafka
+list="$list kafka"
+# 启动 ZooKeeper 后才启动 HBase
+list="$list hadoop hbase phoenix clickhouse chproxy"
+# loganalyze 用于云垒 2.x
+if [[ $loganalyze_yn == "y" ]]; then
+    list="$list elasticsearch kafka spark"
+fi
+[[ $es_enable == 1 ]] && list="$list elasticsearch"
+# 是否部署态势
+if [[ $cloudmonitor == 1 ]]; then
+    # 如果没有部署独立 ZooKeeper，需要在态势阶段启动 ZooKeeper
+    if [[ ${zookeeper_yn:-n} != y ]]; then
+        list="$list zookeeper"
+    fi
+    list="$list rsyslog spark"
+    echo $list | grep kafka &> /dev/null || list="$list kafka"
+fi
+# 最后启动的服务
+list="$list tomcat"
+
+start() {
+   getlist $list
+    for i in $list; do
+        echo "---- $i ----"
+        sd$i start
+        sleep 1
+    done
+}
+
+stop() {
+    # 先关闭 Tomcat 服务
+    list="tomcat"
+    # 云眼 3.3 之后增加 Kafka
+    list="$list kafka"
+    # 是否部署态势
+    if [[ $cloudmonitor == 1 ]]; then
+        # 如果没有部署独立 ZooKeeper，需要在态势阶段关闭 ZooKeeper
+        if [[ ${zookeeper_yn:-n} != y ]]; then
+            list="$list zookeeper"
+        fi
+        list="$list rsyslog spark"
+        echo $list | grep kafka &> /dev/null || list="$list kafka"
+    fi
+    # loganalyze 用于云垒 2.x
+    if [[ $loganalyze_yn == "y" ]]; then
+        list="$list spark elasticsearch kafka"
+    fi
+    [[ $es_enable == 1 ]] && list="$list elasticsearch"
+    # HBase 关闭顺序
+    list="$list phoenix hbase hadoop"
+    # 是否独立部署 ZooKeeper
+    if [[ ${zookeeper_yn:-n} == y ]]; then
+        list="$list zookeeper"
+    fi
+    # 最后关闭的服务
+    list="$list activemq memcached redis mysqld nginx"
+    getlist $list
+    for i in $list; do
+        echo "---- $i ----"
+        sd$i stop
+        sleep 1
+    done
+}
+
+restart() {
+    stop
+    start
+}
+
+status() {
+    getlist $list
+    for i in $list; do
+        echo "---- $i ----"
+        sd$i status
+    done
+}
+
+usage() {
+    echo "Usage: $(basename $0) {start|stop|restart|status}"
+}
+
+[ $# -eq 0 ] && usage
+
+case "$1" in
+    "start")
+        start
+        ;;
+    "stop")
+        stop
+        ;;
+    "restart")
+        restart
+        ;;
+    "status")
+        status
+        ;;
+    "-h")
+        usage
+        ;;
+esac

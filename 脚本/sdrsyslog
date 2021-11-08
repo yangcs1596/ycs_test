@@ -1,0 +1,49 @@
+#!/bin/bash
+# Copyright www.safedog.cn @ 2017
+# by 1057 (lvxj@safedog.cn)
+
+# Check if user is mybk
+[ $(whoami) != "mybk" ] && { echo "ERROR: This script must be run as mybk"; exit 1; }
+
+start() {
+    echo "Starting rsyslog"
+    sudo systemctl start rsyslog
+}
+
+stop() {
+    echo "Stopping rsyslog"
+    sudo systemctl stop rsyslog
+}
+
+restart() {
+    stop
+    start
+}
+
+status() {
+    sudo systemctl status rsyslog
+}
+
+usage() {
+    echo "Usage: $(basename $0) {start|stop|restart|status}"
+}
+
+[ $# -eq 0 ] && usage
+
+case "$1" in
+    "start")
+        start
+        ;;
+    "stop")
+        stop
+        ;;
+    "restart")
+        restart
+        ;;
+    "status")
+        status
+        ;;
+    "-h")
+        usage
+        ;;
+esac

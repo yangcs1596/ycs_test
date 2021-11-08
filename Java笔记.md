@@ -673,7 +673,7 @@ https://www.cnblogs.com/againn/p/9512013.html
 
 ***public***    可以从其他类中访问
 
-***obstract***  本类不能被实例化
+***abstract***  本类不能被实例化
 
 ***final***    不能再声明子类
 
@@ -2368,13 +2368,45 @@ public V put(K key, V value) {
 
 ### 5-1 Deque双向队列 和栈stack
 
+Deque有三种用途：
+
+* 普通队列(一端进另一端出):
+  Queue queue = new LinkedList()或Deque deque = new LinkedList()
+
+* 双端队列(两端都可进出)
+  Deque deque = new LinkedList()
+* 堆栈
+  Deque deque = new LinkedList()
+
 ```java
 
+    
+ 
+   
 ```
 
+* Deque接口扩展(继承)了 Queue 接口。在将双端队列用作队列时，将得到 FIFO（先进先出）行为。将元素添加到双端队列的末尾，从双端队列的开头移除元素。从 Queue 接口继承的方法完全等效于 Deque 方法
 
+| **Queue方法**                                                | **等效Deque方法** |
+| ------------------------------------------------------------ | ----------------- |
+| add(e)                                                       | addLast(e)        |
+| offer(e)                                                     | offerLast(e)      |
+| remove()                                                     | removeFirst()     |
+| poll() 返回当前队列顶部的对象并将其删除。如果队列为空，则此方法返回null | pollFirst()       |
+| element()                                                    | getFirst()        |
+| peek() 此方法返回当前队列顶部的对象，而不删除它。如果队列为空，则此方法返回null。 | peekFirst()       |
 
+* 双端队列也可用作 LIFO（后进先出）堆栈。应优先使用此接口而不是遗留 Stack 类。在将双端队列用作堆栈时，元素被推入双端队列的开头并从双端队列开头弹出。堆栈方法完全等效于 Deque 方法，如下表所示：
 
+| **堆栈方法** | **等效Deque方法** |
+| ------------ | ----------------- |
+| push(e)      | addFirst(e)       |
+| pop()        | removeFirst()     |
+| peek()       | peekFirst()       |
+
+方法详细： https://blog.csdn.net/weixin_44008257/article/details/108013581
+
+![image-20211104114554264](.\image\image-20211104114554264.png)
 
 ### 6 gc 垃圾回收
 

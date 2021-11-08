@@ -1,0 +1,78 @@
+#!/bin/bash
+# Copyright www.safedog.cn @ 2017
+# by 1057 (lvxj@safedog.cn)
+
+# Check if user is mybk
+[ $(whoami) != "mybk" ] && { echo "ERROR: This script must be run as mybk"; exit 1; }
+
+. /home/mybk/mybk.cfg &> /dev/null
+
+jpidof() {
+    for i in "$@"; do
+        ps aux | sed 's/start$//' | awk '$11~/java$/&&$NF~/\y'$i'\y/{print$2}'
+    done
+}
+
+wait_hmaster_init() {
+    echo -n "Waiting for HMaster completed initialization."
+    while true; do
+        if /opt/hbase/bin/hbase hbck &> /dev/null; then
+            echo; break
+        else
+            echo -n .; sleep 1
+        fi
+    done
+}
+
+start() {
+    if [[ -n $(jpidof HMaster HQuorumPeer HRegionServer) ]]; then
+        echo "HBase already started."
+    else
+        /opt/hbase/bin/start-hbase.sh
+    fi
+    wait_hmaster_init
+}
+
+stop() {
+    /opt/hbase/bin/stop-hbase.sh
+    #logexpect /mybk/log/hbase/hbase-mybk-zookeeper-hdfs1.safedog.cn.log "Terminating" | grep "Terminating"
+    return 0
+}
+
+restart() {
+    stop
+    start
+}
+
+status() {
+    if [[ ${zookeeper_yn:-n} == y ]]; then
+        list="HMaster HRegionServer"
+    else
+        list="HMaster HRegionServer HQuorumPeer"
+    fi
+    for i in $list; do jps | grep "[0-9]\+ $i$" || echo Not Found: $i; done
+}
+
+usage() {
+    echo "Usage: $(basename $0) {start|stop|restart|status}"
+}
+
+[ $# -eq 0 ] && usage
+
+case "$1" in
+    "start")
+        start
+        ;;
+    "stop")
+        stop
+        ;;
+    "restart")
+        restart
+        ;;
+    "status")
+        status
+        ;;
+    "-h")
+        usage
+        ;;
+esac

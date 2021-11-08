@@ -1,0 +1,103 @@
+#!/bin/bash
+# Copyright www.safedog.cn @ 2017
+# by 1057 (lvxj@safedog.cn)
+
+# Check if user is mybk
+[ $(whoami) != "mybk" ] && { echo "ERROR: This script must be run as mybk"; exit 1; }
+
+# Default
+es_instances="elasticsearch1 elasticsearch2"
+# Config File
+. /home/mybk/mybk.cfg &> /dev/null
+[[ $es_enable != 1 ]] || [ "$loganalyze" == "n" ] && exit
+
+start() {
+    for i in $es_instances; do
+        if [[ -d /opt/$i ]]; then
+            if ps aux | grep -v grep | grep "=/opt/$i" &> /dev/null; then
+                echo -e "$i\t\trunning!"
+            else
+                echo "Starting $i..."
+                export node_name=$i
+                nohup /opt/$i/bin/elasticsearch &>> /opt/$i/$i.log &
+                logexpect /opt/$i/$i.log "started"
+                sleep 1
+            fi
+        else
+            echo "/opt/$i not exists!"
+        fi
+    done
+    if [[ ${elasticsearch_head_enable:-0} == 1 ]]; then
+        if [[ -d /opt/nodejs/elasticsearch-head/ ]]; then
+            echo "Starting elasticsearch-head..."
+            cd /opt/nodejs/elasticsearch-head
+            nohup npm run start &> /dev/null &
+        fi
+    fi
+}
+
+stop() {
+     for i in $es_instances; do
+        if [[ -d /opt/$i ]]; then
+            pid=$(ps aux | grep -v grep | grep "=/opt/$i" | awk '{print $2}')
+            if [[ $pid -gt 0 ]]; then
+                echo "Stopping $i..."
+                kill -9 $pid
+            else
+                echo -e "$i\t\tstopped!"
+            fi
+        fi
+    done
+    if [[ -d /opt/nodejs/elasticsearch-head/ ]]; then
+        for i in npm grunt; do
+            pid=$(ps aux | grep -v grep | grep "$i" | awk '{print $2}')
+            if [[ $pid -gt 0 ]]; then
+                echo "Shutting down elasticsearch-head ($pid)"
+                kill -9 $pid
+            fi
+        done
+    fi
+}
+
+restart() {
+    stop
+    start
+}
+
+status() {
+    jps -v | awk '$2 == "Elasticsearch" {for(i=1;i<=NF;i++) if($i ~ /-Des.path.home=/) {sub(/.*\//,"",$i); print $i,$1}}'
+    if [[ -d /opt/nodejs/elasticsearch-head/ ]]; then
+        for i in npm grunt; do
+            pid=$(ps aux | grep -v grep | grep "$i" | awk '{print $2}')
+            if [[ $pid -gt 0 ]]; then
+                echo "elasticsearch-head is running ($(pgrep -l $i))"
+            else
+                echo "elasticsearch-head is stopped"
+            fi
+        done
+    fi
+}
+
+usage() {
+    echo "Usage: $(basename $0) {start|stop|restart|status}"
+}
+
+[ $# -eq 0 ] && usage
+
+case "$1" in
+    "start")
+        start
+        ;;
+    "stop")
+        stop
+        ;;
+    "restart")
+        restart
+        ;;
+    "status")
+        status
+        ;;
+    "-h")
+        usage
+        ;;
+esac

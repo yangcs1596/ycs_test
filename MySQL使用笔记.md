@@ -31,7 +31,7 @@
 对索引字段中文本的搜索进行优化
 ```
 
-### 连接命令
+### mysql连接命令
 
 ```shell
 》mysql -h+IP -u+root -p+password 注意不需要空格
@@ -62,8 +62,19 @@
 
 使用该命令只能查看慢查询次数，但是我们没有办法知道是哪些查询产生了慢查询，如果想要知道是哪些查询导致的慢查询，那么我们必须修改mysql的配置文件。打开mysql的配置文件（windows系统是my.ini,linux系统是my.cnf），在[mysqld]下面加上以下代码：
 
-```
+```mysql
+#一、配置的方式是永久开启
 `log-slow-queries=mysql_slow.log``long_query_time=1`
+
+#所有执行时间超过1秒的sql都将被记录到慢查询文件中（我这里就是 /data/mysql/mysql-slow.log
+
+#二、临时开启的命令
+#1、开启
+set global slow_query_log = on; 
+#2、临界值
+set long_query_time = 1;
+#3、关闭
+set global slow_query_log = off; 
 ```
 
 * 我们应该使用**explain**命令查看mysql的执行计划，寻找其中的可优化点。 
@@ -259,6 +270,7 @@ add (
 
 ~~~mysql
 alter table 表名称 modify 字段名称 字段类型 [是否允许非空];
+alter table 表名称 change column 旧字段  新字段 字段类型 是否非空 default null comment '说明' After 某字段;
 ~~~
 
 ##### 3-1 修改编码格式
@@ -358,6 +370,17 @@ show create table table_name; -- 显示建表语句
 
 ```
 
+#### 9、插入
+
+```mysql
+INSERT INTO table_name ( field1, field2,...fieldN )
+                       VALUES
+                       ( value1, value2,...valueN );
+                       
+INSERT INTO table_name ( field1, field2,...fieldN )
+      select xx from table;
+```
+
 
 
 ### INNER JOIN
@@ -433,11 +456,12 @@ CONVERT(value, type);
 
 
 
-### 查询一张表有几个字段
+### information_schema的表信息
 
 ```mysql
 #查询表的字段
 select * from information_schema.COLUMNS where table_name='表名' and TAble_schema = '库'
+
 #查询某数据库的所有表
 SELECT table_name
 FROM information_schema.tables
@@ -629,6 +653,85 @@ select * from P_DWA_ERP_LEDGER_JQ_MONTH_NEW('12');
 
 
 
+#### 通过游标来实现通过查询结果集循环
+
+https://www.cnblogs.com/Luouy/p/7301344.html
+
+```mysql
+/*定义游标*/
+declare idCur cursor for select A.HostId from dev_host as A, sys_hostconfig as B where A.HostId != B.HostId;
+/*定义监听器 设置循环结束标识done值怎么改变 的逻辑*/
+declare continue handler for not FOUND set done = 1; /*done = true;亦可*/
+
+open idCur;  /*打开游标*/
+close idCur;  /*关闭游标*/
+
+#实际demo
+/*我们有时候会遇到需要对 从A表查询的结果集S_S 的记录 进行遍历并做一些操作（如插入），且这些操作需要的数据或许部分来自S_S集合*/
+/*临时存储过程，没办法，不能直接在查询窗口做这些事。*/
+drop procedure if exists proc_tmp;
+create procedure proc_tmp()
+BEGIN
+/*这种写法也可以：DECLARE done INT DEFAULT FALSE;*/
+declare done int default 0;  /*用于判断是否结束循环*/
+declare hostId bigint; /*用于存储结果集S_S的记录（因为我这里S_S的记录只有一列且为bigint类型）*/
+
+/******************************1、定义游标******************************/
+declare idCur cursor for select A.HostId from dev_host as A, sys_hostconfig as B where A.HostId != B.HostId;
+/******************************2、定义 设置循环结束标识done值怎么改变 的逻辑******************************/
+declare continue handler for not FOUND set done = 1; /*done = true;亦可*/
+/*这句的含义是：若没有数据返回,程序继续,并将变量done设为1 ，用作if的判断条件
+每个游标必须使用不同的declare continue handler for not found set done=1来控制游标的结束。
+也可以这么写
+declare CONTINUE HANDLER FOR SQLSTATE '02000' SET tmpname = null;
+*/
+
+open idCur;  /******************************3、打开游标******************************/
+
+/******* 4、循环开始start *************/
+REPEAT
+/* 如果要fetch多列应该这样写，fetch cur/*对应下面的idCur*/ into rowId, rowName;但是注意rowId和rowName要先declare，且declare cur时也要select两列，且这两列和rowId、rowName对应 */
+  fetch idCur into hostId;  /*这部分可以看看书，还可以fetch多列（假设结果集S_S的记录不是单列的话）*/
+  if not done THEN  /*数值为非0，MySQL认为是true*/
+     insert into sys_hostconfig(HostId, AElecCap, BElecCap, CElecCap, RemElecCap, ATmpCap, BTmpCap, CTmpCap, BoxTmpCap, CreateTime)
+/*注意这里用到了hostId和now()*/
+      values(hostId, 80, 80, 80, 500, 80, 80, 80, 80, NOW());
+   end if;
+until done end repeat;
+/********** 循环结束end ******/
+close idCur;  /******************************关闭游标******************************/
+END
+
+
+call proc_tmp();
+drop procedure proc_tmp;  /*删除临时存储过程*/
+```
+
+
+
+#### mysqsl几种循环
+
+```mysql
+while 循环条件 do 
+循环体;
+end while;
+
+#--
+loop 
+循环体;
+end loop;
+
+#---
+repeat 
+循环体;
+until 结束循环的条件
+end repeat
+
+循环控制语句：
+iterate：类似于java中的continue，结束本次循环，继续下一次循环。
+leave：类似于java中的break，跳出循环，执行之后的语句。
+```
+
 
 
 ### 函数用法
@@ -653,11 +756,13 @@ select * from P_DWA_ERP_LEDGER_JQ_MONTH_NEW('12');
   返回结果为连接参数产生的字符串，如果有任何一个参数为null，则返回值为null。
   ```
 
-* **concat_ws()函数**
+* **concat_ws()函数** 指定分割符separator 
 
   ```mysql
   1、功能：和concat()一样，将多个字符串连接成一个字符串，但是可以一次性指定分隔符～（concat_ws就是concat with separator）
   2、语法：concat_ws(separator, str1, str2, ...)
+  例子：
+   select group_concat(id order by id separator '_') from t_kenyon;
   ```
 
 * **group_concat()函数**
@@ -780,3 +885,94 @@ spring:
 | initialTimeout        | autoReconnect设置为true时，两次重连之间的时间间隔，单位：秒  | 2      | 1.1          |
 | connectTimeout        | 和数据库服务器建立socket连接时的超时，单位：毫秒。 0表示永不超时，适用于JDK 1.4及更高版本 | 0      | 3.0.1        |
 | socketTimeout         | socket操作（读写）超时，单位：毫秒。 0表示永不超时           |        |              |
+
+# MySQL的主从配置
+
+```mysql
+主库：
+　　1、配置文件里面加入以下两行
+　　　　server-id=1
+　　　　#启用binlog日志
+　　　　log-bin=MySQL-bin
+　　2、创建账户
+　　　　grant replication client,replication slave on *.* to root@'从库ip' identified by 'root';
+　　　　#注意此处的用户和下面从库的用户用户一致
+　　查看状态
+    show  master  status;
+从库：
+　　1、配置文件加上以下几行
+　　　　server-id=2
+　　　　relay-log=relay-bin
+　　　　read-only=1
+
+　　　　replicate-ignore-db = mysql                      不复制的库
+　　　　replicate-ignore-db = test                         不复制的库
+　　　　replicate-ignore-db = information_schema  不复制的库
+
+　　　　replicate-wild-do-table = 数据库名字.表名字 // 所要同步的数据库的单个表，可以加多行就是多个
+
+　   2、从库关联主库
+　　　　change master to master_host='主库ip',master_user='root',master_password='root';
+    查看状态
+    show slave status\G;
+```
+
+
+
+# mysqldump导出
+
+## 1、命令语法
+
+```mysql
+#备注：
+--no-autocommit                     ----采用批量提交方式(提高还原性能)
+--set-gtid-purged=OFF  时，
+在会记录binlog日志，如果不加，不记录binlog日志，所以在我们做主从用了gtid时，用mysqldump备份时就要加--set-gtid-purged=OFF，否则你在主上导入恢复了数据，主没有了binlog日志，同步则不会被同步。
+
+备份数据库 
+#mysqldump　数据库名　>数据库备份名 
+#mysqldump -uroot　-p　-A　-u用户名　-p密码　数据库名>数据库备份名 
+#mysqldump　-uroot　-p -d　-A　--add-drop-table　　>xxx.sql
+导出结构 不导出数据 --opt -d  
+#mysqldump -uroot　-pxx　--opt -d　数据库名　>　xxx.sql
+导出数据和表结构 
+#mysqldump　-uroot　-pxx 数据库名　　>　xxx.sql　
+导出特定表的结构 
+#mysqldump　-uroot　-pxx　-B　数据库名　--table　表名　>　xxx.sql
+
+
+导入数据：
+#use 数据库; 
+#source　/tmp/xxx.sql
+方式二：
+#mysql -uabc_f -pxx abc < abc.sql
+```
+
+## 2、mysqldump实际导出例子
+
+```mysql
+mysql -ucloudnet -pCtx1ytxA@3zdj
+use cloudnet;
+drop table if exists risk_type_copy1;
+create table risk_type_copy1 like risk_type;
+insert into cloudnet.risk_type_copy1 select t.* from cloudnet.risk_type t left join cloudpassport.risk_sys_info r on r.name =t.name where r.ostype = 1;
+truncate table cloudnet.risk_type;
+truncate table cloudnet.risk_affected_os_info;
+insert into cloudnet.risk_type select * from cloudnet.risk_type_copy1;
+
+mysql -ucloudpassport -pCtx1ytxA@3zdj 
+use cloudpassport;
+drop table if exists risk_sys_info_copy1;
+create table risk_sys_info_copy1 like risk_sys_info;
+insert into risk_sys_info_copy1 select * from risk_sys_info where osType = 1;
+truncate table risk_sys_info;
+insert into risk_sys_info select * from risk_sys_info_copy1;
+
+
+-- 导入导出的sql
+mysqldump -ucloudnet -pCtx1ytxA@3zdj cloudnet risk_affected_os_info risk_type kb_cve_mapping patch_store_version --no-autocommit --set-gtid-purged=off >/home/mybk/mysql.cloudnet.knowledgebase20211019.sql
+
+mysqldump -ucloudpassport -pCtx1ytxA@3zdj cloudpassport risk_sys_info --no-autocommit --set-gtid-purged=off >/home/mybk/mysql.cloudpassport.knowledgebase20211019.sql
+```
+
+## 

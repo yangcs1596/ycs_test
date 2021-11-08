@@ -1,0 +1,59 @@
+#!/bin/bash
+# Copyright www.safedog.cn @ 2017
+# by 1057 (lvxj@safedog.cn)
+
+# Check if user is mybk
+[ $(whoami) != "mybk" ] && { echo "ERROR: This script must be run as mybk"; exit 1; }
+
+start() {
+    status > /dev/null || {
+        echo "Starting Memcached."
+        /usr/local/memcached/bin/memcached -d -m 128 -p 11211 -c 8000 -u mybk
+    }
+}
+
+stop() {
+    status > /dev/null && {
+        echo "Shutting down Memcached."
+        kill $(pidof memcached)
+    }
+}
+
+restart() {
+    stop
+    start
+}
+
+status() {
+    ps aux | grep -v grep |  grep /usr/local/memcached/bin/memcached > /dev/null
+    if [ $? -eq 0 ]; then
+        echo "Memcached running ($(pidof memcached))"
+    else
+        echo "Memcached is not running"
+        return 3
+    fi
+}
+
+usage() {
+    echo "Usage: $(basename $0) {start|stop|restart|status}"
+}
+
+[ $# -eq 0 ] && usage
+
+case "$1" in
+    "start")
+        start
+        ;;
+    "stop")
+        stop
+        ;;
+    "restart")
+        restart
+        ;;
+    "status")
+        status
+        ;;
+    "-h")
+        usage
+        ;;
+esac

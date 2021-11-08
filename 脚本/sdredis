@@ -1,0 +1,107 @@
+#!/bin/bash
+# Copyright www.safedog.cn @ 2017
+# by 1057 (lvxj@safedog.cn)
+
+# Check if user is mybk
+[ $(whoami) != "mybk" ] && { echo "ERROR: This script must be run as mybk"; exit 1; }
+
+# Config File
+. /home/mybk/mybk.cfg &> /dev/null
+
+#REDIS_HOME="/usr/local/redis"
+#if [[ ! -d $REDIS_HOME/ && -d /opt/redis/ ]]; then
+#    REDIS_HOME="/opt/redis"
+#fi
+REDIS_HOME="/opt/redis"
+if [[ $# == 2 ]]; then
+    redis_instances="$2"
+else
+    if [[ ${REDIS_SENTINEL_ENABLE:-0} == 1 ]]; then
+        redis_instances="server sentinel"
+    else
+        redis_instances="server"
+    fi
+fi
+REDIS_SERVER_PID=$(ps ax -o pid= -o command= | grep -v grep | grep -E "redis-.*:[0-9]+$" | awk '{print$1}')
+REDIS_SENTINEL_PID=$(ps ax -o pid= -o command= | grep -v grep | grep -E "redis-.*:[0-9]+" | grep sentinel | awk '{print$1}')
+
+start() {
+    for i in $redis_instances; do
+        case $i in
+            server)
+                if [[ -n $REDIS_SERVER_PID ]]; then
+                    echo "Redis Server is running with pid $REDIS_SERVER_PID"
+                else
+                    echo "Starting Redis Server ..."
+                    $REDIS_HOME/bin/redis-server $REDIS_HOME/etc/redis.conf
+                fi
+                ;;
+            sentinel)
+                if [[ -n $REDIS_SENTINEL_PID ]]; then
+                    echo "Redis Sentinel is running with pid $REDIS_SENTINEL_PID"
+                else
+                    echo "Starting Redis Sentinel ..."
+                    $REDIS_HOME/bin/redis-server $REDIS_HOME/etc/sentinel.conf --sentinel
+                fi
+                ;;
+        esac
+    done
+}
+
+stop() {
+    for i in $redis_instances; do
+        case $i in
+            server)
+                if [[ -n $REDIS_SERVER_PID ]]; then
+                    echo "Stopping Redis Server ..."
+                    kill $REDIS_SERVER_PID
+                else
+                    echo "Redis Server is not running"
+                fi
+                ;;
+            sentinel)
+                if [[ -n $REDIS_SENTINEL_PID && ${REDIS_SENTINEL_ENABLE:-0} == 1 ]]; then
+                    echo "Stopping Redis Sentinel ..."
+                    kill $REDIS_SENTINEL_PID
+                else
+                    echo "Redis Sentinel is not running"
+                fi
+                ;;
+        esac
+    done
+}
+
+restart() {
+    stop
+    start
+}
+
+status() {
+    if ! ps ax -o pid= -o command= | grep -v grep | grep -E "redis-.*:"; then
+        echo "Redis is not running"
+    fi
+}
+
+usage() {
+    echo "Usage: $(basename $0) {start|stop|restart|status} [server|sentinel]"
+}
+
+[ $# -eq 0 ] && usage
+
+case "$1" in
+    "start")
+        start
+        ;;
+    "stop")
+        stop
+        ;;
+    "restart")
+        restart
+        ;;
+    "status")
+        status
+        ;;
+    "-h")
+        usage
+        ;;
+esac

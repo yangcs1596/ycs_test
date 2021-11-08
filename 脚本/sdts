@@ -1,0 +1,61 @@
+#!/bin/bash
+# Copyright www.safedog.cn @ 2017
+# by 1057 (lvxj@safedog.cn)
+
+# Check if user is mybk
+[ $(whoami) != "mybk" ] && { echo "ERROR: This script must be run as mybk"; exit 1; }
+
+. /home/mybk/mybk.cfg &> /dev/null
+[[ ${cloudmonitor:-0} == 0 ]] && exit
+
+start() {
+    echo "Starting ts log-processor"
+    mkdir -p /opt/ts/logs
+    pushd /opt/ts &> /dev/null
+    ts_jar=$(ls -tr log-processor*jar | tail -1)
+    nohup java -jar $ts_jar -Dcatalina.base=/usr/local/tomcat8/tomcatcloudts &> /dev/null &
+}
+
+stop() {
+    pid=$(ps aux | grep -v grep | egrep "\blog-processor\b" | awk '{print $2}')
+    echo "Shutting down ts log-processor ($pid)"
+    [[ $pid -gt 0 ]] && kill -9 $pid
+}
+
+restart() {
+    stop
+    start
+}
+
+status() {
+    pid=$(ps aux | grep -v grep | egrep "\blog-processor\b" | awk '{print $2}')
+    if [[ $pid -gt 0 ]]; then
+        echo "ts log-processor is running ($pid)"
+    else
+        echo "ts log-processor is stopped"
+    fi
+}
+
+usage() {
+    echo "Usage: $(basename $0) {start|stop|restart|status}"
+}
+
+[ $# -eq 0 ] && usage
+
+case "$1" in
+    "start")
+        start
+        ;;
+    "stop")
+        stop
+        ;;
+    "restart")
+        restart
+        ;;
+    "status")
+        status
+        ;;
+    "-h")
+        usage
+        ;;
+esac

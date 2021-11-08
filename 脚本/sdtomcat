@@ -1,0 +1,376 @@
+#!/bin/bash
+# Copyright www.safedog.cn @ 2017
+# by 1057 (lvxj@safedog.cn)
+
+# Check if user is mybk
+[ $(whoami) != "mybk" ] && { echo "ERROR: This script must be run as mybk"; exit 1; }
+
+# Default
+tomcat_version="7"
+tomcat_instances="tomcatconsole tomcatpassport1 tomcatsso1 tomcatyunlei"
+# Config File
+. /home/mybk/mybk.cfg &> /dev/null
+# InstanceName
+if [[ $# -ge 2 && $# -le 3 ]]; then
+    if [[ "${2:0:6}" == "tomcat" ]]; then
+        tomcat_instances="$2"
+    else
+        [[ $tomcat_version == 7 ]] && tomcat_instances="tomcat$2"
+        [[ $tomcat_version == 8 ]] && tomcat_instances="tomcatcloud$2"
+    fi
+fi
+
+start() {
+    for i in $tomcat_instances; do
+        if [ -d /usr/local/tomcat${tomcat_version}/$i ]; then
+            RUNPID=$(ps ax -o pid= -o command= | grep -v grep | grep -E "Dcatalina.base=[/a-Z0-9]+/$i" | awk '{print$1}' | head -1)
+            if [[ -n $RUNPID ]]; then
+                echo "$i running with PID $RUNPID"
+            else
+                if [[ $i == tomcatcloudgap ]]; then
+                    cd /usr/local/tomcat${tomcat_version}/$i/myapps/cloudgap
+                    > /usr/local/tomcat${tomcat_version}/$i/logs/catalina.out
+                    nohup java -jar cloudgaproot.jar -Dcatalina.base=/usr/local/tomcat8/tomcatcloudgap &> ../../logs/catalina.out &
+                    logexpect /usr/local/tomcat${tomcat_version}/$i/logs/catalina.out "Tomcat started"
+                    echo "$i startup"
+                elif [[ $i == tomcatcloudts ]]; then
+                    cd /usr/local/tomcat${tomcat_version}/$i
+                    nohup java -jar $(ls -tr myapps/ts/log-processor*jar | tail -1) -Dcatalina.base=/usr/local/tomcat8/tomcatcloudts &>> /dev/null &
+                    ln -sfn /usr/local/tomcat8/tomcatcloudts/logs /opt/ts/
+                    echo "$i startup"
+                elif [[ $i == tomcatcloudplatform ]]; then
+                    cd /usr/local/tomcat${tomcat_version}/$i/myapps/cloudplatform
+                    nohup java -jar cloud-upgrade.jar --spring.profiles.active=prod -Dcatalina.base=/usr/local/tomcat8/tomcatcloudplatform &>> /dev/null &
+                    ln -sfn /usr/local/tomcat8/tomcatcloudplatform/myapps/cloudplatform/log ~/sitelogs/cloudplatform-log
+                    echo "$i startup"
+                elif [[ $i == tomcatcloudapi ]]; then
+                      if [[ ! $1 ]]; then
+                          xms="Xms1G"
+                          xmx="Xmx1G"
+                          xmn="Xmn256m"
+                          #echo $xms $xmx $xmn
+                      else
+                          if [[ "$1" -ge 1 && "$1" -le 8 ]]; then
+                              #echo $1
+                              n=$(( $1 * 1024 / 3 ))
+                              xms="Xms$1G"
+                              xmx="Xmx$1G"
+                              xmn="Xmn${n}m"
+                              #echo $xms $xmx $xmn
+                          else
+                              echo "非法输入，请输入1到8 exp: sdtomcat start api 6"
+                              exit
+                          fi
+                      fi
+                    cd /usr/local/tomcat${tomcat_version}/$i
+                    mkdir -p /usr/local/tomcat${tomcat_version}/$i/logs
+                    for jar_name in eureka-server config-server api-gateway api-cloud; do
+                        echo "/usr/local/tomcat${tomcat_version}/$i/myapps/cloudapi/${jar_name}"
+                        cd /usr/local/tomcat${tomcat_version}/$i/myapps/cloudapi/${jar_name}
+                        if [[ ! -f /usr/local/tomcat${tomcat_version}/$i/myapps/cloudapi/${jar_name}/${jar_name}.jar ]]; then
+                            continue
+                        fi
+                        > /usr/local/tomcat${tomcat_version}/$i/logs/${jar_name}.log
+                        nohup java -${xms} -${xmx} -${xmn} -jar ${jar_name}.jar -Dcatalina.base=/usr/local/tomcat8/tomcatcloudapi-${jar_name} &> /usr/local/tomcat${tomcat_version}/$i/logs/${jar_name}.log &
+                        logexpect /usr/local/tomcat${tomcat_version}/$i/logs/${jar_name}.log "Tomcat started" 10 30
+                        if [[ $jar_name == config-server ]]; then
+                            num=60
+                            while true; do
+                                if [[ $num -gt 1 ]]; then
+                                    num=$(expr $num - 1)
+                                    echo -n "."
+                                    sleep 1
+                                else
+                                    echo
+                                    break
+                                fi
+                            done
+                        fi
+                        echo "$i startup ($jar_name)"
+                        cd /usr/local/tomcat${tomcat_version}/$i
+                    done
+                    mkdir -p ~/sitelogs
+                    ln -sfn /usr/local/tomcat8/tomcatcloudapi/logs ~/sitelogs/cloudapi-log
+                elif [[ $i == tomcatcloudbis ]]; then
+                    xms="Xms1G"
+                    xmx="Xmx1G"
+                    xmn="Xmn256m"
+                    cd /usr/local/tomcat${tomcat_version}/tomcatcloudapi/myapps/cloudapi/cloudbis/
+                    mkdir -p /usr/local/tomcat${tomcat_version}/$i/logs
+                    for jar_name in cloudbis; do
+                        if [[ ! -f /usr/local/tomcat${tomcat_version}/tomcatcloudapi/myapps/cloudapi/${jar_name}/${jar_name}.jar ]]; then
+                            continue
+                        fi
+                        > /usr/local/tomcat${tomcat_version}/tomcatcloudapi/logs/${jar_name}.log
+                        nohup java -${xms} -${xmx} -${xmn} -jar ${jar_name}.jar -Dcatalina.base=/usr/local/tomcat8/tomcatcloudbis-${jar_name} &>/usr/local/tomcat${tomcat_version}/tomcatcloudapi/logs/${jar_name}.log &
+                        logexpect /usr/local/tomcat${tomcat_version}/tomcatcloudapi/logs/${jar_name}.log "Tomcat started" 10 30
+                    done
+                    mkdir -p ~/sitelogs
+                    ln -sfn /usr/local/tomcat8/tomcatcloudapi/logs ~/sitelogs/cloudapi-log
+                elif [[ $i == tomcatcloudarmor ]]; then
+		    if [[ ! $1 ]]; then
+                        cd /usr/local/tomcat${tomcat_version}/$i/myapps/jar
+                        mkdir -p /usr/local/tomcat${tomcat_version}/$i/logs
+                        for jar_name in cloudarmor-baseline cloudarmor-container cloudarmor-image; do
+                            if [[ ! -f /usr/local/tomcat${tomcat_version}/$i/myapps/jar/${jar_name}.jar ]]; then
+                                continue
+                            fi
+                            > /usr/local/tomcat${tomcat_version}/$i/logs/${jar_name}.log
+			    nohup java -server -Xms2G -Xmx2G -XX:+UseG1GC -XX:MaxGCPauseMillis=500 -XX:InitiatingHeapOccupancyPercent=40 -jar ${jar_name}.jar -Dcatalina.base=/usr/local/tomcat8/tomcatcloudarmor-${jar_name} &> ../../logs/${jar_name}.log 2>&1 &
+                            logexpect /usr/local/tomcat${tomcat_version}/$i/logs/${jar_name}.log "Tomcat started" 10 30
+                            echo "$i startup ($jar_name)"
+                        done
+		        ln -sfn /usr/local/tomcat8/tomcatcloudarmor/logs ~/sitelogs/cloudarmor
+                    else
+		        cd /usr/local/tomcat${tomcat_version}/$i/myapps/jar
+                        mkdir -p /usr/local/tomcat${tomcat_version}/$i/logs
+                        case $1 in
+                            cloudarmor-baseline)
+                            if [[ ! -f /usr/local/tomcat${tomcat_version}/$i/myapps/jar/cloudarmor-baseline.jar ]]; then
+                                continue
+                            fi
+                            > /usr/local/tomcat${tomcat_version}/$i/logs/cloudarmor-baseline.log
+                            nohup java -server -Xms2G -Xmx2G -XX:+UseG1GC -XX:MaxGCPauseMillis=500 -XX:InitiatingHeapOccupancyPercent=40 -jar cloudarmor-baseline.jar -Dcatalina.base=/usr/local/tomcat8/tomcatcloudarmor-cloudarmor-baseline &> ../../logs/cloudarmor-baseline.log 2>&1 &
+                            logexpect /usr/local/tomcat${tomcat_version}/$i/logs/cloudarmor-baseline.log "Tomcat started" 10 30
+                            echo "$i startup (cloudarmor-baseline)"
+                            ;;
+                         esac
+                        case $1 in
+                            cloudarmor-container)
+                            if [[ ! -f /usr/local/tomcat${tomcat_version}/$i/myapps/jar/cloudarmor-container.jar ]]; then
+                                continue
+                            fi
+                            > /usr/local/tomcat${tomcat_version}/$i/logs/cloudarmor-container.log
+                            nohup java -server -Xms2G -Xmx2G -XX:+UseG1GC -XX:MaxGCPauseMillis=500 -XX:InitiatingHeapOccupancyPercent=40 -jar cloudarmor-container.jar -Dcatalina.base=/usr/local/tomcat8/tomcatcloudarmor-cloudarmor-container &> ../../logs/cloudarmor-container.log 2>&1 &
+                            logexpect /usr/local/tomcat${tomcat_version}/$i/logs/cloudarmor-container.log "Tomcat started" 10 30
+                            echo "$i startup (cloudarmor-container)"
+                            ;;
+                         esac
+                        case $1 in
+                            cloudarmor-image)
+                            if [[ ! -f /usr/local/tomcat${tomcat_version}/$i/myapps/jar/cloudarmor-image.jar ]]; then
+                                continue
+                            fi
+                            > /usr/local/tomcat${tomcat_version}/$i/logs/cloudarmor-image.log
+                            nohup java -server -Xms2G -Xmx2G -XX:+UseG1GC -XX:MaxGCPauseMillis=500 -XX:InitiatingHeapOccupancyPercent=40 -jar cloudarmor-image.jar -Dcatalina.base=/usr/local/tomcat8/tomcatcloudarmor-cloudarmor-image &> ../../logs/cloudarmor-image.log 2>&1 &
+                            logexpect /usr/local/tomcat${tomcat_version}/$i/logs/cloudarmor-image.log "Tomcat started" 10 30
+                            echo "$i startup (cloudarmor-image)"
+                            ;;
+                         esac
+		    fi
+                else
+                    pushd /usr/local/tomcat${tomcat_version}/$i &> /dev/null
+                    export CATALINA_BASE=/usr/local/tomcat${tomcat_version}/$i
+                    > /usr/local/tomcat${tomcat_version}/$i/logs/catalina.out
+                    chmod +x /usr/local/tomcat${tomcat_version}/bin/startup.sh
+                    /usr/local/tomcat${tomcat_version}/bin/startup.sh
+                    logexpect /usr/local/tomcat${tomcat_version}/$i/logs/catalina.out "Server startup"
+                    popd &> /dev/null
+                    sleep 2
+                fi
+            fi
+        fi
+    done
+}
+
+stop() {
+    for i in $tomcat_instances; do
+        if [ -d /usr/local/tomcat${tomcat_version}/$i ]; then
+            RUNPID=$(ps ax -o pid= -o command= | grep -v grep | grep -E "Dcatalina.base=[/a-Z0-9]+/$i" | awk '{print$1}' | head -1)
+            if [[ -n $RUNPID ]]; then
+                if [[ $i == tomcatcloudgap ]]; then
+                    > /usr/local/tomcat${tomcat_version}/$i/logs/catalina.out
+                    kill $RUNPID
+                    logexpect /usr/local/tomcat${tomcat_version}/$i/logs/catalina.out "Tomcat stop" 10 10
+                    kill -9 $RUNPID 2> /dev/null
+                    echo "Shutting down $i"
+                elif [[ $i == tomcatcloudts ]]; then
+                    #> /usr/local/tomcat${tomcat_version}/$i/logs/catalina.out
+                    kill $RUNPID
+                    #logexpect /usr/local/tomcat${tomcat_version}/$i/logs/catalina.out "Closing" 10 30
+                    #kill -9 $RUNPID 2> /dev/null
+                    echo "Shutting down $i"
+                elif [[ $i == tomcatcloudapi ]]; then
+                    for jar_name in api-gateway api-cloud config-server eureka-server; do
+                        if [[ ! -f /usr/local/tomcat${tomcat_version}/$i/myapps/cloudapi/${jar_name}/${jar_name}.jar ]]; then
+                            continue
+                        fi
+                        > /usr/local/tomcat${tomcat_version}/$i/logs/${jar_name}.log
+                        RUNPID=$(ps ax -o pid= -o command= | grep -v grep | grep -E "Dcatalina.base=[/a-Z0-9]+/$i" | grep $jar_name | awk '{print$1}' | head -1)
+                        if [[ -n $RUNPID ]]; then
+                            kill $RUNPID
+                            logexpect /usr/local/tomcat${tomcat_version}/$i/logs/${jar_name}.log "Completed shut down" 10 10
+                            kill -9 $RUNPID 2> /dev/null
+                            echo "Shutting down $i ($jar_name)"
+                        fi
+                    done
+                elif [[ $i == tomcatcloudbis ]]; then
+                    for jar_name in cloudbis; do
+                        if [[ ! -f /usr/local/tomcat${tomcat_version}/tomcatcloudapi/myapps/cloudapi/${jar_name}/${jar_name}.jar ]]; then
+                            continue
+                        fi
+                        > /usr/local/tomcat${tomcat_version}/tomcatcloudapi/logs/${jar_name}.log
+                        RUNPID=$(ps ax -o pid= -o command= | grep -v grep | grep -E "Dcatalina.base=[/a-Z0-9]+/tomcatcloudbis" | grep $jar_name | awk '{print$1}' | head -1)
+                        if [[ -n $RUNPID ]]; then
+                            kill $RUNPID
+                            logexpect /usr/local/tomcat${tomcat_version}/tomcatcloudapi/logs/${jar_name}.log "Completed shut down" 10 10
+                            kill -9 $RUNPID 2> /dev/null
+                            echo "Shutting down tomcatcloudbis ($jar_name)"
+                        fi
+                    done
+                elif [[ $i == tomcatcloudarmor ]]; then
+                    if [[ ! $1 ]]; then
+                        for jar_name in cloudarmor-baseline cloudarmor-container cloudarmor-image; do
+                            if [[ ! -f /usr/local/tomcat${tomcat_version}/$i/myapps/jar/${jar_name}.jar ]]; then
+                                continue
+                            fi
+                            > /usr/local/tomcat${tomcat_version}/$i/logs/${jar_name}.log
+                            RUNPID=$(ps ax -o pid= -o command= | grep -v grep | grep -E "Dcatalina.base=[/a-Z0-9]+/$i" | grep $jar_name | awk '{print$1}' | head -1)
+                            if [[ -n $RUNPID ]]; then
+                                kill $RUNPID
+                                logexpect /usr/local/tomcat${tomcat_version}/$i/logs/${jar_name}.log "Completed shut down" 10 10
+                                kill -9 $RUNPID 2> /dev/null
+                                echo "Shutting down $i ($jar_name)"
+                            fi
+                        done
+                    else
+                        case $1 in
+                            cloudarmor-baseline)
+                            echo "================"$1
+                            if [[ ! -f /usr/local/tomcat${tomcat_version}/$i/myapps/jar/cloudarmor-baseline.jar ]]; then
+                                continue
+                            fi
+                            > /usr/local/tomcat${tomcat_version}/$i/logs/cloudarmor-baseline.log
+                            RUNPID=$(ps ax -o pid= -o command= | grep -v grep | grep -E "Dcatalina.base=[/a-Z0-9]+/$i-$1" | grep $1 | awk '{print$1}' | head -1)
+                            if [[ -n $RUNPID ]]; then
+                                kill $RUNPID
+                                logexpect /usr/local/tomcat${tomcat_version}/$i/logs/$1.log "Completed shut down" 10 10
+                                kill -9 $RUNPID 2> /dev/null
+                                echo "Shutting down $i $1"
+                            fi
+                            ;;
+                        esac
+                        case $1 in
+                            cloudarmor-container)
+                            if [[ ! -f /usr/local/tomcat${tomcat_version}/$i/myapps/jar/cloudarmor-container.jar ]]; then
+                                continue
+                            fi
+                            > /usr/local/tomcat${tomcat_version}/$i/logs/cloudarmor-container.log
+                            RUNPID=$(ps ax -o pid= -o command= | grep -v grep | grep -E "Dcatalina.base=[/a-Z0-9]+/$i-$1" | grep $1 | awk '{print$1}' | head -1)
+                            if [[ -n $RUNPID ]]; then
+                                kill $RUNPID
+                                logexpect /usr/local/tomcat${tomcat_version}/$i/logs/$1.log "Completed shut down" 10 10
+                                kill -9 $RUNPID 2> /dev/null
+                                echo "Shutting down $i $1"
+                            fi
+                            ;;
+                        esac
+                        case $1 in
+                            cloudarmor-image)
+                            if [[ ! -f /usr/local/tomcat${tomcat_version}/$i/myapps/jar/cloudarmor-image.jar ]]; then
+                                continue
+                            fi
+                            > /usr/local/tomcat${tomcat_version}/$i/logs/cloudarmor-image.log
+                            RUNPID=$(ps ax -o pid= -o command= | grep -v grep | grep -E "Dcatalina.base=[/a-Z0-9]+/$i-$1" | grep $1 | awk '{print$1}' | head -1)
+                            if [[ -n $RUNPID ]]; then
+                                kill $RUNPID
+                                logexpect /usr/local/tomcat${tomcat_version}/$i/logs/$1.log "Completed shut down" 10 10
+                                kill -9 $RUNPID 2> /dev/null
+                                echo "Shutting down $i $1"
+                            fi
+                            ;;
+                        esac
+                    fi
+                else
+                    export CATALINA_BASE=/usr/local/tomcat${tomcat_version}/$i
+                    > /usr/local/tomcat${tomcat_version}/$i/logs/catalina.out
+                    chmod +x /usr/local/tomcat${tomcat_version}/bin/shutdown.sh
+                    /usr/local/tomcat${tomcat_version}/bin/shutdown.sh
+                    logexpect /usr/local/tomcat${tomcat_version}/$i/logs/catalina.out "Destroying"
+                    kill -9 $RUNPID 2> /dev/null
+                    sleep 2
+                fi
+            else
+                echo "$i not running"
+            fi
+        fi
+    done
+}
+
+restart() {
+    stop
+    start $1
+}
+
+status() {
+    awk 'BEGIN {printf "%-40s%-8s%s\n","Name","PID","Port"}'
+    for i in $(ps ax -o pid= -o command= | grep -v awk | awk '{
+        for(i=1;i<=NF;i++) if($i ~ /-Dcatalina.base=/) {
+            sub(/\/$/,"",$i)
+            sub(/.*\//,"",$i)
+            print $i";"$1
+        }}'); do
+        for j in $(ss -lntp | grep "\b${i#*;}\b" | awk '{for(i=1;i<=NF;i++) if($i~/:[0-9]/){sub(/.*:/,"",$i);print$i}}'); do
+            [[ $j -gt 0 ]] && curl -m 3 127.1:$j &> /dev/null && p+=",$j"
+        done
+        echo "$i;${p:1}" | awk -F';' '{printf "%-40s%-8s%s\n",$1,$2,$3}';p=
+    done
+}
+
+list() {
+    if [ -d /usr/local/tomcat${tomcat_version} ]; then
+        find /usr/local/tomcat${tomcat_version}/ -maxdepth 1 -type d -name "tomcat*" | sed '1d' | awk -F/ '{print $5}'
+    fi
+}
+
+new() {
+    if [[ $# == 2 ]]; then
+        src="${1%/}"
+        dst="${2%/}"
+    else
+        echo "Usage: $(basename $0) new <tomcat_dir> <new_tomcat_dir>"
+        exit
+    fi
+    if [[ -d $src ]]; then
+        if [[ -d $dst ]]; then
+            echo "$dst already exist"
+        else
+            rsync -avi --exclude=work/* --exclude=temp/* --exclude=logs/* --exclude=myapps/ $src/ $dst
+            ln -sfT $src/myapps $dst/myapps
+            echo
+            echo "change listen port in $dst/conf/server.xml"
+        fi
+    else
+        echo "$src not exist"
+    fi
+}
+
+usage() {
+    echo "Usage: $(basename $0) {start|stop|restart|status|list|new}"
+}
+
+[ $# -eq 0 ] && usage
+
+case "$1" in
+    "start")
+        start $3
+        ;;
+    "stop")
+        stop $3
+        ;;
+    "restart")
+        restart $3
+        ;;
+    "status")
+        status
+        ;;
+    "list")
+        list
+        ;;
+    "new")
+        new $2 $3
+        ;;
+    "-h")
+        usage
+        ;;
+esac

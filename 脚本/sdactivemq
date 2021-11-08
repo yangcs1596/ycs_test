@@ -1,0 +1,60 @@
+#!/bin/bash
+# Copyright www.safedog.cn @ 2017
+# by 1057 (lvxj@safedog.cn)
+
+# Check if user is mybk
+[ $(whoami) != "mybk" ] && { echo "ERROR: This script must be run as mybk"; exit 1; }
+
+if [[ -x /opt/activemq/bin/activemq ]]; then
+    MQ_EXEC=/opt/activemq/bin/activemq
+elif [[ -x /opt/apache-activemq-5.6.0/bin/activemq ]]; then
+    MQ_EXEC=/opt/apache-activemq-5.6.0/bin/activemq
+else
+    echo "ERROR: activemq not found."
+    exit 1
+fi
+
+start() {
+    $MQ_EXEC start
+}
+
+stop() {
+    #$MQ_EXEC stop
+    echo "Shutting down ActiveMQ."
+    $MQ_EXEC stop
+    sleep 5
+    for i in $(ps ax -o pid= -o command= | grep -v grep | grep "Dactivemq.home=$PREFIX" | awk '{print$1}'); do kill -9 $i; done
+}
+
+restart() {
+    stop
+    start
+}
+
+status() {
+    $MQ_EXEC status
+}
+
+usage() {
+    echo "Usage: $(basename $0) {start|stop|restart|status}"
+}
+
+[ $# -eq 0 ] && usage
+
+case "$1" in
+    "start")
+        start
+        ;;
+    "stop")
+        stop
+        ;;
+    "restart")
+        restart
+        ;;
+    "status")
+        status
+        ;;
+    "-h")
+        usage
+        ;;
+esac

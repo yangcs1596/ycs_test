@@ -1,0 +1,461 @@
+#!/bin/bash
+# by 1057 (lvxj@safedog.cn)
+set -o nounset
+
+# Check if user is mybk
+[ $(whoami) != "mybk" ] && { echo "ERROR: This script must be run as mybk"; exit 1; }
+
+yunlei_version=
+
+if [[ -f /home/mybk/mybk.cfg ]]; then
+    . /home/mybk/mybk.cfg
+else
+    echo "错误：配置文件 /home/mybk/mybk.cfg 不存在。"
+    exit 1
+fi
+
+for i in yunlei_version; do
+    eval _i=\$$i
+    if [[ -z $_i ]]; then
+        echo "错误：未设置变量 $i。"
+        exit 2
+    fi
+done
+
+if [[ $yunlei_version == 2 ]]; then
+    tomcat_dir="/usr/local/tomcat7"
+    passport_myapps="$tomcat_dir/tomcatpassport1/myapps"
+    sso_myapps="$tomcat_dir/tomcatsso1/myapps"
+    yunlei_myapps="$tomcat_dir/tomcatyunlei/myapps"
+    console_myapps="$tomcat_dir/tomcatconsole/myapps"
+    console_upload="$tomcat_dir/tomcatconsole/myapps"
+else
+    tomcat_dir="/usr/local/tomcat8"
+    passport_myapps="$tomcat_dir/tomcatcloudpassport/myapps"
+    sso_myapps="$tomcat_dir/tomcatcloudsso/myapps"
+    yunlei_myapps="$tomcat_dir/tomcatcloudeyes/myapps"
+    console_myapps="$tomcat_dir/tomcatcloudconsole/myapps"
+    console_upload="$tomcat_dir/tomcatcloudconsole/myapps/upload"
+    solid_myapps="$tomcat_dir/tomcatcloudsolid/myapps"
+    waf_myapps="$tomcat_dir/tomcatcloudwaf/myapps"
+    monitor_myapps="$tomcat_dir/tomcatcloudmonitor/myapps"
+    webmonitor_myapps="$tomcat_dir/tomcatcloudwebmonitor/myapps"
+    net_myapps="$tomcat_dir/tomcatcloudnet/myapps"
+    gap_myapps="$tomcat_dir/tomcatcloudgap/myapps"
+    api_myapps="$tomcat_dir/tomcatcloudapi/myapps"
+    bis_myapps="$tomcat_dir/tomcatcloudbis/myapps"
+    ts_myapps="$tomcat_dir/tomcatcloudts/myapps"
+    platform_myapps="$tomcat_dir/tomcatcloudplatform/myapps"
+    armor_myapps="$tomcat_dir/tomcatcloudarmor/myapps"
+fi
+
+mysql_config() {
+    if [[ ! -f /home/mybk/.mylogin.cnf ]]; then
+        echo "错误：配置文件 /home/mybk/.mylogin.cnf 不存在。"
+        exit 1
+    fi
+}
+
+# 定义 mysql 连接方式
+mysql_cmd() {
+    # 如果设置 MySQL root 密码则使用该密码连接（读取 mybk.cfg）
+    if [[ -n ${MYSQL_ROOT_PASSWORD:-} ]]; then
+        MYSQL_PWD=$MYSQL_ROOT_PASSWORD mysql -u root -h mysql.safedog.cn "$@"
+        return
+    fi
+    # 如果存在 `.mylogin.cnf` 文件，则通过 `--login-path` 读取该加密文件的登陆信息（早期环境）
+    if [[ -f /home/mybk/.mylogin.cnf ]]; then
+        mysql --login-path=$1 "$@"
+        return
+    fi
+    echo "错误：未配置 MySQL root 密码且配置文件 /home/mybk/.mylogin.cnf 不存在。"
+    exit 1
+}
+
+for i in "$@"; do
+    file="$i"
+    if [[ ! -e $file ]]; then
+        echo "错误：指定文件 $file 不存在。"
+        exit 4
+    fi
+    name=$(basename "$file")
+    sqlcmd=
+
+    case "$name" in
+        AVL*)
+            mysql_config
+            echo "Upload $name"
+            unzip -qo $file -d $console_upload
+            case "$name" in
+                AVL-Linux*) softVersion=${name:10:10};;
+                AVLSDKV3_Safedog*) softVersion=${name:17:10};;
+            esac
+        upgradeType=4
+        softName=$name
+        softVersion=${softVersion//-/.}
+        softVersion=${softVersion//_/.}
+        softUrl=""
+        softMd5=$(md5sum $file | cut -c 1-32)
+        sqlcmd="insert into upgrade_soft_version \
+            (descr, insertTime, privateUrl, softMd5, softName, softUrl, softVersion, timingUpgrade, upgradeType) \
+            values \
+            ('$softName', unix_timestamp()*1000, null, '$softMd5', '$softName', '$softUrl', '$softVersion', null, '$upgradeType')"
+        if [[ $yunlei_version == 2 ]]; then
+            mysql --login-path=safedogcloud safedogcloud -e "$sqlcmd"
+        else
+            mysql_cmd cloudpassport -e "$sqlcmd"
+        fi
+        ;;
+    patch-all.zip)
+        mysql_config
+        echo "Upload $name"
+        unzip -qo $file -d $console_upload
+        upgradeType=3
+        softName=$name
+        softVersion=$(find $console_upload/safe/system.dat -name "*.pack" -exec basename {} \; | sort | tail -1)
+        softVersion=${softVersion:7:10}
+        softUrl=""
+        softMd5=$(md5sum $file | cut -c 1-32)
+        sqlcmd="insert into upgrade_soft_version \
+            (descr, insertTime, privateUrl, softMd5, softName, softUrl, softVersion, timingUpgrade, upgradeType) \
+            values \
+            ('$softName', unix_timestamp()*1000, null, '$softMd5', '$softName', '$softUrl', '$softVersion', null, '$upgradeType')"
+        if [[ $yunlei_version == 2 ]]; then
+            mysql --login-path=safedogcloud safedogcloud -e "$sqlcmd"
+        else
+            mysql_cmd cloudpassport -e "$sqlcmd"
+        fi
+        ;;
+    *risk_sys_info.*)
+        if [[ $yunlei_version == 3 ]]; then
+            mysql_config
+            case ${name%%.*} in
+                cloudpassport)
+                    echo "Update $name"
+                    mysql_cmd cloudpassport < "$file"
+                    ;;
+                cloudeyes)
+                    echo "Update $name"
+                    mysql_cmd cloudeyes < "$file"
+                    ;;
+                cloudmonitor)
+                    echo "Update $name"
+                    mysql_cmd cloudmonitor < "$file"
+                    ;;
+                cloudnet)
+                    echo "Update $name"
+                    case ${name##*.} in
+                        sql)
+                            mysql_cmd cloudnet < "$file"
+                            ;;
+                        zip)
+                            unzip -qo $file -d /sdyunlei/tmp
+                            mysql_cmd cloudnet < "/sdyunlei/tmp/${name%.zip}"
+                            rm -f "/sdyunlei/tmp/${name%.zip}"
+                            ;;
+                    esac
+                    ;;
+            esac
+        fi
+        ;;
+    *cloudeyes.view.*)
+        mysql_config
+        echo "Update $name"
+        mysql_cmd cloudeyes < "$file"
+        ;;
+    safedog-nginx-waf*.zip)
+        echo "Upload $name"
+        unzip -qo $file -d $console_upload
+        ;;
+    sdserver-installer.zip)
+        echo "Upload $name"
+        unzip -qo $file -d $console_upload
+        chmod +x $console_upload/safe/soft/sshlogin.sh
+        ;;
+    sdscript.zip)
+        echo "Upload $name"
+        unzip -qo $file -d /home/mybk
+        bash /home/mybk/setup.sh
+        ;;
+    *plugshell*)
+        echo "Upload $name"
+        unzip -qo $file -d /tmp
+        bash /tmp/plugshell/upload_plug.sh
+        bash /tmp/plugshell/upload_vul.sh
+        rm -fr /tmp/plugshell
+        ;;
+    *poc_pack*)
+        echo "Upload $name"
+        unzip -qo $file -d /tmp
+        bash /tmp/poc_pack/upload_poc.sh
+        if [[ -d /opt/tomcat8/tomcatcloudconsole/myapps/upload/version ]]; then
+            cp -f /tmp/poc_pack/version/emergencyVersion.dat /opt/tomcat8/tomcatcloudconsole/myapps/upload/version/emergencyVersion.dat
+        fi
+        rm -fr /tmp/poc_pack
+        ;;
+    webshell_rule_*)
+        mysql_config
+        echo "Upload $name"
+        unzip -qo $file -d $console_upload
+        upgradeType=1
+        softName=$name
+        softVersion=${name:14:10}
+        softUrl=""
+        softMd5=$(md5sum $file | cut -c 1-32)
+        sqlcmd="insert into upgrade_soft_version \
+            (descr, insertTime, privateUrl, softMd5, softName, softUrl, softVersion, timingUpgrade, upgradeType) \
+            values \
+            ('$softName', unix_timestamp()*1000, null, '$softMd5', '$softName', '$softUrl', '$softVersion', null, '$upgradeType')"
+        if [[ $yunlei_version == 2 ]]; then
+            mysql --login-path=safedogcloud safedogcloud -e "$sqlcmd"
+            mysql --login-path=safedogcloud safedogcloud < $console_upload/ROOT/website_defend_rule.sql
+        else
+            mysql_cmd cloudpassport -e "$sqlcmd"
+        fi
+        ;;
+    passport*war)
+        echo "Upload $name"
+        if [[ -f $passport_myapps/passport/WEB-INF/classes/properties/private.properties ]]; then
+            rm -fr /tmp/properties
+            /bin/cp -r $passport_myapps/passport/WEB-INF/classes/properties /tmp/
+        fi
+        if [[ -f $passport_myapps/passport/WEB-INF/classes/private.properties ]]; then
+            rm -f /tmp/private.properties
+            /bin/cp $passport_myapps/passport/WEB-INF/classes/private.properties /tmp/
+        fi
+        mkdir -p $passport_myapps/passport
+        rm -fr $passport_myapps/passport/*
+        unzip -qo $file -d $passport_myapps/passport -x "*/private.properties"
+        if [[ -f /tmp/private.properties ]]; then
+            /bin/mv /tmp/private.properties $passport_myapps/passport/WEB-INF/classes/
+        fi
+        if [[ -d /tmp/properties ]]; then
+            /bin/rm -f /tmp/properties/jdbc.properties
+            /bin/rm -f /tmp/properties/hibernate.properties
+            /bin/mv /tmp/properties/* $passport_myapps/passport/WEB-INF/classes/properties
+            # /bin/find /tmp/properties  -path "/tmp/properties/jdbc.properties" -prune -o -type f -exec /bin/mv {} $passport_myapps/passport/WEB-INF/classes/properties \;
+            rm -fr /tmp/properties
+        fi
+	if [[ -f $passport_myapps/passport/WEB-INF/classes/properties/spring-kafka.properties ]]; then
+            kafka_max_block=$(grep kafka.producer.max.block.ms $passport_myapps/passport/WEB-INF/classes/properties/spring-kafka.properties)
+            if [[ ! $kafka_max_block ]]; then
+                  /bin/sed -i "/kafka.producer.enable.idempotence/a\kafka.producer.max.block.ms=10000" $passport_myapps/passport/WEB-INF/classes/properties/spring-kafka.properties
+            fi
+        fi
+        ;;
+    sso*war)
+        echo "Upload $name"
+        mkdir -p $sso_myapps/sso
+        rm -fr $sso_myapps/sso/*
+        unzip -qo $file -d $sso_myapps/sso
+        ;;
+    ROOT*war|cloudeyes.war)
+        echo "Upload $name"
+        if [[ -f $yunlei_myapps/ROOT/WEB-INF/classes/private.properties ]]; then
+            /bin/cp $yunlei_myapps/ROOT/WEB-INF/classes/private.properties /tmp/
+        fi
+        if [[ -d $yunlei_myapps/ROOT/WEB-INF/classes/properties ]]; then
+            rm -fr /tmp/properties
+            /bin/cp -r $yunlei_myapps/ROOT/WEB-INF/classes/properties /tmp/
+        fi
+        mkdir -p $yunlei_myapps/ROOT
+        rm -fr $yunlei_myapps/ROOT/*
+        unzip -qo $file -d $yunlei_myapps/ROOT
+        mkdir -p $yunlei_myapps/../reportfile/
+        if [[ -f /tmp/private.properties ]]; then
+            /bin/cp /tmp/private.properties $yunlei_myapps/ROOT/WEB-INF/classes/private.properties
+        fi
+        if [[ -d /tmp/properties ]]; then
+            /bin/rm -f /tmp/properties/jdbc.properties
+            /bin/rm -f /tmp/properties/hibernate.properties
+            /bin/mv /tmp/properties/* $yunlei_myapps/ROOT/WEB-INF/classes/properties
+            # /bin/find /tmp/properties  -path "/tmp/properties/jdbc.properties" -prune -o -type f -exec /bin/mv {} $yunlei_myapps/ROOT/WEB-INF/classes/properties \;
+            rm -fr /tmp/properties
+        fi
+        if [[ -f $yunlei_myapps/ROOT/WEB-INF/classes/properties/spring-kafka.properties ]]; then
+            kafka_max_block=$(grep kafka.producer.max.block.ms $yunlei_myapps/ROOT/WEB-INF/classes/properties/spring-kafka.properties)
+            if [[ ! $kafka_max_block ]]; then
+                  sed -i "/kafka.producer.enable.idempotence/a\kafka.producer.max.block.ms=10000" $yunlei_myapps/ROOT/WEB-INF/classes/properties/spring-kafka.properties
+            fi
+        fi
+        ;;
+    manager*war|console.war)
+        echo "Upload $name"
+        mkdir -p $console_myapps/manager
+        rm -fr $console_myapps/manager/*
+        unzip -qo $file -d $console_myapps/manager
+        if [[ $yunlei_version == 3 ]]; then
+            mkdir -p $console_myapps/upload/safe/soft/agents/NF-7400{D,I,P,WT,L{,P,N,T}{,64}}
+            mkdir -p $console_myapps/upload/safe/soft/agents/NF{P,B}-7500{W,L{,64}}
+            mkdir -p $console_myapps/upload/safe/soft/agents/NFW-7500{W{I,P,J},L{P,N,J}{,64}}
+            mkdir -p $console_myapps/upload/safe/soft/cert
+        fi
+        ;;
+    cloudwaf*war)
+        echo "Upload $name"
+        mkdir -p $waf_myapps/cloudwaf
+        rm -fr $waf_myapps/cloudwaf/*
+        unzip -qo $file -d $waf_myapps/cloudwaf
+        ;;
+    monitor*war)
+        echo "Upload $name"
+        mkdir -p $monitor_myapps/monitor
+        rm -fr $monitor_myapps/monitor/*
+        unzip -qo $file -d $monitor_myapps/monitor
+        ;;
+    cloudsolid*war)
+        echo "Upload $name"
+        mkdir -p $solid_myapps/cloudsolid
+        rm -fr $solid_myapps/cloudsolid/*
+        unzip -qo $file -d $solid_myapps/cloudsolid
+        ;;
+    cloudwebmonitor*war)
+        echo "Upload $name"
+        mkdir -p $webmonitor_myapps/webmonitor
+        rm -fr $webmonitor_myapps/webmonitor/*
+        unzip -qo $file -d $webmonitor_myapps/webmonitor
+        ;;
+    cloudnet*war)
+        echo "Upload $name"
+        mkdir -p $net_myapps/cloudnet
+        rm -fr $net_myapps/cloudnet/*
+        unzip -qo $file -d $net_myapps/cloudnet
+        ;;
+    cloudgap*zip)
+        echo "Upload $name"
+        mkdir -p $gap_myapps/
+        rm -fr $gap_myapps/*
+        unzip -qo $file -d $gap_myapps/
+        ;;
+    cloudapi*zip)
+        echo "Upload $name"
+        mkdir -p $api_myapps/
+        rm -fr $api_myapps/*
+        unzip -qo $file -d $api_myapps/
+        ;;
+    cloudbis*zip)
+        echo "Upload $name"
+        mkdir -p $bis_myapps/
+        rm -fr $bis_myapps/*
+        unzip -qo $file -d $bis_myapps/
+        ;;
+    cloudplatform*zip)
+        echo "Upload $name"
+        mkdir -p $platform_myapps/
+        rm -fr $platform_myapps/*
+        unzip -qo $file -d $platform_myapps/
+        ;;
+    cloudarmor*zip)
+        echo "Upload $name"
+        mkdir -p $armor_myapps/
+        rm -fr $armor_myapps/*
+        unzip -qo $file -d $armor_myapps/
+        ;;
+    ts_*zip)
+        echo "Upload $name"
+        mkdir -p $ts_myapps/
+        rm -fr $ts_myapps/*
+        unzip -qo $file -d $ts_myapps/ts
+        ;;
+    safedog_*.bin)
+        mkdir -p $console_upload/safe/soft
+        mysql_config
+        softType=$(echo $name | awk -F_ '{print$2}')
+        softVersion=$(echo $name | awk -F_ '{print$3}' | sed 's/.bin//')
+        sqlcmd_getserverip="select serverIp from private_server_ip where id = 11 \G;"
+        sqlcmd_getsoftversion="select softVersion from safedog_version where softType = \"$softType\" \G;"
+        if [[ $yunlei_version == 3 ]]; then
+            serverIp=$(mysql_cmd cloudpassport -e "$sqlcmd_getserverip" | awk -F"/" '{print$3}' | tail -1)
+            getsoftVersion=$(mysql_cmd cloudpassport -e "$sqlcmd_getsoftversion" | awk '{print$2}' | tail -1)
+        fi
+        if [[ -f $console_upload/safe/soft/safedog_${softType}.tar.gz || -f $console_upload/safe/soft/safedog_${softType}.exe ]]; then
+            if [[ $getsoftVersion == $softVersion && -d $console_upload/safe/soft/agents/$softType ]]; then
+                echo "Skip $name"
+                continue
+            fi
+        fi
+        echo "Upload $name"
+        unzip -qo -P safedog_installer_2018 $file -d $console_upload/safe/soft
+        softName=$(unzip -t -P safedog_installer_2018 $file | awk '/testing/{print$2}')
+        downloadName=$softName
+        softMd5=$(md5sum $console_upload/safe/soft/$softName | cut -c 1-32)
+        softUrl="http://down.safedog.cn/safe/soft/$softName"
+        sqlcmd="update safedog_version set \
+            descr='$name', \
+            insertTime='$(date +"%Y-%m-%d %H:%M:%S")', \
+            softMd5='$softMd5', \
+            softUrl='$softUrl', \
+            softVersion='$softVersion' \
+            where softType='$softType'"
+        if [[ $yunlei_version == 3 ]]; then
+            mysql_cmd cloudpassport -e "$sqlcmd"
+        fi
+        # 更新客户端
+        for cert in $(find $console_upload/safe/soft/cert/ -type f -name "*.psf" -printf "%f\n" 2> /dev/null); do
+            user=${cert/.psf/}
+            echo "  - update $user $softName"
+            bash $console_upload/safe/soft/update-cert.sh $user $softName
+        done
+        ;;
+    safedog_*.tar.gz|safedog_*.exe)
+        if [[ $yunlei_version != 2 ]]; then
+            continue
+        fi
+        mysql_config
+        echo "Upload $name"
+        mkdir -p $console_upload/safe/soft
+        case "$name" in
+            safedog_p_linux32*.tar.gz)
+                softType=NF-7400L
+                softVersion=${name:18:9}
+                softName="safedog_${softType}32.tar.gz"
+                downloadName="safedog_p_linux32.tar.gz"
+                ;;
+            safedog_anp_linux32*.tar.gz)
+                softType=NF-7400L
+                softVersion=${name:20:9}
+                softName="safedog_$softType.tar.gz"
+                downloadName="safedog_anp_linux32.tar.gz"
+                ;;
+            safedog_p_linux64*.tar.gz)
+                softType=NF-7400L64
+                softVersion=${name:18:9}
+                softName="safedog_$softType.tar.gz"
+                downloadName="safedog_p_linux64.tar.gz"
+                ;;
+            safedog_anp_linux64*.tar.gz)
+                softType=NF-7400L64
+                softVersion=${name:20:9}
+                softName="safedog_$softType.tar.gz"
+                downloadName="safedog_anp_linux64.tar.gz"
+                ;;
+            safedog_p_windows*.exe)
+                softType=NF-7400D
+                softVersion=${name:18:9}
+                softName="safedog_$softType.exe"
+                downloadName="safedog_p_windows.exe"
+                ;;
+        esac
+        softMd5=$(md5sum $file | cut -c 1-32)
+        sqlcmd_getserverip="select serverIp from private_server_ip where id = 11 \G;"
+        if [[ $yunlei_version == 2 ]]; then
+            serverIp=$(mysql --login-path=safedogcloud safedogcloud -e "$sqlcmd_getserverip" | awk -F"/" '{print$3}' | tail -1)
+        fi
+        softUrl="http://$serverIp/safe/soft/$softName"
+        sqlcmd="update safedog_version set \
+            descr='$name', \
+            insertTime='$(date +"%Y-%m-%d %H:%M:%S")', \
+            softMd5='$softMd5', \
+            softUrl='$softUrl', \
+            softVersion='$softVersion' \
+            where softType='$softType'"
+        if [[ $yunlei_version == 2 ]]; then
+            mysql --login-path=safedogcloud safedogcloud -e "$sqlcmd"
+        fi
+        /bin/cp $file $console_upload/safe/soft/$softName
+        ;;
+    *)
+        continue
+        ;;
+    esac
+done

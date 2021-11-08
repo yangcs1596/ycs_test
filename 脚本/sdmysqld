@@ -1,0 +1,55 @@
+#!/bin/bash
+# Copyright www.safedog.cn @ 2017
+# by 1057 (lvxj@safedog.cn)
+
+# Check if user is mybk
+[ $(whoami) != "mybk" ] && { echo "ERROR: This script must be run as mybk"; exit 1; }
+
+if [[ -x /usr/local/mysql/mysqld ]]; then
+    MYSQLD_EXEC=/usr/local/mysql/mysqld
+elif [[ -x /etc/init.d/mysqld ]]; then
+    MYSQLD_EXEC=/etc/init.d/mysqld
+else
+    echo "ERROR: mysqld not found."
+    exit 1
+fi
+
+start() {
+    sudo $MYSQLD_EXEC start
+}
+
+stop() {
+    sudo $MYSQLD_EXEC stop
+}
+
+restart() {
+    sudo $MYSQLD_EXEC restart
+}
+
+status() {
+    sudo $MYSQLD_EXEC status
+}
+
+usage() {
+    echo "Usage: $(basename $0) {start|stop|restart|status}"
+}
+
+[ $# -eq 0 ] && usage
+
+case "$1" in
+    "start")
+        start
+        ;;
+    "stop")
+        stop
+        ;;
+    "restart")
+        restart
+        ;;
+    "status")
+        status
+        ;;
+    "-h")
+        usage
+        ;;
+esac

@@ -1,0 +1,23 @@
+#!/bin/bash
+# by 1057 (lvxj@safedog.cn)
+
+if [ $# -lt 1 ]; then exit; fi
+
+port="$1"
+delay=60
+if [[ "$2" -gt 0 ]]; then delay="$2"; fi
+
+let n=0
+while :; do
+    if ss -lnt | grep $port > /dev/null; then
+        break
+    else
+        if [[ $n -eq $delay ]]; then
+            echo "portexpect timeout: $delay seconds"
+            break
+        else
+            let n+=1
+            sleep 1
+        fi
+    fi
+done

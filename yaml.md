@@ -97,19 +97,19 @@ prefix = “person”：配置文件中哪个下面的所有属性进行一一�
 
 * https://www.cnblogs.com/mlw1814011067/p/9908856.html
 
-1. 创建项目根目录
+1. **创建项目根目录**
 
 ```
 mkdir 文件夹名
 ```
 
-　　2. 初始化文件夹
+　　2. **初始化文件夹**
 
 ```
 git init
 ```
 
-　　3. 配置用户名和邮箱（第一次配置后，不需要再登录）
+　　3. **配置用户名和邮箱（第一次配置后，不需要再登录）**
 
 ```
 git config user.name 名字
@@ -121,7 +121,7 @@ git config --global user.email 邮箱
 这个是针对当前电脑下的所有本地参数（项目根目录文件夹）
 ```
 
-　　4. 随时查看文件状态
+　　4. **随时查看文件状态**
 
 ```
 git status 
@@ -130,28 +130,28 @@ changes to be commited :     这样的文件以及位于暂存区
 Untracked files:             这样的文件是新创建的，第一次进入
 ```
 
-　　5. 将工作区的文件，放到暂存区
+　　5. **将工作区的文件，放到暂存区**
 
 ```
 git add 文件名/文件夹名
 git add . 这种方式运用较多，将当前文件夹中的所有文件都放到暂存区去
 ```
 
-　　6. 将暂存区的文件，放到主仓库去
+　　6. **将暂存区的文件，放到主仓库去**
 
 ```
 git commit 会进入vi编辑器界面，按i/a进入编辑状态，esc退出编辑状态，：wq保存退出。必须要写内容，要不然就没办法放到主仓库去
-git commit -m 日志内容,就会跳过vi编辑界面
+git commit -m 日志内容,就会跳过vi编辑界面(git push 才会上传到服务器仓库)
 ```
 
-　　7. 成功后，查看暂存区是否还有内容
+　　7. **成功后，查看暂存区是否还有内容**
 
 ```
 git status
 得到 nothing to commit，working directory clean 就表示文件都已经上传到主仓库中
 ```
 
-　　8. 查看日志
+　　8. **查看日志**
 
 ```
 git log
@@ -160,13 +160,13 @@ commit：********    版本号
  Date:时间
 ```
 
-　　9. 将本地仓库的内容上传到服务器仓库上
+　　9. **将本地仓库的内容上传到服务器仓库上**
 
 ```
 git push  git仓库地址  master
 ```
 
-　　10. 第一次从服务器上跟新文件数据到另一台电脑上时
+　　10. **第一次从服务器上跟新文件数据到另一台电脑上时**
 
 ```
 git clone git仓库地址 master（也可以写另外的名字）
@@ -442,11 +442,46 @@ spring:
         min-idle: 0
 ```
 
+* **启动**
+
+  ```json
+  后端模式启动
+  
+  修改redis.conf配置文件， daemonize yes 以后端模式启动。推荐！
+  
+  打开redis.conf,使用命令 :/ daemonize 快速查找到daemonize然后修改。
+  
+  vi /etc/redis/redis.conf
+  仅修改： daemonize yes （no-->yes）
+  
+  #启动
+  /usr/local/bin/redis-server /etc/redis/redis.conf
+  #查看启动
+  ps -ef | grep redis 
+  #使用客户端
+  redis-cli
+  #关闭客户端
+  redis-cli shutdown
+  #开机启动配置
+  echo "/usr/local/bin/redis-server /etc/redis/redis.conf &" >> /etc/rc.local
+  #设置密码
+  修改redis.conf文件配置 
+  使用命令 :/ requirepass 快速查找到 # requirepass foobared 然后去掉注释，这个foobared改为自己的密码。然后wq保存。
+  ```
+
+  
+
 * **可视化工具的控制台语法**
 
 ```cmd
 连接redis命令 /bin/redis-cli
 >> redis-cli -h 127.0.0.1 -p 6379 -a 密码 -u 用户名
+如果需要搭建redis集群，千万别忘了修改端口号。
+注意如果是集群的话 要有-c >> redis-cli -h 192.168.25.153 -p 7002 –c
+创建集群。redis的三种集群，主从复制，哨兵模式，cluster模式
+基于上边分割线内的介绍：cd /usr/local/redis-cluster
+在redis-cluster目录下执行以下命令：
+./redis-trib.rb  create --replicas  1  127.0.0.1:7001  127.0.0.1:7002  127.0.0.1:7003  127.0.0.1:7004  127.0.0.1:7005   127.0.0.1:7006
 或者后续输入密码
 >>auth <password>
 
@@ -1344,6 +1379,55 @@ https://www.jianshu.com/p/5858b2a9b509
 
 ### Node使用
 
+#### 环境搭建
+
+* 安装node.js 即安装了npm
+
+* 配置私库 
+
+  ```cmd
+  #命令
+  npm config set registry http://registry.npm.taobao.org
+  npm config get registry
+  ```
+
+  
+
+##### nrm的使用
+
+nrm(npm registry manager )是npm的镜像源管理工具，有时候国外资源太慢，使用这个就可以快速地在 npm 源间切换
+
+```shell
+npm install -g nrm@1.1.0，#全局安装nrm
+nrm ls  #-- 查看所有镜像源 * 为当前使用源
+nrm use taobao #如果要切换到taobao源，执行命令
+nrm add group http://nexus-nc.fxnotary.com/repository/npmjs-group/   
+nrm add <registry> <url>，#其中reigstry为源名，url为源的路径。
+nrm del <registry> #删除对应的源。
+nrm test npm #测试相应源的响应时间
+```
+
+npm切换源
+
+```shell
+#查看所有源
+方式1. npm config list
+方式2. npm get registry
+
+# [临时使用]
+npm install --registry=https://registry.npm.taobao.org
+
+# [一般永久使用]通过 config 配置指向国内镜像源
+# cnpmjs.org
+$ npm config set registry http://registry.cnpmjs.org
+# npm.taobao.org
+$ npm config set registry http://registry.npm.taobao.org
+
+如果有一天，换的源用不上了，用rm命令删掉它：npm config rm registry
+```
+
+
+
 #### Node模块引入的加载顺序问题
 
 * ##### vue项目main.js文件下import router from ‘./router‘默认导入router文件夹下index.js的原因
@@ -2121,36 +2205,39 @@ npm run build
 
 利用nginx转发地址？
 
-#### nrm的使用
+**备注：**解决vue去掉#号后刷新页面，会报404
 
-nrm(npm registry manager )是npm的镜像源管理工具，有时候国外资源太慢，使用这个就可以快速地在 npm 源间切换
-
-```shell
-npm install -g nrm@1.1.0，#全局安装nrm
-nrm ls  #-- 查看所有镜像源 * 为当前使用源
-nrm use taobao #如果要切换到taobao源，执行命令
-nrm add group http://nexus-nc.fxnotary.com/repository/npmjs-group/   
-nrm add <registry> <url>，#其中reigstry为源名，url为源的路径。
-nrm del <registry> #删除对应的源。
-nrm test npm #测试相应源的响应时间
+```vue
+首先vue的路由Route.js的url去掉 #
+在new Router()的下一行添加上：
+const router = new Router({
+  mode: 'history',  //去掉url中的#
+  routes: [...]
+});
 ```
 
-```shell
-#查看所有源
-方式1. npm config list
-方式2. npm get registry
 
-# [临时使用]
-npm install --registry=https://registry.npm.taobao.org
 
-# [一般永久使用]通过 config 配置指向国内镜像源
-# cnpmjs.org
-$ npm config set registry http://registry.cnpmjs.org
-# npm.taobao.org
-$ npm config set registry http://registry.npm.taobao.org
-
-如果有一天，换的源用不上了，用rm命令删掉它：npm config rm registry
+```nginx
+server {
+    listen 80;
+    server_name my.vue.com;
+    charset utf-8;
+    location / {
+        root /Users/libo/Documents/workspace/Vue-me/my-project/dist;
+        index index.html index.htm index.php;
+        #关键行，这行功能
+        try_files $uri $uri/ /index.html;
+        #    proxy_pass http://127.0.0.1:8081/;
+		#	 proxy_set_header Host $http_host;
+        #    proxy_set_header X-Real-IP $remote_addr;
+        #    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        #    proxy_set_header X-Forwarded-Proto $scheme;
+    }    
+}
 ```
+
+
 
 
 
@@ -3190,6 +3277,8 @@ vim /usr/local/nginx/conf/nginx.conf
 # whereis libpcre.so.1
 # ln -s /usr/local/lib/libpcre.so.1 /lib64
 # sbin/nginx[root@localhost nginx]# ps -aux | grep nginx 
+
+
 ```
 
 #### 常用命令
@@ -3319,6 +3408,31 @@ proxy_redirect参数说明：
 
  前提：proxy_redirect http://hello http://127.0.0.1:8001; 其中 http://hello 为param1，http://127.0.0.1:8001为param2， host为http/https+IP+端口号
 
+#### host攻击防御
+
+```
+
+
+server {
+    listen 80;
+    server_name 127.0.0.1 192.168.1.32;
+    if ($http_Host !~* ^192.168.1.32|127.0.0.1$)
+    {
+    	return 403;
+    }             
+    rewrite ^(.*) https://$server_name$1 permanent;     
+}
+
+
+~ 为区分大小写匹配(可用正则表达式)
+!~为区分大小写不匹配
+~* 为不区分大小写匹配(可用正则表达式)
+!~*为不区分大小写不匹配
+^~ 如果把这个前缀用于一个常规字符串,那么告诉nginx 如果路径匹配那么不测试正则表达式。
+```
+
+
+
 ## RabbitMQ的和前端消息交互
 
 ```
@@ -3352,7 +3466,7 @@ firewall-cmd --reload # 重新加载
 "sudo iptables -A INPUT -p tcp --dport $PORT -j DROP"
 "sudo iptables -A OUTPUT -p tcp --dport $PORT -j DROP" 
 //linux或者
-/sbin/iptables -I INPUT -p tcp --dport 39807 -j ACCEPT  
+/sbin/iptables -I INPUT -p tcp --dport 17852 -j ACCEPT  
 /sbin/iptables -I INPUT -p tcp --dport 15672 -j ACCEPT
 备注一下
 /sbin/iptables -I INPUT -p tcp --dport 8011 -j ACCEPT #开启8011端口 
@@ -3371,6 +3485,14 @@ service iptables status
 关闭指令:service iptables stop 
 
 iptables -A OUTPUT -s 192.168.88.94 -p tcp -m tcp --sport 15674 -j ACCEPT 
+
+
+也可以直接编辑配置文件，添加iptables防火墙规则：
+iptables的配置文件为/etc/sysconfig/iptables
+
+编辑配置文件：
+
+vi /etc/sysconfig/iptables
 ```
 
 * 防火墙端口访问限制
@@ -3662,6 +3784,8 @@ springboot集成
 </dependency>
 ```
 
+
+
 ```java
 //生产者
 @Component
@@ -3718,6 +3842,22 @@ cp /root/a.txt  /tmp/
 #移动文件或者修改文件名
 mv source target
 ```
+
+### 清空文件内容
+
+```shell
+# > 这是一个重定向输出的符号
+cat /dev/null > cloudbis.log
+
+echo "">file_name
+推荐使用cat命令。
+
+使用vi/vim命令打开文件后，输入"%d"清空，后保存即可。但当文件内容较大时，处理较慢，命令如下：
+vim file_name
+:%d
+```
+
+
 
 ### 全局环境变量设置
 
@@ -3914,6 +4054,16 @@ df -i 查看inode使用情况 删除需慎重
 df -h /usr/
 #计算当前目录的大小
 du -sh /usr/
+
+
+用free -m查看的结果：
+# free -h
+# free -m
+total:总计物理内存的大小。
+used:已使用多大。
+free:可用有多少。
+Shared:多个进程共享的内存总额。
+Buffers/cached:磁盘缓存的大小。
 ```
 
 #### 修改时区
@@ -3950,6 +4100,16 @@ ln 命令说明
 - -n 把符号链接视为一般目录
 - -s 软链接(符号链接)
 - -v 显示详细的处理过程
+
+#### Linux的host配置
+
+```linux
+vim /etc/hosts
+#生效
+sudo /etc/init.d/networking restart
+```
+
+
 
 ------
 
@@ -4896,6 +5056,8 @@ java -Xms128m -Xmx256m -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=80
 ```shell
 #查看已经建的命名空间namespace
 kubectl get ns
+#查看集群信息
+kubectl cluster-info
 
 #跑java服务很简单，只需要写一个deloyment的yaml来制作pod，再写一个制作service的yaml来制作service，就ok了。 运行
 kubectl apply -f xxx.yaml
@@ -5444,9 +5606,11 @@ stage节为具体的pipeline步骤
 kubectl describe secrets -n safedog $(kubectl -n safedog get secret | awk '/dashboard-admin/{print $1}')
 #k8s集群获取ca证书
 kubectl get secret $(kubectl get secrets | grep default-token | awk '{print $1}') -o jsonpath="{['data']['ca\.crt']}" | base64 --decode
+#查看集群信息
+kubectl cluster-info
 # 获取节点和服务版本信息
-kubectl get namespaces
-kubectl get nodes
+kubectl get namespaces -o wide
+kubectl get nodes -o wide
 # 获取节点和服务版本信息，并查看附加信息
 kubectl get nodes -o wide
 
@@ -6085,6 +6249,33 @@ public FilterRegistrationBean filterRegistrationBean(@Qualifier("sitemesh3")WebS
   }
 }
 ```
+
+#### 1、swagger集成swagger-bootstrap-ui
+
+```xml
+ <!-- 引入swagger-bootstrap-ui包 -->
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>swagger-bootstrap-ui</artifactId>
+            <version>1.8.5</version>
+        </dependency>
+```
+
+#### 2、swagger集成knife4j
+
+```xml
+
+<!-- 2.0.1 包含 springfox-swagger2 包 -->
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-spring-boot-starter</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+```
+
+#### 3、swagger和gateway的聚合多服务swagger
+
+
 
 ### springboot实现CORS 跨域请求
 

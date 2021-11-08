@@ -1,0 +1,134 @@
+#!/bin/bash
+# by 1057 (lvxj@safedog.cn)
+set -o errexit
+
+SDYUNLEI=/sdyunlei
+
+Usage() {
+    cat << EOL
+Usage: curl -s http://ip-or-domain/script/getsync.sh | bash [ -s -- [Options] ]
+
+Options:
+
+  -u <USER> # rsync user, default: updates
+  -h <HOST> # rsync host, default: update-down.safedog.cn
+  -p <PORT> # rsync port, default: 22873
+  -s <SRC>  # rsync module, default: updates
+  -P <STRING> # the password encoded with base64
+  -n # doesn’t make any changes
+  -e <PATTERN> # exclude files matching PATTERN
+  -d # also delete excluded files from dest dirs
+  -I # Install to system
+  -? # help
+
+EOL
+}
+
+while getopts "u:h:p:s:P:ne:dI?" OPT; do
+    case "$OPT" in
+        u) arg_USER="$OPTARG";;
+        h) arg_HOST="$OPTARG";;
+        p) arg_PORT="$OPTARG";;
+        s) SRC="$OPTARG";;
+        P) Pflag=1; export RSYNC_PASSWORD=$(echo "$OPTARG" | base64 -d);;
+        n) OPTS="$OPTS -n";;
+        e) arg_EXCLUDE="$arg_EXCLUDE --exclude $OPTARG";;
+        d) arg_DELEXCLUDE=1;;
+        I) Iflag=1;;
+        ?) Usage; exit;;
+    esac
+done
+
+select_mp() {
+    if [[ $(df -hlT -x tmpfs -x devtmpfs -x iso9660 | grep -v "/boot" | sed 1d | wc -l) == 1 ]]; then
+        select_mp=$(df -hlT -x tmpfs -x devtmpfs -x iso9660 | grep -v "/boot" | tail -1 | awk '{print$NF}')
+    else
+        echo 当前系统存在多个挂载点：
+        echo
+        df -hlT -x tmpfs -x devtmpfs | grep -v "/boot"
+        echo
+        read -p "请输入用于创建安装目录的挂载点：" select_mp
+    fi
+}
+
+if [[ -d $SDYUNLEI ]]; then
+    echo 已存在 $SDYUNLEI 目录：$(readlink -f $SDYUNLEI)
+else
+    until [[ -d ${select_mp-} ]]; do
+        select_mp
+    done
+
+    SDYUNLEI=$(echo $select_mp/ | sed 's@//$@/@')sdyunlei
+    echo 将在 $select_mp 挂载点下创建安装目录 sdyunlei
+    echo 创建目录 $SDYUNLEI
+    mkdir -p $SDYUNLEI
+    if [[ $select_mp != / ]]; then
+        echo 将目录 $SDYUNLEI 软链接到 / 目录
+        ln -sfn $SDYUNLEI /
+    fi
+fi
+chmod a+rx $(readlink -f $SDYUNLEI)
+
+# 同步源
+SRC="${SRC:-updates}"
+# 目标目录
+DST="$SDYUNLEI/files/$SRC"
+mkdir -p $DST
+# 加载配置文件
+if [[ -f ${DST}.cfg ]]; then
+    . ${DST}.cfg
+fi
+# 默认选项
+if [[ $SRC == patchfile_download ]]; then
+    OPTS="$OPTS -rlptD -vi --progress --iconv=."
+else
+    OPTS="$OPTS -rlptD -vi --progress --iconv=. --delete"
+fi
+# 连接选项
+r_USER="${arg_USER:-${cfg_USER:-updates}}"
+r_HOST="${arg_HOST:-${cfg_HOST:-update-down.safedog.cn}}"
+r_PORT="${arg_PORT:-${cfg_PORT:-22873}}"
+# 排除项
+r_EXCLUDE="${arg_EXCLUDE:-${cfg_EXCLUDE:-}}"
+OPTS="$OPTS $r_EXCLUDE"
+r_DELEXCLUDE="${arg_DELEXCLUDE:-${cfg_DELEXCLUDE:-0}}"
+if [[ $r_DELEXCLUDE == 1 ]]; then
+    OPTS="$OPTS --delete-excluded"
+fi
+# 密码文件
+if [[ -f ${DST}.secret ]]; then
+    PASSWDFILE="${DST}.secret"
+    OPTS="$OPTS --password-file=$PASSWDFILE"
+    chown $(whoami). $PASSWDFILE
+    chmod 600 $PASSWDFILE
+fi
+# 日志文件
+LOGFILE="${DST}.log"
+OPTS="$OPTS --log-file=$LOGFILE"
+
+# 同步
+if [[ $Iflag == 1 ]]; then
+    > ${DST}.cfg
+    echo "cfg_USER=$r_USER" >> ${DST}.cfg
+    echo "cfg_HOST=${arg_HOST:-update-down.safedog.cn}" >> ${DST}.cfg
+    echo "cfg_PORT=$r_PORT" >> ${DST}.cfg
+    echo "cfg_EXCLUDE=\"$r_EXCLUDE\"" >> ${DST}.cfg
+    echo "cfg_DELEXCLUDE=$r_DELEXCLUDE" >> ${DST}.cfg
+    if [[ $Pflag == 1 ]]; then
+        echo "$RSYNC_PASSWORD" > "${DST}.secret"
+    fi
+    if [[ $(id -u) == 0 ]]; then
+        if [[ -f /etc/lsb-release ]]; then
+            crontab_file=/var/spool/cron/crontabs/$(whoami)
+        else
+            crontab_file=/var/spool/cron/$(whoami)
+        fi
+        touch $crontab_file
+        sed -i "/curl.*\b$SRC\$/d" $crontab_file
+        echo "0 2 * * * curl -s http://${arg_HOST:-update-down.safedog.cn}/script/getsync.sh | bash -s -- -s $SRC" >> $crontab_file
+        echo "curl -s http://${arg_HOST:-update-down.safedog.cn}/script/getsync.sh | bash -s -- \$@" > /bin/getsync;
+        chmod +x /bin/getsync
+    fi
+else
+    rsync $OPTS rsync://$r_USER@$r_HOST:$r_PORT/$SRC $DST
+fi

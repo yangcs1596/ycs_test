@@ -1,0 +1,29 @@
+#!/usr/bin/expect -f
+# by 1057 (lvxj@safedog.cn)
+
+if { $argc < 2 } {
+    exit
+}
+
+set logfile [lindex $argv 0]
+set logstr  [lindex $argv 1]
+
+if { $argc < 3 } {
+    set line 10
+} else {
+    set line [lindex $argv 2]
+}
+
+if { $argc < 4 } {
+    set delay 120
+} else {
+    set delay [lindex $argv 3]
+}
+
+set timeout $delay
+
+spawn tailf -$line $logfile
+expect "$logstr"
+send "\x03\n"
+sleep 1
+expect eof
