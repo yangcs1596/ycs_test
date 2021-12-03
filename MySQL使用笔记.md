@@ -60,6 +60,33 @@
 
 ### mysql日志记录慢查询
 
+My.ini配置
+
+```ini
+[mysql]
+# 设置mysql客户端默认字符集
+default-character-set=utf8
+[mysqld]
+#设置3306端口
+port = 3306
+# 设置mysql的安装目录
+basedir=D:\mysql\mysql-5.7.26-winx64
+# 设置mysql数据库的数据的存放目录
+datadir=D:\mysql\data
+# 允许最大连接数
+max_connections=200
+# 服务端使用的字符集默认为8比特编码的latin1字符集
+character-set-server=utf8
+# 创建新表时将使用的默认存储引擎
+default-storage-engine=INNODB
+# 忽略密码
+#skip-grant-tables
+#去除导入导出限制
+ secure_file_priv =""
+```
+
+
+
 使用该命令只能查看慢查询次数，但是我们没有办法知道是哪些查询产生了慢查询，如果想要知道是哪些查询导致的慢查询，那么我们必须修改mysql的配置文件。打开mysql的配置文件（windows系统是my.ini,linux系统是my.cnf），在[mysqld]下面加上以下代码：
 
 ```mysql
@@ -155,6 +182,8 @@ COALESCE ( expression1, expression2, ... expression-n );
 #### 3、不常用函数
 
 * CHAR_LENGTH(s) 、  CHARACTER_LENGTH(s) 返回字符数
+* length() 返回长度，空字符和null返回0 
+* trim() 去掉开头结尾的空字符
 
 ###  数据库操作
 
@@ -969,10 +998,18 @@ truncate table risk_sys_info;
 insert into risk_sys_info select * from risk_sys_info_copy1;
 
 
--- 导入导出的sql
+-- 导出的sql
 mysqldump -ucloudnet -pCtx1ytxA@3zdj cloudnet risk_affected_os_info risk_type kb_cve_mapping patch_store_version --no-autocommit --set-gtid-purged=off >/home/mybk/mysql.cloudnet.knowledgebase20211019.sql
 
 mysqldump -ucloudpassport -pCtx1ytxA@3zdj cloudpassport risk_sys_info --no-autocommit --set-gtid-purged=off >/home/mybk/mysql.cloudpassport.knowledgebase20211019.sql
 ```
 
 ## 
+
+# 导入sql脚本文件
+
+```mysql
+mysql -ucloudpassport -pCtx1ytxA@3zdj 数据库名 < 存放位置
+mysql -uroot -p123456 cloud_system<D:\\mysql\\LOL3.sql
+```
+

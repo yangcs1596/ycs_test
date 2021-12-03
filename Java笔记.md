@@ -40,6 +40,10 @@
 
 **其它中间件工具**：  Logstash ， ElasticSearch ，
 
+
+
+Linx连接工具：全能终端神器 MobaXterm， X-shell,  FinalShell
+
 ```shell
 Zuul：
 
@@ -61,6 +65,24 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 ```
 
 
+
+#### 组件可视化软件
+
+* redis
+
+  `Redis DeskTop Manager `
+
+   `Another Redis DeskTop Manager 是redis桌面可视化工具`
+
+  https://github.com/uglide/RedisDesktopManager
+
+  https://www.jb51.net/article/208969.htm
+
+* linux
+
+  `xshell` 
+
+  `finalShell`
 
 
 
@@ -838,6 +860,13 @@ public interface Interface1{
 
 **？ -  表示不确定的java类型**
 
+##### 4、 泛型方法
+
+```java
+public <T> void show(T t),void前面的泛型T是什么作用
+public <T>这个T是个修饰符的功能，表示是个泛型方法  <T> 不是返回值，表示传入参数有泛型
+```
+
 
 
 ------
@@ -1523,6 +1552,40 @@ Mono.never().subscribe(System.out::println);
 
  2、通过Mono动态方法创建：
  通过 create()方法来使用 MonoSink 来创建 Mono。
+
+### System.getProperty()
+
+| java.version                  | Java 运行时环境版本               |
+| ----------------------------- | --------------------------------- |
+| java.vendor                   | Java 运行时环境供应商             |
+| java.vendor.url               | Java 供应商的 URL                 |
+| java.home                     | Java 安装目录                     |
+| java.vm.specification.version | Java 虚拟机规范版本               |
+| java.vm.specification.vendor  | Java 虚拟机规范供应商             |
+| java.vm.specification.name    | Java 虚拟机规范名称               |
+| java.vm.version               | Java 虚拟机实现版本               |
+| java.vm.vendor                | Java 虚拟机实现供应商             |
+| java.vm.name                  | Java 虚拟机实现名称               |
+| java.specification.version    | Java 运行时环境规范版本           |
+| java.specification.vendor     | Java 运行时环境规范供应商         |
+| java.specification.name       | Java 运行时环境规范名称           |
+| java.class.version            | Java 类格式版本号                 |
+| java.class.path               | Java 类路径                       |
+| java.library.path             | 加载库时搜索的路径列表            |
+| java.io.tmpdir                | 默认的临时文件路径                |
+| java.compiler                 | 要使用的 JIT 编译器的名称         |
+| java.ext.dirs                 | 一个或多个扩展目录的路径          |
+| os.name                       | 操作系统的名称                    |
+| os.arch                       | 操作系统的架构                    |
+| os.version                    | 操作系统的版本                    |
+| file.separator                | 文件分隔符（在 UNIX 系统中是“/”） |
+| path.separator                | 路径分隔符（在 UNIX 系统中是“:”） |
+| line.separator                | 行分隔符（在 UNIX 系统中是“/n”）  |
+| user.name                     | 用户的账户名称                    |
+| user.home                     | 用户的主目录                      |
+| user.dir                      | 用户的当前工作目录                |
+
+在java开发中经常用到System.getProperty("user.dir");获取用户的当前工作目录，百度后发现还有很多资源，记录下来，以后备用。
 
 
 
@@ -2364,6 +2427,8 @@ public V put(K key, V value) {
     }  
 ```
 
+#### 3、Table的使用
+
 
 
 ### 5-1 Deque双向队列 和栈stack
@@ -2545,7 +2610,7 @@ WriteNullBooleanAsFalse–Boolean字段如果为null,输出为false,而非null
 
   ```java
    public <T, S extends T> T testGenericMethodDefine(T t, S s){}
-  //<T> T 表示返回的是一个泛型
+  //<T> T 表示返回的是一个泛型  传参是T 方法前一定要加<T> 你直接换成<E>会更容易理解的
   //T t 表示传递的参数是一个泛型
   ```
 
@@ -3563,7 +3628,7 @@ parameterType=”Blog” resultType=”Blog”>
 
 #### CDATA
 
-* mybatis的xml文件中需要写一些特殊字符，入><&这些字符在xml解析的时候会被转义，但是我们不希望它被转义，这时候就使用<![CDATA[]]>
+* mybatis的xml文件中需要写一些特殊字符，如><&这些字符在xml解析的时候会被转义，但是我们不希望它被转义，这时候就使用<![CDATA[]]>
 
 ```xml
 
@@ -3571,6 +3636,25 @@ parameterType=”Blog” resultType=”Blog”>
    <![CDATA[  and Time > #{time}  ]]>
 </if>
 ```
+
+#### 条件判断
+
+if 的连接条件判断  用 and 、 or
+
+```xml
+if标签里面的test判断是可以使用工具类来做判断的，毕竟test后面跟的也是一个布尔值，其用法是：
+
+<if test="@完整的包名类名@方法名(传参)">
+例如：
+<if test="@com.xxx.util.MybatisTestUtil@isNotEmpty(obj)"> 
+    
+#判断数组是否包含某个元素
+<if test="list.contains(xxx)">
+	//...
+</if>
+```
+
+
 
 ## [MyBatis-Plus](https://mp.baomidou.com/)
 

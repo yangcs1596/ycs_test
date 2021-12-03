@@ -1,0 +1,259 @@
+#!/bin/bash
+# by 1057 (lvxj@safedog.cn)
+[[ $(id -u) != "0" ]] && { echo "错误：该脚本需要以 root 权限执行。(ERROR: 1010)"; exit 10; }
+
+set -o errexit
+set -o nounset
+
+CURRENTDIR=$(pwd)
+IP=
+ACCOUNT=
+PRODUCT_TYPE=
+PROXY=
+
+usage() {
+    cat << EOF
+服务器主机安全轻量化Agent脚本
+
+用法：
+  $0 <IP> [ACCOUNT] [PRODUCT_TYPE] [PROXY]
+
+参数：
+  IP            必选项，指定云垒服务器 IP
+  ACCOUNT       可选项，指定云垒账号，兼容云垒 2.2，默认客户端证书对应账号为 cloud
+  PRODUCT_TYPE  可选项，指定产品类型
+  PROXY         可选项，指定代理信息，格式：IP[:port][,username][,password]
+
+EOF
+}
+check_os() {
+    OS_BIT=$(getconf LONG_BIT)
+
+    # 获取 CentOS, RedHat 系统版本
+    if [[ -r /etc/redhat-release ]]; then
+        eval $(awk '/release/ {for(i=1;i<=NF;i++) if($i ~ /[0-9.]+/) {print "OS="$1"\nOS_VERSION="$i}}' /etc/redhat-release)
+        [[ "$OS" == "Red" ]] && OS="RedHat"
+        [[ -n "$OS" && -n "$OS_VERSION" ]] && return
+    fi
+
+    # 获取 Ubuntu 系统版本
+    if [[ -r /etc/lsb-release ]]; then
+        eval $(awk '/^DISTRIB_ID/ || /^DISTRIB_RELEASE/ {print}' /etc/lsb-release)
+        OS=$DISTRIB_ID; OS_VERSION=$DISTRIB_RELEASE
+        [[ -n "$OS" && -n "$OS_VERSION" ]] && return
+    elif grep -i debian /etc/issue &> /dev/null; then
+        eval $(awk '/ebian/ {for(i=1;i<=NF;i++) if($i ~ /[0-9.]+/) {print "OS="$1"\nOS_VERSION="$i}}' /etc/issue)
+        [[ -n "$OS" && -n "$OS_VERSION" ]] && return
+    fi
+
+    error "脚本暂时不支持该系统。(ERROR: 1011)" 11
+}
+install_depends() {
+    echo "安装依赖包，请确保系统存在可用软件源。"
+    case "${OS}" in
+        "CentOS"|"RedHat")
+            packages="pciutils dmidecode net-tools psmisc mlocate lsof zip"
+            #if [[ $WEB_TYPE == web_no ]]; then
+            #    [[ ${OS_VERSION:0:1} -eq 6 ]] && packages="$packages libcgroup"
+            #fi
+            for i in $packages; do
+                rpm -q $i &> /dev/null || {
+                    echo "安装依赖包 $i ..."
+                    yum install -y $i > /dev/null || error "依赖安装失败。(ERROR: 1006)" 6
+                }
+            done
+            #if [[ $WEB_TYPE == web_no ]]; then
+            #    if [[ ${OS_VERSION:0:1} -eq 6 ]]; then
+            #        service cgconfig status &> /dev/null || service cgconfig start
+            #        chkconfig cgconfig on
+            #    fi
+            #fi
+            ;;
+        "Debian"|"Ubuntu")
+            packages="pciutils dmidecode net-tools psmisc mlocate lsof zip ifupdown"
+            #if [[ $WEB_TYPE == web_no ]]; then
+            #    [[ ${OS_VERSION:0:2} -eq 12 ]] && packages="$packages libcgroup1 cgroup-bin"
+            #    [[ ${OS_VERSION:0:2} -eq 14 ]] && packages="$packages libcgroup1 cgroup-lite"
+            #fi
+            for i in $packages; do
+                dpkg -s $i 2> /dev/null | grep Status.*installed &> /dev/null || {
+                    echo "安装依赖包 $i ..."
+                    apt-get install -y $i > /dev/null || error "依赖安装失败。(ERROR: 1006)" 6
+                }
+            done
+            ;;
+    esac
+}
+check_ip() {
+    IP=$1; return
+    eval $(echo $1 | awk -F: '{print "IP="$1,"PORT="$2}')
+    if command -v ssh &> /dev/null; then
+        if ssh -v -o ConnectTimeout=3 $IP -p ${PORT:-80} 2>&1 | grep established > /dev/null; then
+            IP=$1
+        else
+            error "无法与指定 IP：$1 建立连接。(ERROR: 1013)" 13
+        fi
+    else
+        IP=$1
+    fi
+}
+check_url() {
+    [[ -n ${soft_url:-} ]] && return
+    name="$2"
+    url="$1$2"
+    #echo "check url: $url"
+    code=$(curl -sgkI $url -w %{http_code} -o /dev/null || :)
+    if [[ $code == 200 ]]; then
+        soft_name=$name
+        soft_url=$url
+        #echo "download url: $url"
+    fi
+}
+disable_selinux() {
+    if [[ -f /etc/selinux/config && -n $(which getenforce 2> /dev/null) ]]; then
+        if [[ $(getenforce) == "Enforcing" ]]; then
+            echo "禁用 SELinux"
+            setenforce 0
+            sed -i 's/\(SELINUX=\).*/\1disabled/' /etc/selinux/config
+        fi
+    fi
+}
+set_python_path() {
+    if command -v python &> /dev/null; then
+        python_path=$(which python)
+        return
+    else
+        if which python3 &> /dev/null; then
+            ln -s $(which python3) /bin/python
+            python_path=/bin/python
+        else
+            error "当前系统未发现可用的 Python，请安装 Python 后重试。(ERROR: 1014)" 14
+        fi
+    fi
+}
+error() {
+    echo "错误：$1"
+    clean
+    [[ "$2" > 0 ]] && exit $2
+    exit 1
+}
+clean() {
+    [[ -d "$tmp_dir" ]] && rm -fr $tmp_dir
+}
+sdserver_install() {
+    set_python_path
+    case "$WEB_TYPE" in
+        "web_no")
+            echo "安装主机安全轻量化Agent"
+            # disable_selinux
+            tmp_dir=$CURRENTDIR/sdserver-installer_$(date +%s)
+            ;;
+        "nginx")
+            echo "安装 Nginx 主机安全轻量化Agent"
+            tmp_dir=$CURRENTDIR/sdnginx-installer_$(date +%s)
+            ;;
+        "apache")
+            echo "安装 Apache 主机安全轻量化Agent"
+            tmp_dir=$CURRENTDIR/sdapache-installer_$(date +%s)
+            ;;
+        "java")
+            echo "安装 Java 主机安全轻量化Agent"
+            tmp_dir=$CURRENTDIR/sdjava-installer_$(date +%s)
+            ;;
+    esac
+    mkdir -p $tmp_dir
+    pushd $tmp_dir > /dev/null
+    if [[ -z "$ACCOUNT" ]]; then
+        check_url "http://$IP/safe/soft/" "$soft_name"
+        check_url "https://$IP/safe/soft/" "$soft_name"
+    elif [[ -z "$PRODUCT_TYPE" ]]; then
+        check_url "http://$IP/safe/soft/agents/" "${ACCOUNT}-$soft_name"
+        check_url "https://$IP/safe/soft/agents/" "${ACCOUNT}-$soft_name"
+    else
+        check_url "http://$IP/safe/soft/agents/$PRODUCT_TYPE/" "${ACCOUNT}-$soft_name"
+        check_url "https://$IP/safe/soft/agents/$PRODUCT_TYPE/" "${ACCOUNT}-$soft_name"
+        check_url "http://$IP/safe/soft/agents/$PRODUCT_TYPE/" "${ACCOUNT}-safedog_$soft_name"
+        check_url "https://$IP/safe/soft/agents/$PRODUCT_TYPE/" "${ACCOUNT}-safedog_$soft_name"
+    fi
+    if [[ -f $CURRENTDIR/$soft_name ]]; then
+        echo "当前目录下已存在文件：$soft_name，将使用该文件安装。"
+        cp $CURRENTDIR/$soft_name $soft_name
+    else
+        if [[ -z ${soft_url:-} ]]; then
+            error "客户端下载失败，请检查服务器 IP 是否正确。(ERROR: 1012)" 12
+        else
+            echo "下载客户端：$soft_url"
+            curl -sgk $soft_url -o $soft_name
+        fi
+    fi
+    tar xzf $soft_name
+    cd $(tar tzf $soft_name | head -1)
+    if [[ -d "/etc/safedog/sdcc/" ]]; then
+	\cp ./install_files/sdcc/conf/safedog_user.psf /etc/safedog/sdcc/ -f
+    fi
+    chmod +x ./install.py
+    case "$PRODUCT_TYPE" in
+        NFP-7500L*)  $python_path ./install.py -f fm_server_p -s $IP; popd > /dev/null; clean; exit;;
+        NFB-7500L*)  $python_path ./install.py -f fm_server_b -s $IP; popd > /dev/null; clean; exit;;
+        NFW-7500LP*) $python_path ./install.py -f fm_a_client -s $IP -w $WEB_TYPE; popd > /dev/null; clean; exit;;
+        NFW-7500LN*) $python_path ./install.py -f fm_n_client -s $IP -w $WEB_TYPE; popd > /dev/null; clean; exit;;
+        NFW-7500LJ*) $python_path ./install.py -f fm_j_client -s $IP -w $WEB_TYPE; popd > /dev/null; clean; exit;;
+    esac
+    if [[ $WEB_TYPE == web_no ]]; then
+        if [[ -n $(find install_files/ -maxdepth 1 -type d -name "safedog_apache*" -or -name "safedog_apache*" -or -name "safedog_java*") ]]; then
+            $python_path ./install.py -s $IP -w web_no $PROXY
+        else
+            $python_path ./install.py -s $IP $PROXY
+        fi
+    else
+        $python_path ./install.py -s $IP -w $WEB_TYPE $PROXY
+    fi
+    popd > /dev/null
+    clean
+}
+
+case "$#" in
+    0)  usage && exit;;
+    2)  ACCOUNT="$2";;
+    3)  ACCOUNT="$2"; PRODUCT_TYPE="$3";;
+    4)  ACCOUNT="$2"; PRODUCT_TYPE="$3"
+        PROXY_IP="$(echo "$4" | awk -F, '{print$1}')"
+        PROXY_USER="$(echo "$4" | awk -F, '{print$2}')"
+        PROXY_PASS="$(echo "$4" | awk -F, '{print$3}')"
+        if [[ -n $PROXY_USER && -n $PROXY_PASS ]]; then
+            PROXY="-x $PROXY_IP -u $PROXY_USER -p $PROXY_PASS"
+        else
+            PROXY="-x $PROXY_IP"
+        fi
+        ;;
+esac
+
+check_ip $1
+if [[ $# < 3 ]]; then #旧版只提供两个参数
+    check_os
+    install_depends #3.1.1 默认打包依赖命令，只有之前的版本才需要安装依赖
+    WEB_TYPE="web_no" #默认只支持安装服狗
+    soft_name=safedog_NF-7400L${OS_BIT}.tar.gz
+else
+    OS_BIT=$(getconf LONG_BIT)
+    case "$PRODUCT_TYPE" in
+        NF-7400LN|NFW-7500LN)
+            WEB_TYPE="nginx"
+            ;;
+        NF-7400LP|NFW-7500LP)
+            WEB_TYPE="apache"
+            ;;
+        NF-7400LJ|NFW-7500LJ)
+            WEB_TYPE="java"
+            ;;
+        *)
+            WEB_TYPE="web_no"
+            ;;
+    esac
+    build_type_bit=`uname -a | awk '{print $12}'`
+    build_type=${build_type_bit%??}
+    [[ $build_type == "aarch" ]] && PRODUCT_TYPE=${PRODUCT_TYPE}A
+    [[ $OS_BIT == 64 ]] && PRODUCT_TYPE=${PRODUCT_TYPE}64
+    soft_name=${PRODUCT_TYPE}.tar.gz
+fi
+sdserver_install

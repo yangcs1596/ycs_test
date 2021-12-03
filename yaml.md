@@ -93,6 +93,38 @@ prefix = “person”：配置文件中哪个下面的所有属性进行一一�
   mvn archetype:create-from-project
   ```
 
+### SVN的命令
+
+```shell
+###检出
+svn checkout http://路径(目录或文件的全路径)　[本地目录全路径] --username　用户名
+svn checkout svn://路径(目录或文件的全路径)　[本地目录全路径] --username=用户名 --password=密码
+#注：如果不带--password 参数传输密码的话，会提示输入密码，建议不要用明文的--password 选项。
+#　　 其中 username 与 password前是两个短线，不是一个。
+#　　 不指定本地目录全路径，则检出到当前目录下。
+###导出(导出一个干净的不带.svn文件夹的目录树)
+svn export [-r 版本号] http://路径(目录或文件的全路径) [本地目录全路径]　--username　用户名
+svn export [-r 版本号] svn://路径(目录或文件的全路径) [本地目录全路径]　--username　用户名
+svn export 本地检出的(即带有.svn文件夹的)目录全路径 要导出的本地目录全路径
+###添加新文件例子
+svn add test.php ＜－ 添加test.php 
+svn commit -m “添加我的测试用test.php“ test.php
+svn add *.php ＜－ 添加当前目录下所有的php文件
+svn commit -m “添加我的测试用全部php文件“ *.php
+
+### update操作
+svn update -r m path
+例如：
+svn update如果后面没有目录，默认将当前目录以及子目录下的所有文件都更新到最新版本。
+svn update -r 200 test.php(将版本库中的文件test.php还原到版本200)
+svn update test.php(更新，于版本库同步。如果在提交的时候提示过期的话，是因为冲突，需要先update，修改文件，然后清除svn resolved，最后再提交commit)
+
+简写：svn up
+svn up -username=用户 --password=密码
+```
+
+
+
 ### GitHub的命令
 
 * https://www.cnblogs.com/mlw1814011067/p/9908856.html
@@ -3466,7 +3498,7 @@ firewall-cmd --reload # 重新加载
 "sudo iptables -A INPUT -p tcp --dport $PORT -j DROP"
 "sudo iptables -A OUTPUT -p tcp --dport $PORT -j DROP" 
 //linux或者
-/sbin/iptables -I INPUT -p tcp --dport 17852 -j ACCEPT  
+/sbin/iptables -I INPUT -p tcp --dport 9092 -j ACCEPT  
 /sbin/iptables -I INPUT -p tcp --dport 15672 -j ACCEPT
 备注一下
 /sbin/iptables -I INPUT -p tcp --dport 8011 -j ACCEPT #开启8011端口 
@@ -3478,7 +3510,7 @@ firewall-cmd --reload # 重新加载
 2、netstat -tunlp|grep 端口号
 可以通过"netstat -anp" 来查看哪些端口被打开
 
-//添加入站规则
+
 service iptables status
 启动指令:service iptables start   
 重启指令:service iptables restart   
@@ -3698,8 +3730,8 @@ ALTER TABLE <tableNmae> ADD <column>  <columnType>;
 在upsert语句中制定存在的idcardnum即可实现更新
 Phoenix中不存在update的语法关键字，而是upsert
 upsert into table (column1...) values(value1....)
-查询更新
-uppsert into table (colunm1...) select value1... from table where condition
+#查询更新
+upsert into table (colunm1...) select value1... from table where condition
 
 #删除表
 drop table ljc.student;
@@ -4542,8 +4574,7 @@ compile:默认值，表示当前依赖包，要参与当前项目的编译，后
 provided:代表在编译和测试的时候用，运行，打包的时候不会打包进去
 test：表示当前依赖包只参与测试时的工作：比如Junit,只在test目录生效
 runtime：表示当前依赖包只参与运行周期，其他跳过了
-system：从参与度和provided一致，不过被依赖项不会从maven远程仓库下载，而是从本地的系统拿。需要
-systemPath属性来定义路径
+system：从参与度和provided一致，不过被依赖项不会从maven远程仓库下载，而是从本地的系统拿。需要systemPath属性来定义路径
 #特殊
 import 只能用在dependencyManagement块中，它将spring-boot-dependencies 中dependencyManagement下的dependencies插入到当前工程的dependencyManagement中，所以不存在依赖传递。 
 当没有<scope>import</scope>时，意思是将spring-boot-dependencies 的dependencies全部插入到当前工程的dependencies中，并且会依赖传递。
@@ -6581,6 +6612,29 @@ input {
 
 
 
+#### SpringBoot整合es
+
+```xml
+<!--es客户端-->
+<dependency>
+    <groupId>io.searchbox</groupId>
+    <artifactId>jest</artifactId>
+    <version>6.3.1</version>
+</dependency>
+<dependency>
+    <groupId>io.searchbox</groupId>
+    <artifactId>jest-common</artifactId>
+    <version>6.3.1</version>
+</dependency>
+<dependency>
+    <groupId>org.elasticsearch</groupId>
+    <artifactId>elasticsearch</artifactId>
+    <version>6.2.3</version>
+</dependency>
+```
+
+
+
 
 
 ### MYCAT爬坑
@@ -6652,3 +6706,8 @@ onlyOffice开源文档编辑器  [kkFileView](https://gitee.com/kekingcn/file-on
 **Linux：**Nginx、Docker、Kubernetes、Jenkins、kibana、elasticsearch、fastDFS、Portainer
 
 **代码管理：** SVNtortoise、Git、GitLable、私服Nexus
+
+
+
+链接：![img](file:///C:\Users\ASUS\AppData\Roaming\Tencent\QQTempSys\[5UQ[BL(6~BS2JV6W}N6[%S.png)https://pan.baidu.com/s/1-8fNQ2I_AxTOZlgI96_Aew 
+提取码：u5w0

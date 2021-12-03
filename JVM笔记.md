@@ -29,3 +29,22 @@ BigDecimal b2 = new BigDecimal(Double.toString(210298.99));
 System.out.println(b1.add(b2).doubleValue());
 ```
 
+
+
+## JVM调优
+
+### jstat命令
+
+ 界面不太友好 
+
+### headdump分析
+
+不能重启服务后再dump, 会找不到
+
+### mat工具分析
+
+### gc日志分析
+
+#### JMC工具
+
+火焰图

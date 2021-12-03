@@ -3466,8 +3466,16 @@ https://hub.docker.com/
 [root@localhost ~]# docker pull tomcat
 3、根据镜像启动容器
 docker run --name mytomcat -d tomcat:latest
+
+或者
+根据一个image, 启动一个容器(应用)
+docker run -d -e ENV=DEV -p 30000:20880 -e DUBBO_IP_TO_REGISTRY=10.1.0.54 -e DUBBO_PORT_TO_REGISTRY=30000 -e JAVA_OPTS='' healthapp-product-admin-rpc
+————————————————
+#docker run --name mysq -idt -e MYSQL_ROOT_PASSWORD=123456 -p 1306:3306 -p 13060:33060 mysql:latest
+
 4、docker ps  #docker ps|grep order
 查看运行中的容器
+查看全部容器 docker ps -a
 5、 停止运行中的容器
 docker stop  容器的id
 6、查看所有的容器 # docker ps -a |grep order
@@ -3487,18 +3495,41 @@ service firewalld stop：关闭防火墙
 
 11、查看容器的日志 #docker logs -f --tail=1000 38b8317cbee8 查看1000行的日志
 docker logs container-name/container-id
+
 12、进入容器
 docker-enter 80bbd5d7c8b2
-
 13、根据容器id进入到对应文件夹  docker attach 容器ID 或者
 docker exec -it 镜像id /bin/bash  #常用
+注意: attach Docker attach可以attach到一个已经运行的容器的stdin，然后进行命令执行的动作。
+但是需要注意的是，如果从这个stdin中 exit，会导致容器的停止
+
 1）Ctrl + d 退出并停止容器；
 2）Ctrl + p + q 退出并在后台运行容器；或者 exit
 更多命令参看
 https://docs.docker.com/engine/reference/commandline/docker/
 可以参考每一个镜像的文档
 
+
+
+###批量删除停止
+docker container   stop   $(docker  container  ls   -a  -q)
+2、批量删除容器和镜像
+2.1、批量删除容器
+docker container rm $(docker container ls -a -q)
+
+2.2、批量删除镜像
+docker image rm $(docker image ls -a -q)
+
+###重启docker
+systemctl restart docker
 ````
+
+
+
+```json
+#进入容器文件夹命令
+docker exec -it 镜像id/bin/sh
+```
 
 
 
