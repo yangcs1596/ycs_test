@@ -121,6 +121,79 @@ svn update test.php(更新，于版本库同步。如果在提交的时候提示
 
 简写：svn up
 svn up -username=用户 --password=密码
+
+##svn status    -- 查看本地修改代码情况：修改的或本地独有的文件详细信息
+svn merge   -- 合并svn和本地代码
+svn revert   -- 撤销本地修改代码
+
+
+###回退到某个版本的命令
+svn merge -r rHEAD:109 http://example.com/repository/trunk/src/
+说明：
+rHEAD:109 从哪个版本回复到哪个版本，例子中的意思就是从当前最新版本回退到109
+```
+
+#### svn工具增量打包
+
+公司同事地址 https://github.com/zhongyueming1121/svnpatch
+
+包工具在资料私群里
+
+![img](./image/svnpatch.png)
+
+![img](./image/目录说明.jpg)
+
+#### SVN分支合并代码
+
+https://jingyan.baidu.com/article/60ccbceb433c0364cab19738.html
+
+```
+##这个是ingegrate整合代码
+1、在IDEA的上方菜单中，依次选择VCS --> Integrate Project...如图所示。也可以在项目上点右键，在弹出的菜单中选择Subversion -> Integrate Directory...
+2、在Source 1中选择主干的SVN地址，并选择当时分支分支时的版本号，本例是4909；在Source2中选择分支的地址，并在版本号处选择HEAD，表示把分支最新代码合并。然后在Try merge, but make no changes选项中打勾，在Depth中选择working copy。这样的配置是将分支最新代码与主干分出分支时的代码进行尝试比较。最后点“OK”，开始尝试合并
+3、当确认尝试合并无问题后，再次重复上述合并步骤的界面，但在Try merge, but make no changes选项中取消打勾，然后点击“OK”
+4、当合并代码过程中出现文件冲突时，会弹出一个冲突列表。此时需要对冲突的文件进行一个个合并。选择一个冲突的文件，单击“Merge...”，在弹出的合并窗口中，会展示三个文件，左边是本地代码，中间是合并后的代码，右边是分支上的代码。IDEA已经将冲突的代码块标志出来，你只需要将左边和右边的代码往中间合并，然后查看中间的代码是否正确，若不正确，直接修改正确，最后点击下方的“Apply”，完成该文件的合并。
+5、在确认修改的文件无误后，在“Version Control”--> Local Changes 标签页，在文件根文件夹“Default"上，单击右键，在弹出的菜单中，选择"Commit Changes"提交代码，在弹出的确认窗口中，会再次显示所有要提交的文件，会在文件复选项上打勾，在下方的Commit Message中填写上本次提交内容的描述信息。最后点击”Commit“，提交代码到SVN
+
+##分支合并到另一个分支的方法
+1、CMD的Subversion Working Copies Information 设置好 Trunk location 合并的target 即为trunk
+2、设置Branch locations 即为 待合并的分支代码地址
+3、Merge from 选择Quick Manual Select 快速手动选择 需要合并的提交记录代码 
+```
+
+#### IDEA里SVN配置
+
+- https://blog.csdn.net/hello__word__/article/details/81773815
+
+checkout depth的几个含义
+
+```
+1、Fully recursive							——全递归：检出完整的目录树，包含所有的文件或子目录。
+2、Immediate children,including folders		——直接子节点，包含文件夹：检出目录，包含其中的文件或子目录，但是不递归展开子目录。
+3、Only file chlidren						——仅文件子节点：检出指定目录，包含所有文件，但是不检出任何子目录。
+4、Only this item							——仅此项：只检出目录。不包含其中的文件或子目录
+```
+
+#### SVN版本回退
+
+```
+1、svn reset 指定版本号，  在 svn push -f
+这种方法会把后面的提交记录都删除掉 ，不鼓励这种方式
+
+2、svn revert还原指定版本(range
+git revert OLDER_COMMIT^..NEWER_COMMIT
+
+例子： 提交记录a,b,c,d 
+需要还原到a  则：git revert b^..d;
+#如果其中有需要特殊还原的，使用 cherry-pick 选择还原
+#测试了上诉方法不行，测试下面的
+直接svn自带的工具 show log 右键-->revert to this revision更改SVN服务器端的源码，只需右键test提交到SVN服务器端即可
+
+revert和changes的代码区别
+如果我们在7这里选择revert to this version那么7之后的8,9,10的操作都会被消除
+如果在7选择revert changes from this version那么7版本的修改将会被消除
+
+#注意：如果要想服务器的代码改变，记得commit代码
 ```
 
 
@@ -388,19 +461,6 @@ merge
 
 
 
-### IDEA里SVN配置
-
-- https://blog.csdn.net/hello__word__/article/details/81773815
-
-checkout depth的几个含义
-
-```
-1、Fully recursive							——全递归：检出完整的目录树，包含所有的文件或子目录。
-2、Immediate children,including folders		——直接子节点，包含文件夹：检出目录，包含其中的文件或子目录，但是不递归展开子目录。
-3、Only file chlidren						——仅文件子节点：检出指定目录，包含所有文件，但是不检出任何子目录。
-4、Only this item							——仅此项：只检出目录。不包含其中的文件或子目录
-```
-
 
 
 ### Dubbo 
@@ -453,7 +513,7 @@ public SqlManagerFactoryBean sqlManagerFactoryBean(DataSource dataSource) throws
 
 
 
-### Redis
+## Redis
 
 ```yaml
 spring:
@@ -474,36 +534,255 @@ spring:
         min-idle: 0
 ```
 
-* **启动**
+### 集群模式
 
-  ```json
-  后端模式启动
-  
-  修改redis.conf配置文件， daemonize yes 以后端模式启动。推荐！
-  
-  打开redis.conf,使用命令 :/ daemonize 快速查找到daemonize然后修改。
-  
-  vi /etc/redis/redis.conf
-  仅修改： daemonize yes （no-->yes）
-  
-  #启动
-  /usr/local/bin/redis-server /etc/redis/redis.conf
-  #查看启动
-  ps -ef | grep redis 
-  #使用客户端
-  redis-cli
-  #关闭客户端
-  redis-cli shutdown
-  #开机启动配置
-  echo "/usr/local/bin/redis-server /etc/redis/redis.conf &" >> /etc/rc.local
-  #设置密码
-  修改redis.conf文件配置 
-  使用命令 :/ requirepass 快速查找到 # requirepass foobared 然后去掉注释，这个foobared改为自己的密码。然后wq保存。
-  ```
+#### Redis主从复制
 
-  
+Redis 主从复制支持 **主从同步** 和 **从从同步** （后续版本新增的功能，以减轻主节点的同步负担）两种
 
-* **可视化工具的控制台语法**
+```shell
+# 设置master服务器IP和端口
+slaveof 127.0.0.1 6379 
+# slave是否只读，从服务器负责读操作，主服务器负责写操作，从而实现读写分离
+slave-read-only yes
+```
+
+分别按照顺序启动mater(redis-[server](https://so.csdn.net/so/search?q=server&spm=1001.2101.3001.7020) redis.conf)和slave(redis-server redis2.conf)
+
+该模式一旦Master服务器发生宕机，会导致无法向redis中读取或者写入数据，高可用性极差。
+
+#### 哨兵模式
+
+主要配置如下:
+
+```bash
+#redis-master.conf    master配置
+port 6379
+daemonize yes
+logfile "6379.log"
+dbfilename "dump-6379.rdb"
+ 
+#redis-slave1.conf   slave1配置
+port 6380
+daemonize yes
+logfile "6380.log"
+dbfilename "dump-6380.rdb"
+slaveof 127.0.0.1 6379
+ 
+#redis-slave2.conf    slave2配置
+port 6381
+daemonize yes
+logfile "6381.log"
+dbfilename "dump-6381.rdb"
+slaveof 127.0.0.1 6379
+```
+
+然后启动三个redis实例:
+
+```undefined
+redis-server redis-master.conf
+redis-server redis-slave1.conf
+redis-server redis-slave2.conf
+```
+
+
+
+按照上面同样的方法，我们给哨兵节点也创建三个配置文件。*(哨兵节点本质上是特殊的 Redis 节点，所以配置几乎没什么差别，只是在端口上做区分就好)*
+
+```bash
+# redis-sentinel-1.conf
+port 26379
+daemonize yes
+logfile "26379.log"
+sentinel monitor mymaster 127.0.0.1 6379 2
+
+# redis-sentinel-2.conf
+port 26380
+daemonize yes
+logfile "26380.log"
+sentinel monitor mymaster 127.0.0.1 6379 2
+
+# redis-sentinel-3.conf
+port 26381
+daemonize yes
+logfile "26381.log"
+sentinel monitor mymaster 127.0.0.1 6379 2
+```
+
+其中，`sentinel monitor mymaster 127.0.0.1 6379 2` 配置的含义是：该哨兵节点监控 `127.0.0.1:6379` 这个主节点，该主节点的名称是 `mymaster`，最后的 `2` 的含义与主节点的故障判定有关：至少需要 `2` 个哨兵节点同意，才能判定主节点故障并进行故障转移。
+
+执行下方命令将哨兵节点启动起来：
+
+```css
+redis-server redis-sentinel-1.conf --sentinel
+redis-server redis-sentinel-2.conf --sentinel
+redis-server redis-sentinel-3.conf --sentinel
+```
+
+使用 `redis-cil` 工具连接哨兵节点，并执行 `info Sentinel` 命令来查看是否已经在监视主节点了
+
+#### 集群方式
+
+哨兵方式虽然实现了故障自动切换, 但是实际为客户端提供读写服务的Redis仍然只有主节点一个,所以受限于单机的内存容量。
+
+* 搭建Redis集群
+
+要让集群正常工作至少需要3个主节点，在这里我们要创建6个redis节点，其中三个为主节点，三个为从节点。为了方便演示,这6个redis部署在同一台机器, 采用不同的端口号(7000 ~ 7005)。
+
+* 准备配置文件
+
+6个Redis节点的配置文件分别命名为node_7000.conf, node_7001.conf , ......, node_7005.conf,
+
+除了端口号不同外,其余配置相同, 配置如下:
+
+```yaml
+# 后台执行
+daemonize yes
+# 端口号
+port 7000
+# 为每一个集群节点指定一个 pid_file
+pidfile ~/Desktop/redis-cluster/redis_7000.pid
+# 启动集群模式
+cluster-enabled yes
+# 每一个集群节点都有一个配置文件，这个文件是不能手动编辑的。确保每一个集群节点的配置文件不通
+cluster-config-file nodes-7000.conf
+# 集群节点的超时时间，单位：ms，超时后集群会认为该节点失败
+cluster-node-timeout 5000
+# 最后将 appendonly 改成 yes(AOF 持久化)
+appendonly yes
+```
+
+启动6个Redis实例
+
+```undefined
+redis-server redis_7000.conf
+redis-server redis_7001.conf
+redis-server redis_7002.conf
+redis-server redis_7003.conf
+redis-server redis_7004.conf
+redis-server redis_7005.conf
+```
+
+建立集群 执行命令:
+
+```bash
+redis-cli --cluster create --cluster-replicas 1 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005
+
+--replicas 1 的意思是：我们希望为集群中的每个主节点创建一个从节点。
+
+```
+
+使用 `redic-cli` 任意连接一个节点：
+
+```css
+redis-cli -c -h 127.0.0.1 -p 7000
+127.0.0.1:7000>
+```
+
+- `-c`表示集群模式；`-h` 指定 ip 地址；`-p` 指定端口。
+- 任意节点使用`cluster nodes` 查看节点列表
+
+### **启动**
+
+```json
+后端模式启动
+
+修改redis.conf配置文件， daemonize yes 以后端模式启动。推荐！
+
+打开redis.conf,使用命令 :/ daemonize 快速查找到daemonize然后修改。
+
+vi /etc/redis/redis.conf
+仅修改： daemonize yes （no-->yes）
+
+#启动
+/usr/local/bin/redis-server /etc/redis/redis.conf
+#查看启动
+ps -ef | grep redis 
+#使用客户端
+redis-cli
+#关闭客户端
+redis-cli shutdown
+#开机启动配置
+echo "/usr/local/bin/redis-server /etc/redis/redis.conf &" >> /etc/rc.local
+#设置密码
+修改redis.conf文件配置 
+使用命令 :/ requirepass 快速查找到 # requirepass foobared 然后去掉注释，这个foobared改为自己的密码。然后wq保存。
+```
+
+### 淘汰策略了解
+
+Redis 提供 6 种数据淘汰策略：
+
+- **volatile-lru（least recently used）**：从已设置过期时间的数据集（server.db[i].expires）中挑选最近最少使用的数据淘汰
+- **volatile-ttl**：从已设置过期时间的数据集（server.db[i].expires）中挑选将要过期的数据淘汰
+- **volatile-random**：从已设置过期时间的数据集（server.db[i].expires）中任意选择数据淘汰
+
+* **allkeys-lru（least recently used）**：当内存不足以容纳新写入数据时，在键空间中，移除最近最少使用的 key（这个是最常用的）
+
+* **allkeys-random**：从数据集（server.db[i].dict）中任意选择数据淘汰
+* **no-eviction**：禁止驱逐数据，也就是说当内存不足以容纳新写入数据时，新写入操作会报错。这个应该没人使用吧！
+
+### 持久化
+
+**快照（snapshotting）持久化（RDB）**
+
+Redis 可以通过创建快照来获得存储在内存里面的数据在某个时间点上的副本。Redis 创建快照之后，可以对快照进行备份，可以将快照复制到其他服务器从而创建具有相同数据的服务器副本（Redis 主从结构，主要用来提高 Redis 性能），还可以将快照留在原地以便重启服务器的时候使用。
+
+快照持久化是 Redis 默认采用的持久化方式，在 Redis.conf 配置文件中默认有此下配置：
+
+```conf
+save 900 1           #在900秒(15分钟)之后，如果至少有1个key发生变化，Redis就会自动触发BGSAVE命令创建快照。
+
+save 300 10          #在300秒(5分钟)之后，如果至少有10个key发生变化，Redis就会自动触发BGSAVE命令创建快照。
+
+save 60 10000        #在60秒(1分钟)之后，如果至少有10000个key发生变化，Redis就会自动触发BGSAVE命令创建快照。
+```
+
+### redis.conf部分配置详解
+
+```shell
+# 启动redis，显示加载配置redis.conf
+# ./redis-server /path/to/redis.conf
+
+# 停止redis
+# redis-cli -h IP -p PORT shutdown
+
+# 可以包含一个或多个其他配置文件，如果多个redis服务器存在标准配置模板，但是每隔redis服务器可能有个性化的配置
+# include /path/to/local.conf
+# include /path/to/other.conf
+
+# 这个地方网上存在许多误解，bind的是网络接口。对于一个redis服务器来说可以有一个或者多个网卡。比如服务器上有两个网卡：bind 192.168.1.100 192.168.1.101，如果bind bind 192.168.1.100，则只有该网卡地址接受外部请求，如果不绑定，则两个网卡都接受请求
+# bind 192.168.1.100 192.168.1.101
+# bind 127.0.0.1 ::1
+
+# 监听端口号，默认为6379，如果为0监听任连接
+port 6379
+
+# TCP连接中已完成队列的长度
+tcp-backlog 511
+
+#客户端和Redis服务端的连接超时时间，默认为0表示永不超时
+timeout 0
+
+# 服务端周期性时间（单位秒）验证客户端是否处在健康状态，避免服务端一直阻塞
+tcp-keepalive 300
+
+# Redis以后台守护进程形式启动
+daemonize yes
+
+# 配置PID文件路径，当redis以守护进程启动时，它会把PID默认写到 /var/redis/run/redis_6379.pid文件里面
+pidfile "/var/run/redis_6379.pid"
+
+#Redis日志级别：debug，verbose，notice，warning，级别一次递增
+loglevel notice
+
+#日志文件路径及名称
+logfile ""
+```
+
+
+
+### **可视化工具的控制台语法**
 
 ```cmd
 连接redis命令 /bin/redis-cli
@@ -523,6 +802,10 @@ spring:
 》exists key 判断对应的key是否存在 存在返回1，否则返回0
 》type key 查看key的类型
 》del key 删除对应的key
+
+# 批量删除匹配通配符的key用到了Linux中的管道和xargs参数：
+redis-cli keys "s*" | xargs redis-cli del
+./redis-cli -p 39087 -a Ctx1ytxA@3zdj  keys 'cloudnet:patch:doing*' | xargs  ./redis-cli -p 39087 -a Ctx1ytxA@3zdj del
 
 
 hset key field value   单个设置  
@@ -572,6 +855,8 @@ Long remove(K key, Object… values);//移除集合中一个或多个成员
 V pop(K key);//移除并返回集合中的一个随机元素
 Cursor scan(K key, ScanOptions options);//遍历set
 ```
+
+### 例子
 
 #### 分布式锁
 
@@ -1002,6 +1287,37 @@ private String extractPathFromPattern(final HttpServletRequest request) {
 
 #### AOP 切面@Around注解
 
+##### aop-切面说明
+
+```java
+AspectJ的Execution表达式
+#######    1)通过方法签名定义切点
+execution(public * *(..))
+匹配所有目标类的public方法，但不匹配SmartSeller和protected void showGoods()方法。第一个*代表返回类型，第二个*代表方法名，而..代表任意入参的方法；
+   
+execution(* *To(..))
+匹配目标类所有以To为后缀的方法。它匹配NaiveWaiter和NaughtyWaiter的greetTo()和serveTo()方法。第一个*代表返回类型，而*To代表任意以To为后缀的
+ ########   2)通过类定义切点
+execution(* com.baobaotao.Waiter.*(..))
+匹配Waiter接口的所有方法
+execution(* com.baobaotao.Waiter+.*(..))
+匹配Waiter接口及其所有实现类的方法
+ ########   3)通过类包定义切点
+execution(* com.baobaotao.*(..))
+匹配com.baobaotao包下所有类的所有方法
+execution(* com.baobaotao..*(..))
+匹配com.baobaotao包、子孙包下所有类的所有方法
+execution(* com..*.*Dao.find*(..))
+匹配包名前缀为com的任何包下类名后缀为Dao的方法，方法名必须以find为前缀
+########   4)通过方法入参定义切点
+execution(* joke(String,int)))
+匹配joke(String,int)方法，且joke()方法的第一个入参是String，第二个入参是int
+execution(* joke(String,..)))
+匹配目标类中的joke()方法，该方法第 一个入参为String，后面可以有任意个入参且入参类型不限
+```
+
+
+
 Spring AOP常用于拦截器、事务、日志、权限验证等方面。
 
 ```java
@@ -1217,7 +1533,57 @@ ObjectMapper mapper = new ObjectMapper();
 mapper.setSerializationInclusion(Include.NON_NULL);
 ```
 
-#### @Cacheable 方法缓存主键
+#### @Cacheable 基本使用
+
+##### springboot @Cacheable 基本使用
+
+加入依赖
+
+```yml
+<dependency>
+   <groupId>org.springframework.boot</groupId>
+   <artifactId>spring-boot-starter-cache</artifactId>
+</dependency>
+```
+
+开启注解缓存
+
+在启动类上加入 `@EnableCaching`
+
+缓存注解
+
+1. ```java
+   @Cacheable(key="#containerId", value="CONTAINER_INFO", unless="#result == null")
+   private V test(String containerId){}
+   ```
+
+   ：对方法结果进行缓存（主要用于GET方法）
+
+   1. `cacheNames/value`:指定缓存主键（`Cache`）的名字
+   2. `key`:缓存数据使用`key`，支持`spEl`语法
+   3. `keyGenerator`:`key`的生成器。与`key`属性冲突，自定义 `keyGenerator` 必须实现`org.springframework.cache.interceptor.KeyGenerator`,`default`使用默认的参数值生成器
+   4. `cacheManager`:指定缓存管理器，或者`cacheResolver`指定获取解析器
+   5. `cacheResolver`: 与`CacheManager`冲突
+   6. `condition`：指定条件满足才缓存，与`unless`相反。可以使用`spEL`语法
+   7. `unless`：否定缓存，当满足条件时，结果不被缓存。可以获取到结果（`#result`）进行判断。支持`spEL`语法
+   8. `sync`：是否异步模式。在该模式下`unless`不被支持。`default=false`
+
+2. `@CachePut`:先调用方法，在对结果进行缓存。（主要用于PUT方法），需要注意`key`的设置
+
+3. ```
+   @CacheEvict
+   ```
+
+   :默认先调用方法，在删除缓存（主要用于DELETE方法）
+
+   1. `allEntries`: 删除缓存组件中（`cacheNames/value`指定）所有的值
+   2. `beforeInvocation`：在方法执行之前删除值，`default=false`
+
+4. `@Caching`：组合注解。针对复杂情况
+
+5. `@CacheConfig`：加载类上，用于设置缓存的共有属性
+
+##### Cacheable 例子
 
 是一个既可以应用于方法级别，也可用于类级别的注解。自spring3.1开始就通过它实现了缓存管理。
 
@@ -1229,6 +1595,109 @@ mapper.setSerializationInclusion(Include.NON_NULL);
    @Cacheable(value = "PERSON",key = "#tagId+'_'+#zz")
    public List<Person> getPersonByTagid(Long tagId,String zz)
    ```
+
+2. 缓存时间
+
+   ```java
+    /**
+        * 这个是配合@Cacheable使用的，需要的话，单独配置在项目中
+        * @param factory
+        * @return
+        */
+   //    @Bean
+       public CacheManager cacheManager(RedisConnectionFactory factory) {
+           RedisSerializer<String> redisSerializer = new StringRedisSerializer();
+           Jackson2JsonRedisSerializer jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer(Object.class);
+           //解决查询缓存转换异常的问题
+           ObjectMapper om = new ObjectMapper();
+           om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+           om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+           jackson2JsonRedisSerializer.setObjectMapper(om);
+           // 配置序列化（解决乱码的问题）,过期时间600秒
+           RedisCacheConfiguration config = RedisCacheConfiguration
+                   .defaultCacheConfig()
+                   .entryTtl(Duration.ofSeconds(600))
+                   .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(redisSerializer))
+                   .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jackson2JsonRedisSerializer))
+                   .disableCachingNullValues();
+   
+           RedisCacheManager cacheManager = RedisCacheManager.builder(factory)
+                   .cacheDefaults(config)
+                   // 可以给每个cacheName不同的RedisCacheConfiguration  设置不同的过期时间
+                   //.withCacheConfiguration("Users",config.entryTtl(Duration.ofSeconds(100)))
+                   .transactionAware()
+                   .build();
+           return cacheManager;
+       }
+   ## #另一种风格方式，封装代码  学习优化代码
+       
+   @Configuration
+   public class RedisCacheConfig {
+       @Value("${zihexin.globalSessionTimeout}")
+       private long globalSessionTimeout;
+       @Autowired
+       ResourceLoader resourceLoader;
+       
+       @Bean
+       public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
+           return RedisCacheManager.builder(redisConnectionFactory)
+                   //默认的缓存配置(没有配置键的key均使用此配置)
+                   .cacheDefaults(getDefaultCacheConfiguration())
+                   .withInitialCacheConfigurations(getCacheConfigurations())
+                   //在spring事务正常提交时才缓存数据
+                   .transactionAware()
+                   .build();
+       }
+       
+       private Map<String, RedisCacheConfiguration> getCacheConfigurations() {
+           Map<String, RedisCacheConfiguration> configurationMap = new HashMap<>();
+           //缓存键,且3600*10秒后过期,3600*10秒后再次调用方法时需要重新缓存
+           configurationMap.put("AllMenuList", this.getDefaultCacheConfiguration(globalSessionTimeout*10));
+           configurationMap.put("Menus", this.getDefaultCacheConfiguration(globalSessionTimeout*10));
+           configurationMap.put("NotButtonList", this.getDefaultCacheConfiguration(globalSessionTimeout*10));
+           configurationMap.put("UserMenuList", this.getDefaultCacheConfiguration(globalSessionTimeout*10));
+           return configurationMap;
+       }
+       
+       /**
+        * 获取redis的缓存配置(针对于键)
+        *
+        * @param seconds 键过期时间
+        * @return
+        */
+       private RedisCacheConfiguration getDefaultCacheConfiguration(long seconds) {
+           Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer<>(Object.class);
+           ObjectMapper om = new ObjectMapper();
+           om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+           om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+           jackson2JsonRedisSerializer.setObjectMapper(om);
+           RedisCacheConfiguration redisCacheConfiguration = RedisCacheConfiguration.defaultCacheConfig();
+           redisCacheConfiguration = redisCacheConfiguration.serializeValuesWith(
+                   RedisSerializationContext
+                           .SerializationPair
+                           .fromSerializer(jackson2JsonRedisSerializer)
+           ).entryTtl(Duration.ofSeconds(seconds));
+           return redisCacheConfiguration;
+       }
+       
+       /**
+        * 获取Redis缓存配置,此处获取的为默认配置
+        * 如对键值序列化方式,是否缓存null值,是否使用前缀等有特殊要求
+        * 可另行调用 RedisCacheConfiguration 的构造方法
+        *
+        * @return
+        */
+       private RedisCacheConfiguration getDefaultCacheConfiguration() {
+           // 注意此构造函数为 spring-data-redis-2.1.9 及以上拥有,经试验 已知spring-data-redis-2.0.9及以下版本没有此构造函数
+           // 但观察源码可得核心不过是在值序列化器(valueSerializationPair)的构造中注入 ClassLoader 即可
+           return RedisCacheConfiguration.defaultCacheConfig(resourceLoader.getClassLoader());
+       }
+   }
+   ```
+
+   
+
+
 
 #### @Modelattribute注解
 
@@ -1475,6 +1944,12 @@ $ npm config set registry http://registry.npm.taobao.org
 
 #### 创建一个新项目
 
+```
+npm install -g @vue/cli
+```
+
+
+
 * **vue init**
 
 ```
@@ -1483,7 +1958,7 @@ $ npm config set registry http://registry.npm.taobao.org
 webpack是官方推荐的标准模板名
 使用方式：vue init webpack 项目名称
 
-electron-vue的模板
+electron-vue的模板(github上的项目)
 使用方式：vue init simulatedgreg/electron-vue 项目名称
 
 
@@ -1507,7 +1982,14 @@ $ cnpm run dev
 
 ------
 
-#### Vue的语法
+### Vue的语法
+
+```js
+#vue中给定默认值写法 双杠
+{{ message || '啊对对对'}}
+```
+
+
 
 ```js
 #vue的一些语法用法 模板
@@ -1544,6 +2026,53 @@ ncu
 ncu -u
 更新全部到最新版本：
 npm run install
+```
+
+##### $router和$route区别
+
+```vue
+//传值
+this.$router.push({path:"/menLink",query:{alert:"页面跳转成功"}})
+this.$router.push({path:"/menLink",params:{alert:"页面跳转成功"}})
+
+//获取值
+<p>提示：{{this.$route.params.alert}}</p>
+<p>提示：{{this.$route.query.alert}}</p>
+ 
+```
+
+<div style="color:red">两种方式的区别是query传参的参数会带在url后边展示在地址栏，params传参的参数不会展示到地址栏。<p>需要注意的是接收参数的时候是route而不是router。两种方式一一对应，名字不能混用</p></div>
+
+##### vue中provide和inject 
+
+```vue
+由于vue有$parent属性可以让子组件访问父组件。但孙组件想要访问祖先组件就比较困难。通过provide/inject可以轻松实现跨级访问祖先组件的数据
+
+父组件
+export default {
+  name: 'App',
+  data () {
+    return {
+    datas: [
+        {
+            id: 1,
+            label: '产品一'
+        },
+	]
+  },
+
+// 父组件中返回要传给下级的数据
+  provide () {
+    return {
+      datas: this.datas
+    }
+  }
+}
+// 后代组件中使用
+export default {
+	inject: ['datas']
+}
+
 ```
 
 
@@ -1894,12 +2423,12 @@ export default new Vuex.Store({
 
 
 
-#### axios的使用 推荐用vue-resource
+#### axios的使用  和 vue-resource
 
 ```js
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 
-# vue的ajax不要用axios, 这个在ie11不兼容, 用vue-resource
+#首选使用axios
 
 <script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
 
@@ -2158,6 +2687,148 @@ devDependencies 节点下的模块是我们在开发时需要用的，比如项�
 > }
 > ```
 
+#### npm编写组件
+
+##### 起步
+
+```js
+vue create my-project
+#调整目录
+原src修改成examples 用作展示使用
+新增packages 用于存放编写组件
+
+目录调整后运行项目会报错， webpack无法获取编译, 新建vue.config.js
+// vue.config.js
+module.exports = {
+  // 修改 src 目录 为 examples 目录
+  pages: {
+    index: {
+      // page 的入口
+      entry: 'examples/main.js',   // 把src 修改为examples
+      // 模板来源
+      template: 'public/index.html',
+      // 在 dist/index.html 的输出
+      filename: 'index.html'
+    }
+  },
+  // 扩展 webpack 配置，使 packages 加入编译
+  /* chainWebpack 是一个函数，会接收一个基于 webpack-chain 的 ChainableConfig 实例。允许对内部的 webpack 配置进行更细粒度的修改。 */
+  chainWebpack: config => {
+    config.module
+      .rule('js')
+      .include
+        .add(__dirname + 'packages')  // 注意这里需要绝对路径，所有要拼接__dirname
+        .end()
+      .use('babel')
+        .loader('babel-loader')
+        .tap(options => {
+          // 修改它的选项...
+          return options
+        })
+  }
+}
+
+```
+
+##### 编写组件
+
+```vue
+packages目录 新建 组件文件夹 和 index.js
+（index.js内容） import columnSelect from './columnSelect'
+                // 存储组件列表
+                const components = [
+                  columnSelect
+                ] 
+                /* 
+                  定义install 方法，接收Vue作为参数，如果使用use注册插件，则所有的组件都将被注册
+                */
+                const install = function (Vue) {
+                  // 判断是否安装
+                  if(install.installed){return}
+                  // 遍历所有组件
+                  components.map(item => {
+                    Vue.component(item.name,item)
+                  })
+                }
+                // 判断是否引入文件
+                if(typeof window !== 'undefined' && window.Vue){
+                  install(window.Vue)
+                }
+                export default{
+                  install,
+                  columnSelect
+                }
+组件文件夹 新建 src文件夹（src下面新建组件名xxx.vue）和index.js
+（index.js内容） import xxx from './src/组件名xxx.vue'  
+                xxx.install = function(Vue){Vue.component(xxx.name, xxx)}
+                export default xxx
+
+```
+
+##### 编译
+
+以下我们在 scripts 中新增一条命令 npm run lib
+•	--target: 构建目标，默认为应用模式。这里修改为 lib 启用库模式。
+•	--dest : 输出目录，默认 dist。这里我们改成 lib
+•	[entry]: 最后一个参数为入口文件，默认为 src/App.vue。这里我们指定编译packages/ 组件库目录。
+
+```
+"scripts": {
+    // ...
+    "lib": "vue-cli-service build --target lib --name vcolorpicker --dest lib packages/index.js"
+}
+```
+
+执行编译库命令
+
+```
+npm run lib
+```
+
+配置 package.json 文件中发布到 npm 的字段
+
+```
+{	name: 包名，该名字是唯一的。可在 npm 官网搜索名字，如果存在则需换个名字。
+	version: 版本号，每次发布至 npm 需要修改版本号，不能和历史版本号相同。
+	description: 描述。
+	main: 入口文件，该字段需指向我们最终编译后的包文件。
+	keyword：关键字，以空格分离希望用户最终搜索的词。
+	author：作者
+	private：是否私有，需要修改为 false 才能发布到 npm
+	....
+}
+```
+
+添加.npmignore文件，设置忽略发布文件
+
+```
+#忽略目录
+examples/
+packages/
+public/
+
+#忽略指定文件
+vue.config.js
+babel.config.js
+*.map
+```
+
+##### 私服配置
+
+```
+npm config set registry 私服地址
+```
+
+##### 发布
+
+```
+终端执行 npm publish 
+```
+
+
+
+
+
 #### 如何对Prettier进行配置
 
 一共有三种方式支持对Prettier进行配置：
@@ -2220,7 +2891,33 @@ module.exports = {
 
 
 
-#### Tomcat部署vue项目
+### Tomcat
+
+#### 结构
+
+```shell
+#windows例子
+bin (运行脚本）
+conf (配置文件）
+lib (核心库文件）
+logs (日志目录)
+temp (临时目录)
+webapps (自动装载的应用程序的目录）
+work (JVM临时文件目录[java.io.tmpdir])
+#变量（很重要）
+catalina.home 和
+catalina.base 这两个属性仅在你需要安装多个Tomcat实例而不想安装多个软件备份的时候使用，这样能节省磁盘空间。
+
+#linux
+CATALINA_TMPDIR指向临时目录temp的位置
+catalina.home指向公用信息的位置，就是bin和lib的父目录。
+catalina.base指向每个Tomcat目录私有信息的位置，就是conf、logs、temp、webapps和work的父目录
+#ps: 所以我们要运行多个应用时，就更改catalina.base , 然后启动tomcat就可以 startup.sh了？
+```
+
+
+
+#### 部署vue项目
 
 * tomcat部署
 
@@ -2269,9 +2966,18 @@ server {
 }
 ```
 
+#### 部署jar服务
 
+```shell
+#带有context的问题
+如果访问不需要有context， 将jar或者war包 命名为ROOT.war, 结合前面的tomcat结构, linux安装一个tomcat 可以有多个webapps, 利用 catalina.base 这个系统变量来控制，重启tomcat即可
+export CATALINA_BASE=/usr/local/tomcat${tomcat_version}/$i #服务地址
 
+#项目中文带乱码的问题，注意conf的server.xml配置
+<Connector connectionTimeout="20000" port="8080" protocol="HTTP/1.1" redirectPort="8443"  URIEncoding="UTF-8"/>
+加上URIEncoding="UTF-8。
 
+```
 
 
 
@@ -2582,130 +3288,6 @@ public void genFile() throws Exception {
 
 
 
-### java打包项目的配置
-
-src/main/java下的默认只打包java文件，如果想打包xml文件，则加如下配置
-
-```xml
-#pom.xml
-<build>
-    <!-- 资源目录 -->    
-    <resources>    
-        <resource>    
-            <!-- 设定主资源目录  -->    
-            <directory>src/main/java</directory>    
-
-            <!-- maven default生命周期，process-resources阶段执行maven-resources-plugin插件的resources目标处理主资源目下的资源文件时，只处理如下配置中包含的资源类型 -->     
-            <includes>
-                <include>**/*.xml</include>
-            </includes>  
-
-            <!-- maven default生命周期，process-resources阶段执行maven-resources-plugin插件的resources目标处理主资源目下的资源文件时，不处理如下配置中包含的资源类型（剔除下如下配置中包含的资源类型）-->      
-            <excludes>  
-                <exclude>**/*.yaml</exclude>  
-            </excludes>  
-<!-- maven default生命周期，process-resources阶段执行maven-resources-plugin插件的resources目标处理主资源目下的资源文件时，指定处理后的资源文件输出目录，默认是${build.outputDirectory}指定的目录-->      
-            <!--<targetPath>${build.outputDirectory}</targetPath> -->      
-
-            <!-- maven default生命周期，process-resources阶段执行maven-resources-plugin插件的resources目标处理主资源目下的资源文件时，是否对主资源目录开启资源过滤 -->    
-            <filtering>true</filtering>     
-        </resource>  			
-    </resources> 	
-</build>
-```
-
-#### 默认resources目录下的文件都会被打包
-
-如果想resources目录下的xml文件不被打包，可通过如下配置:
-
-```html
-<!--过滤resource下的文件-->
-	<resources>  
-        <resource>  
-            <directory>src/main/resources</directory>  
-            <includes>  
-                <include>*.properties</include>  <!--打包properties文件-->
-            </includes>  
-            <excludes>  
-                <exclude>*.xml</exclude>  <!--过滤xml与yaml文件-->
-                <exclude>*.yaml</exclude>  
-            </excludes>  
-        </resource>  
-```
-
-插件完成
-
-```xml
-<build>
-    <plugin>  
-        <artifactId>maven-resources-plugin</artifactId>  
-        <executions>  
-            <execution>  
-                <id>copy-resources</id>  
-                <phase>validate</phase>  
-                <goals>  
-                    <goal>copy-resources</goal>  
-                </goals>  
-                <configuration>  
-<!-- 并把文件复制到target/conf目录下-->
-                    <outputDirectory>${project.build.directory}/conf</outputDirectory>  
-                    <resources>  
-                        <resource>  
-                            <directory>src/main/resources</directory>  
-<!-- 指定不需要处理的资源 <excludes> <exclude>WEB-INF/*.*</exclude> </excludes> -->  
-							<excludes> <exclude>**/*.xml</exclude> </excludes>
-                            <filtering>true</filtering>  
-                        </resource>  
-                    </resources>  
-                </configuration>  
-            </execution>  
-        </executions> 
-    </plugin> 
-</build>build>
-```
-
-
-
-#### pluginManagement说明
-
-假如存在两个项目，项目A为项目B的父项目，其关系通过pom文件的关系确定。项目A的父pom文件片段如下：
-
-```xml
-<build>
-<pluginManagement>
-    <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>2.1</version>
-            <configuration>
-                <attach>true</attach>
-            </configuration>
-            <executions>
-                <execution>
-                    <phase>compile</phase>
-                    <goals>
-                        <goal>jar</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
-    </plugins>
-</pluginManagement>
-</build>
-```
-
-如果项目B也想使用该plugin配置，则在项目B的子pom文件中只需要如下配置：
-
-```xml
-<plugins>
-    <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-    </plugin>
-</plugins>
-```
-
 ------
 
 ### 浏览器客户端使用activeMQ
@@ -2985,7 +3567,128 @@ spring:
 * 与 搜索引擎Elasticsearch 合作
 * 日志可视化工具
 
-### RabbitMQ 的使用
+## RabbitMQ 的使用
+
+#### 集群模式
+
+```
+##单一模式
+只启动一个mq
+##普通模式
+主备模式:主节点提供读写，从节点不提供读写服务，只是负责提供备份服务,备份节点的主要功能是在主节点宕机时，完成自动切换 从-->主
+主从模式:主节点提供读写，从节点只读
+##
+镜像模式：集群模式非常经典的就是Mirror镜像模式，保证100%数据不丢失
+
+```
+
+##### 搭建集群  假设环境如下：
+
+1、两台Centos7的机器，hostname分别为：F , G .
+
+2、IP地址分别为：F—172.18.8.229 ， G—172.18.8.224。
+
+3、修改hosts文件如下，下面是G这台机器的hosts文件内容，F也需要如下配置：
+
+```bash
+[root@G bin]# cat /etc/hosts
+127.0.0.1 G  localhost localhost.localdomain localhost4 localhost4.localdomain4 
+::1       G  localhost localhost.localdomain localhost6 localhost6.localdomain6 
+
+172.18.8.224 G
+172.18.8.229 F
+```
+
+* 安装
+
+这里安装启动成功之后，来几个常用的操作。
+
+```bash
+[root@G bin]# ./rabbitmq-server -deched  --后台启动服务
+[root@G bin]# ./rabbitmqctl start_app  --启动服务
+[root@G bin]# ./rabbitmqctl stop_app  --关闭服务
+[root@G bin]# ./rabbitmq-plugins enable rabbitmq_management --启动web管理插件
+[root@G bin]# ./rabbitmqctl add_user zlh zlh  --添加用户，密码
+[root@G bin]# ./rabbitmqctl set_user_tags zlh administrator --设置zlh为administrator权限
+```
+
+1、必须使集群中也就是F，G这两台机器的.erlang.cookie文件中cookie值一致，且权限为owner只读。
+
+cat .erlang.cookie  查看
+
+```bash
+[root@F ~]# chmod 600 .erlang.cookie
+```
+
+2、查看集群状态，我的是已经做好的。
+
+```bash
+[root@F bin]# ./rabbitmqctl cluster_status
+Cluster status of node rabbit@F ...
+[{nodes,[{disc,[rabbit@G]},{ram,[rabbit@F]}]},
+```
+
+3.把G中的rabbitmq加入到集群中来
+
+```bash
+[root@F bin]# ./rabbitmqctl join_cluster --ram rabbit@G
+```
+
+##### 镜像模式
+
+ https://www.jianshu.com/p/5b2879fba25b
+
+node1：192.168.174.10
+ node2：192.168.174.11
+ node3：192.168.174.12
+ node4：192.168.174.13
+ node5：192.168.174.14
+ 其中，node1、node2、node3三台服务器安装RabbitMQ服务，node4和node5安装HA-proxy和Keepalived。
+
+**Haproxy 的特点是：高可用，负载均衡。**
+
+**KeepAlived 的特点：通过VRRP协议（虚拟ip）实现高可用功能（主备切换）**
+
+```bash
+./rabbitmqctl set_policy ha-all "^" '{"ha-mode":"all"}'
+```
+
+参数意思为：
+
+ha-all：为策略名称。
+
+^：为匹配符，只有一个^代表匹配所有，^zlh为匹配名称为zlh的exchanges或者queue。
+
+ha-mode：为匹配类型，他分为3种模式：
+
+* all-所有（所有的queue），
+
+* exctly-部分（需配置ha-params参数，此参数为int类型比如3，众多集群中的随机3台机器），
+
+* nodes-指定（需配置ha-params参数，此参数为数组类型比如["3rabbit@F","rabbit@G"]这样指定为F与G这2台机器。）
+
+- RabbitMQ集群配置
+   我们这里以node1为master节点，node2和node3为slave节点。
+   1、停止MQ服务
+
+> rabbimqctl stop
+
+2、复制node1节点的/root/.erlang.cookie文件到其他节点，并覆盖
+
+> scp /root/.erlang.cookie root@node2:~
+>  scp /root/.erlang.cookie root@node3:~
+
+3、启动集群
+
+> rabbitmq-server -datached
+
+4、slave 加入集群，对node2和node3分别执行下面操作
+
+> rabbitmqctl stop_app
+>  rabbitmqctl join_cluster rabbit@node1
+>  rabbitmqctl start_app
+
+
 
 #### 集成
 
@@ -3258,6 +3961,87 @@ void basicPublish(String exchange, String routingKey, boolean mandatory, boolean
         private String clusterId;
 ```
 
+#### RabbitMQ的和前端消息交互
+
+```
+gzy@5185188
+ps -ef |grep rabbit  linux查看  /home/env
+
+退出编辑模式 
+　　按ESC键，然后 ：注意这里是要加冒号
+　　　　退出vi
+    :q!  不保存文件，强制退出vi命令
+    :w   保存文件，不退出vi命令
+    :wq  保存文件，退出vi命令
+
+#添加stomp相关的插件
+rabbitmq-plugins enable rabbitmq_web_stomp rabbitmq_stomp rabbitmq_web_stomp_examples
+;
+#重启服务
+rabbitmqctl stop_app
+rabbitmqctl start_app
+#查看集群状态，有使用集群的话集群中的所有服务器都要添加插件
+rabbitmqctl cluster_status
+```
+
+#### Linux开放防火墙端口号
+
+```shell
+firewall-cmd --zone=public --add-port=2181/tcp --permanent #网页端口
+firewall-cmd --zone=public --add-port=5672/tcp --permanent  #AMQP端口,java使用
+firewall-cmd --reload # 重新加载
+//关闭某个端口
+"sudo iptables -A INPUT -p tcp --dport $PORT -j DROP"
+"sudo iptables -A OUTPUT -p tcp --dport $PORT -j DROP" 
+//linux或者
+/sbin/iptables -I INPUT -p tcp --dport 9092 -j ACCEPT  
+/sbin/iptables -I INPUT -p tcp --dport 15672 -j ACCEPT
+备注一下
+/sbin/iptables -I INPUT -p tcp --dport 8011 -j ACCEPT #开启8011端口 
+/etc/rc.d/init.d/iptables save #保存配置 
+/etc/rc.d/init.d/iptables restart #重启服务 
+
+查看端口号
+1、lsof -i:端口号
+2、netstat -tunlp|grep 端口号
+可以通过"netstat -anp" 来查看哪些端口被打开
+
+
+service iptables status
+启动指令:service iptables start   
+重启指令:service iptables restart   
+关闭指令:service iptables stop 
+
+iptables -A OUTPUT -s 192.168.88.94 -p tcp -m tcp --sport 15674 -j ACCEPT 
+
+
+也可以直接编辑配置文件，添加iptables防火墙规则：
+iptables的配置文件为/etc/sysconfig/iptables
+
+编辑配置文件：
+
+vi /etc/sysconfig/iptables
+```
+
+* 防火墙端口访问限制
+
+编辑`/etc/sysconfig/iptables`，添加
+
+```js
+-A INPUT -m state --state NEW -m tcp -p tcp -s 127.0.0.1 --dport 6379 -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp -s 126.212.173.185 --dport 6379 -j ACCEPT
+#如果访问ip没有限制，就不需要添加-s ip地址了
+#对了，一定要在最后添加
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+
+COMMIT
+#防火墙重启命令
+ service iptables start
+```
+
+## 
+
 ## nginx笔记
 
 #### 安装
@@ -3334,7 +4118,7 @@ Nginx 是一款自由的、开源的、高性能的 HTTP **服务器和反向代
 
 Nginx 可以作为一个 HTTP 服务器进行网站的发布处理，另外 Nginx 可以作为**反向代理进行负载均衡**的实现。
 
-```
+```shell
 cd /etc/nginx/
 vim nginx.conf
 cd /usr/sbin/
@@ -3364,6 +4148,27 @@ http {
     sendfile_max_chunk 100k;  #每个进程每次调用传输数量不能大于设定的值，默认为0，即不设上限。
     keepalive_timeout 65;  #连接超时时间，默认为75s，可以在http，server，location块。
 
+    http {
+    include         mime.types;
+    default_type    application/octet-stream;
+    sendfile        on;
+    tcp_nopush      on;
+    keepalive_timeout 75;
+    client_header_buffer_size 32k;
+    large_client_header_buffers 4 32k;
+    open_file_cache max=102400 inactive=20s;
+    open_file_cache_valid 30s;
+    open_file_cache_min_uses 1;
+    server_tokens off;
+    gzip on;
+    gzip_min_length 1024;
+    gzip_buffers    4 16k;
+    gzip_http_version 1.1;
+    gzip_types      image/gif  text/plain application/x-javascript text/css application/xml;
+    gzip_vary on;
+    client_max_body_size 100M;
+    #limit_conn_zone $binary_remote_addr zone=addr:5m;
+
     upstream mysvr {   
       server 127.0.0.1:7878;
       server 192.168.10.121:3333 backup;  #热备
@@ -3379,9 +4184,19 @@ http {
            proxy_pass  http://mysvr;  #请求转向mysvr 定义的服务器列表
            proxy_set_header Host $host;
            proxy_set_header X-Real-IP $remote_addr
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
            proxy_read_timeout 3600;
            deny 127.0.0.1;  #拒绝的ip
-           allow 172.18.5.54; #允许的ip           
+           allow 172.18.5.54; #允许的ip 
+            #上传的限制    
+           client_max_body_size     50m; //文件大小限制，默认1m
+           client_header_timeout    1m;
+           client_body_timeout      1m;
+           #请求时间
+           proxy_connect_timeout     60s;
+           proxy_read_timeout      1m;
+           proxy_send_timeout      1m;
         } 
     }
 }
@@ -3463,86 +4278,83 @@ server {
 ^~ 如果把这个前缀用于一个常规字符串,那么告诉nginx 如果路径匹配那么不测试正则表达式。
 ```
 
+#### vue静态代理例子
 
+```nginx
+#user  nobody;
+worker_processes  1;
+#error_log  logs/error.log;
+#error_log  logs/error.log  notice;
+#error_log  logs/error.log  info;
+#pid        logs/nginx.pid;
 
-## RabbitMQ的和前端消息交互
+events {
+    worker_connections  1024;
+}
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    #log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+    #                  '$status $body_bytes_sent "$http_referer" '
+    #                  '"$http_user_agent" "$http_x_forwarded_for"';
+
+    #access_log  logs/access.log  main;
+    sendfile        on;
+    #tcp_nopush     on;
+    #keepalive_timeout  0;
+    keepalive_timeout  65;
+    #gzip  on;
+    server {
+        listen       80;
+        server_name  activate.navicat.com;
+		#if ($http_Host !~* ^192.168.1.32$)
+	    #{   
+		#	return 403;
+		#}
+		#location / {
+        #    proxy_pass http://127.0.0.1:8081/;
+		#	proxy_set_header Host $http_host;
+        #    proxy_set_header X-Real-IP $remote_addr;
+        #    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        #    proxy_set_header X-Forwarded-Proto $scheme;
+        #}
+        location / {
+            root   E:\开发笔记\System_Template\dist;
+            index  index.html index.htm;
+			#解决vue的去掉# 刷新报404
+			try_files $uri $uri/ /index.html;
+        }        
+    }	
+	server {
+        listen 443 ssl;
+        server_name activate.navicat.com;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload";
+        add_header X-Frame-Options SAMEORIGIN;
+        ssl_certificate     sdyunlei.crt;
+        ssl_certificate_key sdyunlei.key;
+        ssl_session_timeout 5m;
+        ssl_protocols SSLv2 SSLv3 TLSv1.2;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+        ssl_prefer_server_ciphers on;
+
+        location / {
+        #    proxy_pass http://127.0.0.1:8081/;
+		#	 proxy_set_header Host $http_host;
+        #    proxy_set_header X-Real-IP $remote_addr;
+        #    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        #    proxy_set_header X-Forwarded-Proto $scheme;
+			root   E:\开发笔记\System_Template\dist;
+            index  index.html index.htm;
+        }
+	}	
+	#include 文件路径  可导入其它配置
+}
 
 ```
-gzy@5185188
-ps -ef |grep rabbit  linux查看  /home/env
-
-退出编辑模式 
-　　按ESC键，然后 ：注意这里是要加冒号
-　　　　退出vi
-    :q!  不保存文件，强制退出vi命令
-    :w   保存文件，不退出vi命令
-    :wq  保存文件，退出vi命令
-
-#添加stomp相关的插件
-rabbitmq-plugins enable rabbitmq_web_stomp rabbitmq_stomp rabbitmq_web_stomp_examples
-;
-#重启服务
-rabbitmqctl stop_app
-rabbitmqctl start_app
-#查看集群状态，有使用集群的话集群中的所有服务器都要添加插件
-rabbitmqctl cluster_status
-```
-
-### Linux开放防火墙端口号
-
-```shell
-firewall-cmd --zone=public --add-port=2181/tcp --permanent #网页端口
-firewall-cmd --zone=public --add-port=5672/tcp --permanent  #AMQP端口,java使用
-firewall-cmd --reload # 重新加载
-//关闭某个端口
-"sudo iptables -A INPUT -p tcp --dport $PORT -j DROP"
-"sudo iptables -A OUTPUT -p tcp --dport $PORT -j DROP" 
-//linux或者
-/sbin/iptables -I INPUT -p tcp --dport 9092 -j ACCEPT  
-/sbin/iptables -I INPUT -p tcp --dport 15672 -j ACCEPT
-备注一下
-/sbin/iptables -I INPUT -p tcp --dport 8011 -j ACCEPT #开启8011端口 
-/etc/rc.d/init.d/iptables save #保存配置 
-/etc/rc.d/init.d/iptables restart #重启服务 
-
-查看端口号
-1、lsof -i:端口号
-2、netstat -tunlp|grep 端口号
-可以通过"netstat -anp" 来查看哪些端口被打开
 
 
-service iptables status
-启动指令:service iptables start   
-重启指令:service iptables restart   
-关闭指令:service iptables stop 
-
-iptables -A OUTPUT -s 192.168.88.94 -p tcp -m tcp --sport 15674 -j ACCEPT 
-
-
-也可以直接编辑配置文件，添加iptables防火墙规则：
-iptables的配置文件为/etc/sysconfig/iptables
-
-编辑配置文件：
-
-vi /etc/sysconfig/iptables
-```
-
-* 防火墙端口访问限制
-
-编辑`/etc/sysconfig/iptables`，添加
-
-```js
--A INPUT -m state --state NEW -m tcp -p tcp -s 127.0.0.1 --dport 6379 -j ACCEPT
--A INPUT -m state --state NEW -m tcp -p tcp -s 126.212.173.185 --dport 6379 -j ACCEPT
-#如果访问ip没有限制，就不需要添加-s ip地址了
-#对了，一定要在最后添加
--A INPUT -j REJECT --reject-with icmp-host-prohibited
--A FORWARD -j REJECT --reject-with icmp-host-prohibited
-
-COMMIT
-#防火墙重启命令
- service iptables start
-```
 
 ## RocketMQ的使用
 
@@ -3629,6 +4441,13 @@ return rows.stream().map(new Function<Row, Count>() {
 
 ### Hadoop
 
+```
+ip:50070/explorer.html#/
+实现界面可视化
+```
+
+
+
 hadoop能干什么
 
 * 大数据存储：分布式存储 利用的hdfs
@@ -3672,6 +4491,26 @@ ETL:数据抽取到oracle、mysql、DB2、mongdb及主流数据库
 
 Hadoop是专为离线和大规模数据分析而设计的，并不适合那种对几个记录随机读写的在线事务处理模式。
 
+### hdfs命令
+
+```shell
+#命令
+/bin> ./hdfs dfs -ls /
+
+hadoop fs -ls /
+#查看所有文件结构
+hdfs dfs -ls -R /
+hdfs dfs -lsr /
+
+#下载
+hdfs dfs  -get   /install.log  /export/servers
+
+hdfs dfs  -get /sfdcloud/hbase/data/default/SmallFile/36c28567c58221b30c0c0f8a4238f48d /home/file
+
+```
+
+
+
 ### Hbase
 
 ```
@@ -3706,6 +4545,19 @@ HBase可以用来做数据的固化，也就是数据存储，做这个他非常
 
 https://www.jianshu.com/p/b7ec14a67a06?from=groupmessage@
 
+注意点
+
+```js
+#
+在phoenix中，默认情况下，库名，表名，字段名等会自动转换为大写，若要小写，使用双引号，如"ns1"。
+注意:特别注意引号，总之很变态
+#
+注意 以下所有操作，前提都是Hbase中不存在库，表，然后能过phoenix以sql的方式来创建hbase中的库，表，记录等，至于 Hbase中已经存在的表，phoenix如何映射，有专门的章节来讲解
+
+```
+
+
+
 ```mysql
 #登录./sqlline.py
 ./sqlline.py localhost:2181:/hbase-unsecure
@@ -3716,13 +4568,25 @@ https://www.jianshu.com/p/b7ec14a67a06?from=groupmessage@
 !tables
 select * from SYSTEM.CATALOG;
 !desc SYSTEM.CATALOG
+#建库语句
+//创建schema(就是hbase中的namespace),就是数据库
+create schema IF NOT EXISTS "ns1";
+*************使用schema，执行后再创建表，增加记录等，否则都建在default数据库中了****************
+USE "ns1";
+删除schema
+drop schema "ns1";
 #建表语句
 通过Phoenix创建的表,必须指定primary key(对应Hbase的rowkey)
 //设置联合主键
 drop table if exist <tableName>
 create table xx
  ....
+ 这里 定义的主键，就是hbase中的rowkey
 CONSTRAINT PK PRIMARY KEY (EMAIL,id,name));
+
+表字段的一些类型 
+UNSIGNED_INT, UNSIGNED_LONG, VARCHAR
+
 #添加字段
 ALTER TABLE <tableNmae> ADD <column>  <columnType>;
 
@@ -3732,6 +4596,9 @@ Phoenix中不存在update的语法关键字，而是upsert
 upsert into table (column1...) values(value1....)
 #查询更新
 upsert into table (colunm1...) select value1... from table where condition
+注意：
+1）upsert：表中的主键不存在就是插入，存在就是更新
+2）where的字段值要加单引号 ' ', 字段名的小写是加双引号，别弄混了
 
 #删除表
 drop table ljc.student;
@@ -3803,7 +4670,7 @@ enable_all  disable_all 't.8'
 
 
 
-### Kafka 
+## Kafka 
 
 springboot集成
 
@@ -3848,7 +4715,110 @@ public class Consumer {
 }
 ```
 
+### 客户端命令
 
+1、启动kafka服务
+
+```
+bin/kafka-server-start.sh config/server.properties &
+
+
+#查看版本
+进到kafka的安装目录
+ 执行下列语句
+复制
+find ./libs/ -name \*kafka_\* | head -1 | grep -o '\kafka[^\n]*'
+kafka_2.10-0.8.2.2.jar
+就可以看到kafka的具体版本
+其中，2.10为scala版本，0.8.2.2为kafka版本。
+
+#查看配置
+/config/server.properties 中的zookeeper.connect=
+```
+
+2、停止kafka服务
+
+```
+./kafka-server-stop.sh 
+```
+
+3、查看所有的话题
+
+```
+./kafka-topics.sh --list --zookeeper localhost:2181
+
+./kafka-topics.sh --zookeeper localhost:2181 --list
+```
+
+4、查看所有话题的详细信息
+
+```
+./kafka-topics.sh --zookeeper localhost:2181 --describe
+```
+
+5、列出指定话题的详细信息
+
+```
+./kafka-topics.sh --zookeeper localhost:2181 --describe  --topic demo
+#根据组查询
+./kafka-consumer-groups.sh --bootstrap-server kafka.safedog.cn:9092 --describe  --group cloudnet_plugCallback_mysql
+```
+
+6、删除一个话题
+
+```
+./kafka-topics.sh --zookeeper localhost:2181 --delete  --topic test
+```
+
+7、创建一个叫test的话题，有两个分区，每个分区3个副本
+
+```
+./kafka-topics.sh --zookeeper localhost:2181 --create --topic test --replication-factor 3 --partitions 2
+```
+
+ 8、测试kafka发送和接收消息（启动两个终端）
+
+```
+#发送消息（注意端口号为配置文件里面的端口号）
+./kafka-console-producer.sh --broker-list localhost:9092 --topic test
+#消费消息（可能端口号与配置文件保持一致，或与发送端口保持一致）
+./kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --from-beginning   #加了--from-beginning 重头消费所有的消息./kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test         #不加--from-beginning 从最新的一条消息开始消费
+```
+
+9、查看某个topic对应的消息数量
+
+```
+./kafka-run-class.sh cloudbis.cluster.component.risk.mysql --broker-list localhost:9092 --topic test --time -1
+
+Current-offset与log-end-offset 相等表示kafka topic 消息已全部消费完
+```
+
+10、显示所有消费者
+
+```
+./kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list
+```
+
+11、获取正在消费的topic（console-consumer-63307）的group的offset
+
+```
+./kafka-consumer-groups.sh --describe --group console-consumer-63307 --bootstrap-server localhost:9092
+```
+
+11、显示消费者
+
+```
+./kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list 
+#用 |grep  关键字查询
+```
+
+## kafka可视化工具
+
+```
+#Offset exploer
+http://www.kafkatool.com/download.html
+
+```
 
 
 
@@ -4350,6 +5320,130 @@ public <T> T postForObject(String url, @Nullable Object request, Class<T> respon
 }
 ```
 
+## ant构建
+
+### 命令build.xml
+
+```shell
+build.xml的相关配置，参考  https://www.jianshu.com/p/89dc3485c7c7?utm_campaign=maleskine&utm_content=note&utm_medium=seo_notes&utm_source=recommendation
+
+
+#执行
+该参数在运行默认 build.xml 以外的构建文件时使用。
+$ ant -build otherbuild.xml  [指定target]
+-find
+它将搜索生成文件，首先搜索当前目录，然后搜索父目录，直到找到该文件。
+ant -find build.xml
+-Dproperty
+它有助于使用命令行设置属性值。属性是属性的名称，值是与属性关联的值。
+ant -Dname = rahul  -build build.xml
+```
+
+
+
+### property详解
+
+```xml
+<project name="sfdcloud-env" basedir=".">
+    读取环境变量
+    <property environment="env"/>  
+    <property name="maven.home" value="${env.MAVEN_HOME}/bin/mvn" />
+    导入配置文件，后续可直接使用
+    <property file="./omad/build.properties"/>   
+    import 引入别的xml文件，提高复用性：
+    <import file="./env-judge.xml"/>
+	<import file="./tasks.xml"/>
+    <!-- 初始化任务 --> 
+    <target name="init"> 
+    	<echo message=" init ${init} ..."/> 
+    </target>
+    <target name="compile" depends="init"> 
+        <delete dir="${classes.dir}" /> 
+        <mkdir dir="${classes.dir}" /> 
+        <javac srcdir="${src.dir}" destdir="${classes.dir}"> 
+        	<classpath refid="master-classpath" /> 
+        </javac> 
+    </target> 
+    if：当属性设置时才执行该任务。
+    <target name="sync_module_k12_teach" if="${is_k12_teach}">
+        执行某个定义的任务。
+        <antcall target="sync_module_item">
+            <param name="html.dir" value="org"/>
+        </antcall>
+    </target>
+</project>
+project
+每个构建文件都有一个project标签，有以下属性：
+- default：表示默认的运行目标  deploy 
+- basedir：表示项目的基准目录。
+- name：表示项目名。
+- description：表示项目的描述。
+
+delete
+删除文件或文件目录，有如下属性
+- file：删除文件
+- dir：删除目录
+- includeEmptyDirs：值得是否删除空目录，默认是true
+- failonerror：报错是否停止，默认是true
+- verbose：是否列出删除的文件，默认是false
+
+mkdir
+创建一个目录
+<mkdir dir=”＄{class.root}”/>
+
+copy
+拷贝文件或文件目录，属性如下：
+- file:表示源文件。
+- tofile:表示目标文件。
+- todir:表示目标目录。
+- overwrite:是否覆盖目标文件，默认为false。
+- includeEmptyDirs:是否拷贝空目录，默认为true。
+- failonerror:如目标没有发现是否自动停止，默认值true。
+- verbose:是否显示详细信息，默认值false。
+<copy todir="${compress.dir}" overwrite="true">
+   
+fileset
+文件集标签，通常与任务结合来使用，例如上面的copy的demo中，通过将fileset定义的文件路径下的文件，拷贝到todir指定的路径中。
+也可以用于批量删除：
+<delete includeemptydirs="true">
+<fileset dir="${basedir}/src/html" >
+    <include name="**/module-*/**"/>
+</fileset>
+    antcall
+执行某个定义的任务。
+    parallel
+并行执行多个子任务
+<parallel failonany="true">
+	<antcall target="sync_module_corp"/>
+</parallel>
+    
+equils：指定属性是否相等：
+<condition property="scondition">
+<!--如果arg1的值与arg2的值相等返回true，否则为false-->
+<equals arg1="${name}" arg2="this is name"/>
+</condition>
+    
+    
+exec
+用来执行系统命令，或者指定环境的命令。
+比如：
+<exec executable="${maven.home}">
+    <arg value="clean"/>
+    <arg value="package"/>
+    <arg value="-DSkipTests"/>
+    <arg value="-P${model}"/>
+</exec>
+
+```
+
+
+
+
+
+
+
+------
+
 ## MAVEN
 
 ### POM配置私服maven地址
@@ -4556,6 +5650,20 @@ snapshot快照库和release发布库
 mvn deploy:deploy-file -DgroupId=com.xy.oracle -DartifactId=ojdbc14 -Dversion=10.2.0.4.0 -Dpackaging=jar -Dfile=E:\ojdbc14.jar -Durl=http://127.0.0.1:8081/nexus/content/repositories/thirdparty/ -DrepositoryId=thirdparty
 ```
 
+#### Maven的packaging打包类型
+
+```xml
+当其项目属于父级项目时，要将其设置<packaging>pom</packaging>
+
+<packaging>pom</packaging>
+packing默认是jar类型，
+pom ---------> 父类型都为pom类型
+jar ---------> 内部调用或者是作服务使用（一般只有class编译后文件）
+war ---------> 需要部署的项目（war是一个web模块，其中需要包括WEB-INF）
+```
+
+
+
 #### Maven的scm配置git
 
 * https://my.oschina.net/u/3744526/blog/4673956
@@ -4567,7 +5675,7 @@ mvn deploy:deploy-file -DgroupId=com.xy.oracle -DartifactId=ojdbc14 -Dversion=10
 #不要忘记加distributionManagement 否则发布不上去
 ```
 
-#### maven中pom的scope理解
+#### maven中依赖scope运行
 
 ```
 compile:默认值，表示当前依赖包，要参与当前项目的编译，后续测试，运行时，打包
@@ -4580,7 +5688,7 @@ import 只能用在dependencyManagement块中，它将spring-boot-dependencies �
 当没有<scope>import</scope>时，意思是将spring-boot-dependencies 的dependencies全部插入到当前工程的dependencies中，并且会依赖传递。
 ```
 
-#### maven依赖的传递性ABC
+#### maven依赖option的传递性ABC
 
 ```xml
 3.传递性依赖
@@ -4602,20 +5710,7 @@ A依赖B，B依赖C。当前项目为A，只当B在A项目中的scope，那么c�
 
 
 
-#### maven中的各种打包类型
-
-```xml
-<packaging>pom</packaging>
-packing默认是jar类型，
-pom ---------> 父类型都为pom类型
-jar ---------> 内部调用或者是作服务使用（一般只有class编译后文件）
-war ---------> 需要部署的项目（war是一个web模块，其中需要包括WEB-INF）
-
-```
-
-
-
-#### maven的内置属性
+#### maven的project内置属性
 
 ```xml
 Maven的六类属性，${project.basedir}，${project.build.directory}
@@ -4645,6 +5740,8 @@ p r o j e c t . b u i l d . f i a n l N a m e ： 项 目 打 包 输 出 文 �
 <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <!-- 打包跳过自动运行junit test -->
+    <skipTests>true</skipTests>
 </properties>
  ```
 
@@ -4665,63 +5762,64 @@ maven 默认的打包类型为 jar，
 我们执行的maven命令的时候将首先对父项目执行，而后当 父项目 的packing 类型为 pom 时，将对所有的子模块执行同样的命令，否则将无法执行同样的命令，那么依赖的传递将无法由maven 编译或者打包命令 得以执行。
 ```
 
-* mvn的私服仓库配置
+#### mvn的build 仓库配置
 
-  ```xml
-  <build>
-      <plugins>
-          <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-compiler-plugin</artifactId>
-              <version>3.6.1</version>
-              <configuration>
-                  <source>1.8</source>
-                  <target>1.8</target>
-                  <encoding>UTF-8</encoding>
-                  <optimize>true</optimize>
-                  <showDeprecation>true</showDeprecation>
-                  <showWarnings>true</showWarnings>
-                  <compilerArgument>-Xlint:all,-serial,-path,-rawtypes,-unchecked</compilerArgument>
-                  <!-- 跳过main-->
-                  <skip>true</skip>
-              </configuration>
-          </plugin>
-      </plugins>
-     #静态文件的打包
-      <resources>
-          <resource>
-              <directory>src/main/resources</directory>
-              <includes>
-                  <!-- 此处设置打成jar包后保留的静态资源文件 .txt .xml等-->
-                  <include>**/*.md</include>
-              </includes>
-          </resource>
-      </resources>
-  </build>
-  #需要package打包发到私服时，配置私服仓库
-  然后在本地maven的settings.xml中加入配置server id要一致
-  <!-- 使用分发管理将本项目打成jar包，直接上传到指定服务器 -->
-  <distributionManagement>
-      <!--正式版本-->
-      <repository>
-          <!-- nexus服务器中用户名：在settings.xml中<server>的id-->
-          <id>yang</id>
-          <!-- 这个名称自己定义 -->
-          <name>Release repository</name>
-          <url>http://192.168.1.105:8081/repository/yang/</url>
-      </repository>
-  	<!--快照
-  	<snapshotRepository>
-  		<id>nexus-snapshots</id>
-  		<name>Snapshots repository</name>
-  		<url>http://192.168.1.105/repository/yang/</url>
-  	</snapshotRepository>-->
-  </distributionManagement>
-  ```
+```xml
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.6.1</version>
+            <configuration>
+                <source>1.8</source>
+                <target>1.8</target>
+                <encoding>UTF-8</encoding>
+                <optimize>true</optimize>
+                <showDeprecation>true</showDeprecation>
+                <showWarnings>true</showWarnings>
+                <compilerArgument>-Xlint:all,-serial,-path,-rawtypes,-unchecked</compilerArgument>
+                <!-- 跳过main-->
+                <skip>true</skip>
+            </configuration>
+        </plugin>
+    </plugins>
+   #静态文件的打包
+    <resources>
+        <resource>
+            <directory>src/main/resources</directory>
+            <includes>
+                <!-- 此处设置打成jar包后保留的静态资源文件 .txt .xml等-->
+                <include>**/*.md</include>
+            </includes>
+        </resource>
+    </resources>
+</build>
+#需要package打包发到私服时，配置私服仓库
+然后在本地maven的settings.xml中加入配置server id要一致
+<!-- 使用分发管理将本项目打成jar包，直接上传到指定服务器 -->
+<distributionManagement>
+    <!--正式版本-->
+    <repository>
+        <!-- nexus服务器中用户名：在settings.xml中<server>的id-->
+        <id>yang</id>
+        <!-- 这个名称自己定义 -->
+        <name>Release repository</name>
+        <url>http://192.168.1.105:8081/repository/yang/</url>
+    </repository>
+	<!--快照
+	<snapshotRepository>
+		<id>nexus-snapshots</id>
+		<name>Snapshots repository</name>
+		<url>http://192.168.1.105/repository/yang/</url>
+	</snapshotRepository>-->
+</distributionManagement>
+```
 
 #### mvn命令jar包发到私服命
 
 ```shell
+#实际执行的时候都在同一行，也不要多空格，在pom的根目录下执行
 mvn deploy:deploy-file 
 -Dfile=jar包 
 -Dmaven.test.skip=true  
@@ -4787,7 +5885,190 @@ deploy去掉时间戳
 </plugin>
 ```
 
-### JenKins项目管理工具
+#### java打包项目的配置
+
+src/main/java下的默认只打包java文件，如果想打包xml文件，则加如下配置
+
+```xml
+#pom.xml
+<build>
+    <!-- 资源目录 -->    
+    <resources>    
+        <resource>    
+            <!-- 设定主资源目录  -->    
+            <directory>src/main/java</directory>    
+
+            <!-- maven default生命周期，process-resources阶段执行maven-resources-plugin插件的resources目标处理主资源目下的资源文件时，只处理如下配置中包含的资源类型 -->     
+            <includes>
+                <include>**/*.xml</include>
+            </includes>  
+
+            <!-- maven default生命周期，process-resources阶段执行maven-resources-plugin插件的resources目标处理主资源目下的资源文件时，不处理如下配置中包含的资源类型（剔除下如下配置中包含的资源类型）-->      
+            <excludes>  
+                <exclude>**/*.yaml</exclude>  
+            </excludes>  
+<!-- maven default生命周期，process-resources阶段执行maven-resources-plugin插件的resources目标处理主资源目下的资源文件时，指定处理后的资源文件输出目录，默认是${build.outputDirectory}指定的目录-->      
+            <!--<targetPath>${build.outputDirectory}</targetPath> -->      
+
+            <!-- maven default生命周期，process-resources阶段执行maven-resources-plugin插件的resources目标处理主资源目下的资源文件时，是否对主资源目录开启资源过滤 -->    
+            <filtering>true</filtering>     
+        </resource>  			
+    </resources> 	
+</build>
+```
+
+##### 默认resources目录下的文件都会被打包
+
+如果想resources目录下的xml文件不被打包，可通过如下配置:
+
+```html
+<!--过滤resource下的文件-->
+	<resources>  
+        <resource>  
+            <directory>src/main/resources</directory>  
+            <includes>  
+                <include>*.properties</include>  <!--打包properties文件-->
+            </includes>  
+            <excludes>  
+                <exclude>*.xml</exclude>  <!--过滤xml与yaml文件-->
+                <exclude>*.yaml</exclude>  
+            </excludes>  
+        </resource>  
+```
+
+插件完成
+
+```xml
+<build>
+    <plugin>  
+        <artifactId>maven-resources-plugin</artifactId>  
+        <executions>  
+            <execution>  
+                <id>copy-resources</id>  
+                <phase>validate</phase>  
+                <goals>  
+                    <goal>copy-resources</goal>  
+                </goals>  
+                <configuration>  
+<!-- 并把文件复制到target/conf目录下-->
+                    <outputDirectory>${project.build.directory}/conf</outputDirectory>  
+                    <resources>  
+                        <resource>  
+                            <directory>src/main/resources</directory>  
+<!-- 指定不需要处理的资源 <excludes> <exclude>WEB-INF/*.*</exclude> </excludes> -->  
+							<excludes> <exclude>**/*.xml</exclude> </excludes>
+                            <filtering>true</filtering>  
+                        </resource>  
+                    </resources>  
+                </configuration>  
+            </execution>  
+        </executions> 
+    </plugin> 
+</build>build>
+```
+
+
+
+##### pluginManagement说明
+
+假如存在两个项目，项目A为项目B的父项目，其关系通过pom文件的关系确定。项目A的父pom文件片段如下：
+
+```xml
+<build>
+<pluginManagement>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.1</version>
+            <configuration>
+                <attach>true</attach>
+            </configuration>
+            <executions>
+                <execution>
+                    <phase>compile</phase>
+                    <goals>
+                        <goal>jar</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</pluginManagement>
+</build>
+```
+
+如果项目B也想使用该plugin配置，则在项目B的子pom文件中只需要如下配置：
+
+```xml
+<plugins>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+    </plugin>
+</plugins>
+```
+
+##### jar解压
+
+```shell
+打包成tar.gz格式压缩包
+# tar -zcvf renwolesshel.tar.gz /renwolesshel
+解压tar.gz格式压缩包
+# tar zxvf renwolesshel.tar.gz
+.war
+解压
+#jar -xvf file.war
+重新打包
+#jar -cvfM0 file2.war <目标目录>
+参数说明
+-c  创建war包
+-v  显示过程信息
+-f  指定 JAR 文件名，通常这个参数是必须的
+-M  不产生所有项的清单（MANIFEST〕文件，此参数会忽略 -m 参数
+-0  这个是阿拉伯数字，只打包不压缩的意思
+
+jar命令格式：jar {c t x u f }[ v m e 0 M i ][-C 目录]文件名...
+其中{ctxu}这四个参数必须选其一。[v f m e 0 M i ]是可选参数，文件名也是必须的。
+-c  创建一个jar包
+-t 显示jar中的内容列表
+-x 解压jar包
+-u 添加文件到jar包中
+-f 指定jar包的文件名
+-v  生成详细的报造，并输出至标准设备
+-m 指定manifest.mf文件.(manifest.mf文件中可以对jar包及其中的内容作一些一设置)
+-0 产生jar包时不对其中的内容进行压缩处理
+-M 不产生所有文件的清单文件(Manifest.mf)。这个参数与忽略掉-m参数的设置
+-i    为指定的jar文件创建索引文件
+-C 表示转到相应的目录下执行jar命令,相当于cd到那个目录，然后不带-C执行jar命令
+
+ 
+————————————————
+版权声明：本文为CSDN博主「Angy__」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/weixin_39896810/article/details/81316879
+
+#解压到指定目录
+unzip pay.war -d /home/zookeeper1/test/pay
+```
+
+##### 后台运行启动jar
+
+```shell
+#nohup 指后台运行
+nohup $JRE_HOME/bin/java -Xms512m -Xmx1024m -jar $JAR_NAME --spring.profiles.active=common-pro,pro --dubbo.protocol.port=20666 --server.port=7671 --dubbo.service.shutdown.wait=180000 --dubbo.registry.file=/home/zxsl/online_dubbox/operation-online-service/20666/dubbo-registry.properties >/dev/null 2>&1 &
+
+nohup java -jar cloud-upgrade.jar --spring.profiles.active=prod -Dcatalina.base=/usr/local/tomcat8/tomcatcloudplatform &>> /dev/null &
+
+
+#简单启动
+nohup java -jar xxx.jar > msg.log  2>&1 &
+```
+
+
+
+------
+
+## JenKins项目管理工具
 
 * 安装BlueOcean插件的界面更美观 https://blog.csdn.net/fly910905/article/details/80331830
 
@@ -5122,6 +6403,9 @@ docker push registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:202007
 kubectl -n notarycloud set image deployment notary-cloud-provider-order notary-cloud-provider-order=registry.k8s.ing:5000/notarycloud/notary-cloud-provider-order:20200717511
 
 
+#创建私有仓库的认证secret
+kubectl create secret docker-registry docker-regsitry-auth --docker-username=admin --docker-password=Harbor1
+345 --docker-server=192.168.31.70
 ```
 
  kubectl -n notarycloud get po -owide 的命令展示列的信息
@@ -5253,7 +6537,7 @@ podTemplate(label: label, containers: [
 
 ```
 
-# PipeLine语法学习
+### PipeLine语法学习
 
 https://www.w3cschool.cn/jenkins/jenkins-jg9528pb.html
 
@@ -5304,7 +6588,7 @@ pipeline {
 
 
 
-## Jenkis pipeline构建项目实践-编写podTemplate实现和k8s对接
+#### Jenkis pipeline构建项目实践-编写podTemplate实现和k8s对接
 
 ```groovy
 def label = "jenkins-jnlp-slave-${UUID.randomUUID().toString()}"
@@ -5414,7 +6698,7 @@ properties([
                 ),
                 text(
                         name: "services",
-                        description: "需要发布的服务名称(换行分割)",
+                        description: "需要发布的服务$名称(换行分割)",
                         defaultValue: "consumer-settlement\nprovider-settlement"
                 )
         ]),
@@ -5613,6 +6897,119 @@ stage节为具体的pipeline步骤
 
 # kubectl常用示例
 
+k8s用于容器化应用程序的部署、扩展和管理
+k8s提供了容器编排、资源调度、弹性伸缩、部署管理、服务发现等一系列功能
+k8s的目标是让部署容器化应用简单高效
+总结：可以理解成一个容器平台、微服务平台（非常适合微服务架构）、便携式云平台
+
+## k8s搭建一个java-web应用
+
+https://www.jianshu.com/p/9afd73af7e45
+
+
+
+#### RC的操作
+
+应用托管在Kubernetes之后，Kubernetes需要保证应用能够持续运行，这是RC的工作内容，它会确保任何时间Kubernetes中都有指定数量的Pod在运行，在此基础上，RC还提供了一些更高级的特性，比如滚动升级、升级回滚等。
+
+```bash
+#创建一个Rc
+[root@node1 rc]# vim nginx_rc.yml
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: myweb
+spec:
+  replicas: 2
+  selector:
+    app: myweb
+  template:
+    metadata:
+      labels:
+        app: myweb
+    spec:
+      containers:
+       - name: myweb
+         image: nginx:1.10
+         ports:
+         - containerPort: 80
+#创建RC
+kubectl create -f nginx_rc.yml      
+#编辑Rc,同service、 deployment
+kubectl edit rc rcName
+#查看rc和pod
+[root@node1 rc]# kubectl get rc
+NAME      DESIRED   CURRENT   READY     AGE
+myweb     2         2         2         7s
+#RC和Pod关联 ------Lable
+[root@node1 rc]# kubectl get rc -o wide
+#修改Nginx的标签
+[root@node1 rc]# kubectl edit pod nginx2
+  labels:
+    app: myweb
+#滚动升级
+#从Nginx1.10升级到Nginx1.15
+#复制一个nginx.yml
+[root@node1 rc]# cp nginx_rc.yml nginx_rc2.yml 
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: myweb2
+spec:
+  replicas: 2
+  selector:
+    app: myweb2
+  template:
+    metadata:
+      labels:
+        app: myweb2
+    spec:
+      containers:
+       - name: myweb
+         image: nginx:1.15
+         ports:
+         - containerPort: 80
+#升级
+[root@node1 rc]# kubectl rolling-update myweb -f nginx_rc2.yml --update-period=30s
+#回滚
+#原理和滚动升级一样
+[root@node1 rc]# kubectl rolling-update myweb2 -f nginx_rc.yml --update-period=1s
+#当我们从myweb升级到myweb2的时候发现有问题，立马中断，如何回滚到myweb？
+[root@node1 rc]# kubectl rolling-update myweb myweb2 --rollback
+```
+
+
+
+#### 组件
+
+```
+组件
+#APIServer
+APIServer组件负责响应用户的管理请求、进行指挥协调工作
+
+#scheduler
+scheduler组件是将待调度的pod按照一定的调度算法绑定到合适的工作节点上
+
+#controller manager
+是一组控制器的合集，负责控制控制管理对应的资源，如副本（replication）和工作节点（node）等。
+
+#etcd
+etcd 负责保存 Kubernetes Cluster 的配置信息和各种资源的状态信息。当数据发生变化时，etcd 会快速地通知 Kubernetes 相关组件。
+
+#kubelet
+管理维护pod运行的agent
+
+#kube-proxy
+将service的流量转发到对应endpoint
+
+#flannel网络
+维持各个节点上pod之间的通信。
+```
+
+![](E:\开发笔记\ycs_test\image\k8s架构图.png)
+
+
+
 * http://zhangblog.com/2020/08/09/kubernetes05/ 帮助文档地址
 
 ## 几个关系
@@ -5684,6 +7081,8 @@ kubectl get sa -A
 kubectl get ds -A
 # 查看所有deployments信息
 kubectl get deploy -A
+kubectl get service -A
+kubectl edit service serviceName
 # 查看所有replicasets信息
 kubectl get rs -A
 # 查看所有statefulsets信息
@@ -5869,7 +7268,18 @@ kubeadm join --token  {k8s生成的token}  {k8s-master-ip-port} --discovery-toke
 kubectl delete node {nodename}
 ```
 
-### 1-4 创建token
+### 1-4 证书和token
+
+```shell
+#k8s获取登录token
+kubectl describe secrets -n safedog $(kubectl -n safedog get secret | awk '/dashboard-admin/{print $1}')
+#k8s集群获取ca证书
+kubectl get secret $(kubectl get secrets | grep default-token | awk '{print $1}') -o jsonpath="{['data']['ca\.crt']}" | base64 --decode
+```
+
+
+
+#### 1-4-1创建token
 
 ```
 #创建一个test账号
@@ -5879,6 +7289,75 @@ kubectl get sa test -n kube-system -o yaml
 #根据secret获取token
 kubectl describe secret [test-token-m9qzv] -n kube-system
 ```
+
+#### 1-4-2创建config
+
+```yml
+#如果需要对客户端做细粒度的权限控制，可以通过以下方式生成 config 文件。
+curl -k https://<YOUR_API_SERVER_PUBLIC_IP>:6443
+创建 ~/.kube/config 文件，并修改文件内容
+apiVersion: v1
+clusters:
+- cluster:
+    # needed if you get error "Unable to connect to the server: x509: certificate signed by unknown authority"
+    insecure-skip-tls-verify: true
+    server: https://YOUR_API_SERVER_PUBLIC_IP:6443
+  name: kubernetes
+contexts:
+- context:
+    cluster: kubernetes
+    user: kubernetes-admin
+  name: kubernetes-admin@kubernetes
+current-context: kubernetes-admin@kubernetes
+kind: Config
+preferences: {}
+users:
+- name: kubernetes-admin
+  user:
+    client-certificate-data: LS0tLS1CRUdJTi... (base64 /etc/kubernetes/ssl/node-node1.pem)
+    client-key-data: LS0tLS1CRUdJTiBS.. (base64 /etc/kubernetes/ssl/node-node1-key.pem)
+其中 client-certificate-data 来源于：
+cat /etc/kubernetes/ssl/node-node1.pem | base64 -w 0
+client-certificate-data 来源于以下命令的输出
+cat /etc/kubernetes/ssl/node-node1-key.pem | base64 -w 0
+#路径/root/.kube/config
+```
+
+#### 1-4-3 获取实例
+
+```shell
+#demo
+Token访问apiserver 权限作用于所有的 namespace
+创建账号（要指定命名空间在kube-system中 才有一些操作权限）
+ Yaml 配置
+   apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: zoubj
+  namespace: kube-system
+绑定账号（用绑定到clusterrole中 cluster-admin 针对集群所有命名空间都有效）
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: zoubj-clusterrolebinding
+subjects:
+- kind: ServiceAccount
+  name: zoubj
+  namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+
+获取token
+获取账号对应的secret 然后提取出secret中的token，并通过base64解密
+[root@master-125 yaml]# kubectl get secret -n kube-system |grep zoubj
+zoubj-token-chpmx                                kubernetes.io/service-account-token   3      3m22s
+[root@master-125 yaml]# kubectl get secret zoubj-token-chpmx -o jsonpath={.data.token} -n kube-system |base64 -d
+eyJhbGciOiJSUzI1NiIsImtpZCI6IjNkVXAzdlFJejFyV3FEdXNZYlF0NTA3ZHEwTzFkOEpZc0hNekg4STBLU0UifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJ6b3Viai10b2tlbi1jaHBteCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJ6b3ViaiIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6IjViOTQ3YjYzLWIwYTMtNDQ0NS1hMzFiLTlhZWEzMmI2YTAzYiIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDprdWJlLXN5c3RlbTp6b3ViaiJ9.iJQFZMWaNEurNa9HcEfKo4mBn17LIYgQ_Zekulc6_RrETsmgkM1r4B8w8wkSwFh6Aj25Xp6icqG4VyPQqnzyS7lAjkwdQw206BCyIeIVKlTlV3VyKH6o6YJLHBBfHxxK2XHOOVgfVa8_vwGCkmFsLCiKg-I5Tm3ckw1bDQ9s3yTh_Z2dO--kNtRMRKoQnkiY3WjUK0CFvO3umYPfxSqJS2OZ8fOiTaoPcf1CwwNiEICyqVfmIpwpX5HSLNAUJRj-Jy8X-exQufQhN9vYGjTEjs-7nGcVYIAJVDJ_hG83cjPdlFLeshKMRySUP9bwCRKm1UORolhipBkx0tuNcDzhpg
+```
+
+
 
 ### 1-5 pod指定节点方式
 
@@ -6062,6 +7541,12 @@ kind: Deployment
 #删除job的pod kubectl delete pod  pi-w7sr8
 ```
 
+1-6 k8s创建角色和用户授权命名空间
+
+```
+https://blog.csdn.net/weixin_43798031/article/details/114703074
+```
+
 
 
 ## api调用
@@ -6154,6 +7639,11 @@ ENTRYPOINT java -jar -javaagent:/agent/skywalking-agent.jar -Dskywalking.agent.s
 
 * 实现钉钉机器人通知 https://blog.csdn.net/yuancao24/article/details/83576194
 
+## 钉钉机器人可接入
+
+* jenkins 构建信息推送
+* jira 信息通知推送
+
 ### Swagger2的 实时生成文档api
 
 ```xml
@@ -6168,6 +7658,8 @@ ENTRYPOINT java -jar -javaagent:/agent/skywalking-agent.jar -Dskywalking.agent.s
     <artifactId>springfox-swagger-ui</artifactId>
     <version>2.9.2</version>
 </dependency>
+
+#界面的优化依赖升级
 ```
 
 ```java
@@ -6376,265 +7868,6 @@ public final class SysSession {
 //### 所以只有那些一次请求有可能使用到多次的变量才存储到ThreadLocal中
 ```
 
-### springboot使用ElasticSearch搜索引擎
-
-* https://www.cnblogs.com/yijialong/p/9729988.html
-
-#### Logstash详解之——input模块
-
-实例
-
-```
-input {
-    stdin {
-    }
-    jdbc {
-      # mysql数据库连接
-      jdbc_connection_string => "jdbc:mysql://192.168.88.65:3306/online_operation?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull"
-      # mysqly用户名和密码
-      jdbc_user => "root"
-      jdbc_password => "2ojf#sojo23@29"
-      # 驱动配置
-      jdbc_driver_library => "/home/gzy/logstash-6.4.2/config/conf.d/mysql/mysql-connector-java-5.1.46.jar"
-      # 驱动类名
-      jdbc_driver_class => "com.mysql.jdbc.Driver"
-      jdbc_paging_enabled => true
-      jdbc_page_size => "500"
-      # 执行指定的sql文件
-      statement_filepath => "/home/gzy/logstash-6.4.2/config/conf.d/mysql/tb_notary.sql"
-      # 设置监听 各字段含义 分 时 天 月  年 ，默认全部为*代表含义：每分钟都更新
-      schedule => "*/10 * * * *"
-      # 索引类型
-      type => "tb_notary"
-      use_column_value => true
-      tracking_column_type => "timestamp"
-      tracking_column => "gmt_modified"
-      last_run_metadata_path => "/home/gzy/logstash-6.4.2/config/conf.d/mysql/lastrun/tb_notary.point"
-    }
-}
-
-filter {
-    json {
-        source => "message"
-        remove_field => ["message"]
-    }
-}
-
-output {
-    if[type]=="tb_notary"{
-      elasticsearch {
-        #es服务器
-        hosts => ["localhost:9200"]
-        #ES索引名称
-        index => "tb_notary"
-        #自增ID
-        document_id => "%{id}"
-        #manage_template => true  
-        #使用templates
-        template => "/home/gzy/logstash-6.4.2/config/templates/tb_notary.json"
-        template_name => "tb_notary"
-        template_overwrite => true
-      }
-    }
-    stdout {
-
-    }
-}
-
-```
-
-```
-logstash -f /etc/logstash.d/
-#logstash 会自动读取 /etc/logstash.d/ 目录下所有 *.conf的文本文件，然后在自己内存里拼接成一个完整的大配置文件，再去执行。
-```
-
-
-
-```shell
-input{
-    file{
-        #path属性接受的参数是一个数组，其含义是标明需要读取的文件位置
-        path => [‘pathA’，‘pathB’]
-        #表示多就去path路径下查看是够有新的文件产生。默认是15秒检查一次。
-        discover_interval => 15
-        #排除那些文件，也就是不去读取那些文件
-        exclude => [‘fileName1’,‘fileNmae2’]
-        #被监听的文件多久没更新后断开连接不在监听，默认是一个小时。
-        close_older => 3600
-        #在每次检查文件列 表的时候， 如果一个文件的最后 修改时间 超过这个值， 就忽略这个文件。 默认一天。
-        ignore_older => 86400
-        #logstash 每隔多 久检查一次被监听文件状态（ 是否有更新） ， 默认是 1 秒。
-        stat_interval => 1
-        #sincedb记录数据上一次的读取位置的一个index
-        sincedb_path => ’$HOME/. sincedb‘
-        #logstash 从什么 位置开始读取文件数据， 默认是结束位置 也可以设置为：beginning 从头开始
-        start_position => ‘beginning’
-        #注意：这里需要提醒大家的是，如果你需要每次都从同开始读取文件的话，关设置start_position => beginning是没有用的，你可以选择sincedb_path 定义为 /dev/null
-    }            
-
-}
-input{
-    jdbc{
-    #jdbc sql server 驱动,各个数据库都有对应的驱动，需自己下载
-    jdbc_driver_library => "/etc/logstash/driver.d/sqljdbc_2.0/enu/sqljdbc4.jar"
-    #jdbc class 不同数据库有不同的 class 配置
-    jdbc_driver_class => "com.microsoft.sqlserver.jdbc.SQLServerDriver"
-    #配置数据库连接 ip 和端口，以及数据库    
-    jdbc_connection_string => "jdbc:sqlserver://200.200.0.18:1433;databaseName=test_db"
-    #配置数据库用户名
-    jdbc_user =>   
-    #配置数据库密码
-    jdbc_password =>
-    #上面这些都不重要，要是这些都看不懂的话，你的老板估计要考虑换人了。重要的是接下来的内容。
-    # 定时器 多久执行一次SQL，默认是一分钟
-    # schedule => 分 时 天 月 年  
-    # schedule => * 22  *  *  * 表示每天22点执行一次
-    schedule => "* * * * *"
-    #是否清除 last_run_metadata_path 的记录,如果为真那么每次都相当于从头开始查询所有的数据库记录
-    clean_run => false
-    #是否需要记录某个column 的值,如果 record_last_run 为真,可以自定义我们需要表的字段名称，
-    #此时该参数就要为 true. 否则默认 track 的是 timestamp 的值.
-    use_column_value => true
-    #如果 use_column_value 为真,需配置此参数. 这个参数就是数据库给出的一个字段名称。当然该字段必须是递增的，可以是 数据库的数据时间这类的
-    tracking_column => create_time
-    #是否记录上次执行结果, 如果为真,将会把上次执行到的 tracking_column 字段的值记录下来,保存到 last_run_metadata_path 指定的文件中
-    record_last_run => true
-    #们只需要在 SQL 语句中 WHERE MY_ID > :last_sql_value 即可. 其中 :last_sql_value 取得就是该文件中的值
-    last_run_metadata_path => "/etc/logstash/run_metadata.d/my_info"
-    #是否将字段名称转小写。
-    #这里有个小的提示，如果你这前就处理过一次数据，并且在Kibana中有对应的搜索需求的话，还是改为true，
-    #因为默认是true，并且Kibana是大小写区分的。准确的说应该是ES大小写区分
-    lowercase_column_names => false
-    #你的SQL的位置，当然，你的SQL也可以直接写在这里。
-    #statement => SELECT * FROM tabeName t WHERE  t.creat_time > :last_sql_value
-    statement_filepath => "/etc/logstash/statement_file.d/my_info.sql"
-    #数据类型，标明你属于那一方势力。单了ES哪里好给你安排不同的山头。
-    type => "my_info"
-    }
-    #注意：外载的SQL文件就是一个文本文件就可以了，还有需要注意的是，一个jdbc{}插件就只能处理一个SQL语句，
-    #如果你有多个SQL需要处理的话，只能在重新建立一个jdbc{}插件。
-}
-input {
-  beats {
-    #接受数据端口
-    port => 5044
-    #数据类型
-    type => "logs"
-  }
-  #这个插件需要和filebeat进行配很这里不做多讲，到时候结合起来一起介绍。
-}
-```
-
-```shell
-
-```
-
-``` json
-#templates 文件tb_notary.json
-{
-    "index_patterns": [
-      "tb_tag"
-    ],
-    "settings": {
-      "index": {
-        "number_of_shards": 5,
-        "number_of_replicas": 1,
-        "codec": "best_compression"
-      },
-      "analysis" : {
-            "analyzer" : {
-                "pinyin_analyzer" : {
-                    "tokenizer" : "my_pinyin"
-                    },
-                "comma":{
-                  "type": "pattern",
-                  "pattern": ",",
-                  "lowercase": false
-                },
-                 "nohtml": {
-                  "tokenizer": "ik_max_word",
-                  "char_filter": ["html_strip"]
-                }
-            },
-            "tokenizer" : {
-                "my_pinyin" : {
-                    "type" : "pinyin",
-                    "keep_separate_first_letter" : false,
-                    "keep_full_pinyin" : true,
-                    "keep_original" : true,
-                    "limit_first_letter_length" : 16,
-                    "lowercase" : true,
-                    "remove_duplicated_term" : true
-                }
-            }
-        }
-    },
-    "mappings": {
-
-      "doc": {
-        "_meta": {
-          "logstash-version": "6.4.2"
-        },
-        "dynamic": "true",
-
-        "properties": {
-                    "tagName": {
-                      "type": "text",
-                      "analyzer":"ik_smart",
-                      "search_analyzer": "ik_smart",
-
-                      "fields": {
-                        "keyword": {
-                          "type": "keyword",
-                          "ignore_above": 4096
-                        },
-                        "pinyin":{
-                          "type": "text",
-                          "analyzer":"pinyin"
-                        }
-                      }
-                    },
-                    "gmtCreate": {
-                                        "type":   "date",
-                                        "format": "yyyy-MM-dd HH:mm:ss||epoch_millis"
-                                    },
-                    "gmtModified": {
-                                        "type":   "date",
-                                        "format": "yyyy-MM-dd HH:mm:ss||epoch_millis"
-                                    }
-                }
-      }
-    },
-    "aliases": {}
-}
-
-```
-
-
-
-#### SpringBoot整合es
-
-```xml
-<!--es客户端-->
-<dependency>
-    <groupId>io.searchbox</groupId>
-    <artifactId>jest</artifactId>
-    <version>6.3.1</version>
-</dependency>
-<dependency>
-    <groupId>io.searchbox</groupId>
-    <artifactId>jest-common</artifactId>
-    <version>6.3.1</version>
-</dependency>
-<dependency>
-    <groupId>org.elasticsearch</groupId>
-    <artifactId>elasticsearch</artifactId>
-    <version>6.2.3</version>
-</dependency>
-```
-
-
-
 
 
 ### MYCAT爬坑
@@ -6651,6 +7884,10 @@ input {
   # 动态加载所有配置
   reload @@config_all;
   ```
+
+下载地址： https://github.com/MyCATApache/Mycat-download
+
+
 
 
 ### 数据库中hql(hibernate)与sql的区别
@@ -6669,9 +7906,64 @@ input {
 
 ### 其它
 
-### NACOS
+## NACOS
 
 #### nacos生产环境的集群负载
+
+* 复制三份nacos程序
+
+* 在所有 nacos目录的conf的目录下，有个文件 application.properties ，并将修改端口和地址、配置数据库连接。
+
+  ```properties
+  server.port=8840
+  nacos.inetutils.ip-address=127.0.0.1
+  spring.datasource.platform=mysql
+  db.num=1
+  db.url.0=jdbc:mysql://127.0.0.1:3306/nacos?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC
+  db.user.0=root
+  db.password.0=123456
+  
+  #节点2
+  server.port=8850
+  nacos.inetutils.ip-address=127.0.0.1
+  spring.datasource.platform=mysql
+  db.num=1
+  db.url.0=jdbc:mysql://127.0.0.1:3306/nacos?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC
+  db.user.0=root
+  db.password.0=123456
+  ```
+
+* 配置集群节点
+
+  在所有 nacos目录的conf的目录下，有个文件 **cluster.conf.example** ，将其命名为 cluster.conf，并将每行配置成ip:port。
+
+  ```conf
+  #it is ip
+  #example
+  127.0.0.1:8840
+  127.0.0.1:8850
+  127.0.0.1:8860
+  ```
+
+* 启动
+
+  ```bash
+  startup.cmd -m cluster
+  ```
+
+* 配置
+
+  ```yml
+  spring:
+    cloud:
+      nacos:
+        config:
+          server-addr: 127.0.0.1:8840,127.0.0.1:8850,127.0.0.1:8860    #配置中心地址,多个逗号分隔
+  ```
+
+
+
+
 
 JenKins
 
@@ -6709,5 +8001,10 @@ onlyOffice开源文档编辑器  [kkFileView](https://gitee.com/kekingcn/file-on
 
 
 
-链接：![img](file:///C:\Users\ASUS\AppData\Roaming\Tencent\QQTempSys\[5UQ[BL(6~BS2JV6W}N6[%S.png)https://pan.baidu.com/s/1-8fNQ2I_AxTOZlgI96_Aew 
-提取码：u5w0
+**安全扫描：**
+
+* NESSUS https://zhuanlan.zhihu.com/p/395459622
+
+
+
+ 

@@ -5340,7 +5340,7 @@
           "chnname": "sys_role_permission"
         },
         {
-          "title": "sys_dict",
+          "title": "数据字典单表设计",
           "fields": [
             {
               "name": "id",
@@ -5483,7 +5483,7 @@
               "relationNoShow": true
             }
           ],
-          "chnname": "数据字典单表设计"
+          "chnname": "sys_dict"
         }
       ],
       "graphCanvas": {
@@ -5493,11 +5493,11 @@
       "associations": []
     },
     {
-      "name": "generate",
-      "chnname": "代码生成器",
+      "name": "table_admin",
+      "chnname": "数据库表字段管理和配置",
       "entities": [
         {
-          "title": "gen_database_config",
+          "title": "数据库配置",
           "fields": [
             {
               "name": "id",
@@ -5506,6 +5506,36 @@
               "chnname": "主键",
               "notNull": true,
               "pk": true
+            },
+            {
+              "name": "name",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "账号"
+            },
+            {
+              "name": "password",
+              "type": "Name",
+              "remark": "",
+              "chnname": "密码"
+            },
+            {
+              "name": "url",
+              "type": "Intro",
+              "remark": "",
+              "chnname": "连接地址"
+            },
+            {
+              "name": "driver",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "驱动"
+            },
+            {
+              "name": "database_type",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "数据库类型"
             },
             {
               "name": "sort_num",
@@ -5609,7 +5639,140 @@
               "relationNoShow": true
             }
           ],
-          "chnname": "数据库配置"
+          "chnname": "database_config"
+        },
+        {
+          "title": "数据库表信息",
+          "fields": [
+            {
+              "name": "id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "主键",
+              "notNull": true,
+              "pk": true
+            },
+            {
+              "name": "database_id",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "库名"
+            },
+            {
+              "name": "table_name",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "表名"
+            },
+            {
+              "name": "table_desc",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "表描述"
+            },
+            {
+              "name": "sort_num",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "排序"
+            },
+            {
+              "name": "record_version",
+              "type": "Integer",
+              "remark": "",
+              "chnname": "乐观锁"
+            },
+            {
+              "name": "created_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "创建人"
+            },
+            {
+              "name": "created_date",
+              "type": "DateTime",
+              "remark": "",
+              "chnname": "创建时间"
+            },
+            {
+              "name": "created_appId",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "创建应用"
+            },
+            {
+              "name": "updated_user",
+              "type": "IdOrKey",
+              "remark": "",
+              "chnname": "更新人"
+            },
+            {
+              "name": "updated_date",
+              "type": "DateTime",
+              "remark": "",
+              "chnname": "更新时间"
+            },
+            {
+              "name": "updated_appId",
+              "type": "DefaultString",
+              "remark": "",
+              "chnname": "更新应用"
+            },
+            {
+              "name": "deleted",
+              "type": "YesNo",
+              "remark": "",
+              "chnname": "删除标记"
+            }
+          ],
+          "indexs": [],
+          "headers": [
+            {
+              "fieldName": "chnname",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "name",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "type",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "dataType",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "remark",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "pk",
+              "relationNoShow": false
+            },
+            {
+              "fieldName": "notNull",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "autoIncrement",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "defaultValue",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "relationNoShow",
+              "relationNoShow": true
+            },
+            {
+              "fieldName": "uiHint",
+              "relationNoShow": true
+            }
+          ],
+          "chnname": "database_table_info"
         }
       ],
       "graphCanvas": {

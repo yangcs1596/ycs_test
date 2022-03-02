@@ -21,6 +21,8 @@
 #ES与数据库的对照
 DB -> Databases -> Tables -> Rows -> Columns 
 ES -> Indices -> Types -> Documents -> Fields
+
+常用的字段数据类型 text, keyword, date, long, double, boolean , ip 在建立索引时，可以指定字段的数据类型
 ```
 
 
@@ -178,7 +180,109 @@ curl -H "Content-Type: application/json" -XPOST 'http://localhost:9200/test_inde
 curl -H "Content-Type: application/json" -XPOST 'http://localhost:9200/test_index/_search?pretty' -d   '{"size": 0,"aggs": {"group_by_state": {"terms": {"field": "status"},"aggs": {"average_balance": {"avg": {"field": "type"}}}}}}'
 ```
 
+## 5、aggs聚合概念
 
+```
+ES的聚合一共有4种类型，Bucket 、Metric、Pipeline 是经常使用的，掌握了这3种聚合就已经可以满足日常大部分的聚合分析场景了。
+demo：
+GET /cars/_search
+{
+  "size": 0,
+  "aggs": {
+    "first_agg_name": {
+      "terms": {
+        "field": "color"
+      },
+      "aggs": {
+        "sub_agg_name1": {
+          "avg": {
+            "field": "price"
+          }
+        },
+        "sub_agg_name2": {
+          "terms": {
+            "field": "make"
+          }
+        }
+      }
+    }
+  }
+} 
+```
+
+掌握Aggregations需要理解两个概念：
+
+- 桶(Buckets)：符合条件的文档的集合，相当于SQL中的group by。比如，在users表中，按“地区”聚合，一个人将被分到北京桶或上海桶或其他桶里；按“性别”聚合，一个人将被分到男桶或女桶
+
+- 指标(Metrics)：基于Buckets的基础上进行统计分析，相当于SQL中的count,avg,sum等。比如，按“地区”聚合，计算每个地区的人数，平均年龄等
+
+![img](.\image\aggs_bukets.png)
+
+```json
+https://www.cnblogs.com/duanxz/p/6528161.html
+##Metrics度量聚合##
+AVG、min 、max、sum 一般作用于number类型字段上
+Stats 统计
+value_count:  计数
+cardinality: 去重计数
+percentiles: 百分比
+top_hits： 简单来说就是聚合分组后从每一个组取部分数据作为结果返回
+
+#order排序
+order指定了最后返回结果的排序方式，默认是按照doc_count排序。
+{
+    "aggs" : {
+        "genders" : {
+            "terms" : {
+                "field" : "gender",
+                "order" : { "_count" : "asc" }
+            }
+        }
+    }
+}
+#桶聚合也支持脚本的使用：
+{
+    "aggs" : {
+        "genders" : {
+            "terms" : {
+                "script" : "doc['gender'].value"
+            }
+        }
+    }
+}
+#缺省值Missing value
+{
+    "aggs" : {
+        "tags" : {
+             "terms" : {
+                 "field" : "tags",
+                 "missing": "N/A" 
+             }
+         }
+    }
+}
+
+例子Date Range
+GET /product/_search
+{
+  "aggs": {
+    "range": {
+      "date_range": {
+        "field": "date",
+        "format": "yyyy-MM",
+        "ranges": [
+          {
+            "to": "now-10M/M"
+          },
+          {
+            "from": "now-10M/M"
+          }
+        ]
+      }
+    }
+  }
+}
+```
 
 
 
@@ -257,12 +361,13 @@ curl -H "Content-Type: application/json" -XPOST 'http://localhost:9200/test_inde
 }
 ```
 
-### 精确查询，类似mysql语句
+### query-term精确查询，类似mysql语句
 
-SELECT document FROM products WHERE price = 20;
+
 
 
 ```json
+SELECT document FROM products WHERE price = 20;
 #GET /my_store/products/_search
 {
     "query":{
@@ -273,7 +378,7 @@ SELECT document FROM products WHERE price = 20;
 }
 ```
 
-### filters
+### filters 过滤器
 
 当进行精确值查找时， 我们会使用过滤器（filters）。过滤器很重要，因为它们执行速度非常快，不会计算相关度（直接跳过了整个评分阶段）而且很容易被缓存。如下： 使用 constant_score 查询以非评分模式来执行 term 查询并以一作为统一评分。
 
@@ -423,6 +528,18 @@ lte :小于等于
 
 ```
 
+##### Query 和 match 和 bool
+
+```
+match Query即全文检索，它的搜索方式是先将搜索字符串分词，再使用各各词条从索引中搜索。
+
+match query与Term query区别是match query在搜索前先将搜索关键字分词，再拿各各词语去索引中搜索。
+
+布尔查询对应于Lucene的BooleanQuery查询，实现将多个查询组合起来。
+```
+
+
+
 ##### term和terms的区别
 
 ```bash
@@ -554,7 +671,7 @@ System.out.println("耗时: "+(end.getTime()-begin.getTime()));
 }
 ```
 
-##### ES去重后计数
+##### ES去重后计数 aggs类似与 group by
 
 ```json
 #select distinct(count(1)) from test;
@@ -571,7 +688,94 @@ System.out.println("耗时: "+(end.getTime()-begin.getTime()));
     }
   }
 }
+#简单聚合
+语法：
+"aggs": {
+    "名称": {
+      "聚合类型": {
+        "field": "聚合字段",
+        "order": { "排序字段": "desc" } 
+      }
+    }
+  }
+
+常用聚合类型查询：
+terms:分组查询，并返回数量
+avg：平均值查询
+sum：总和查询
+max：最大值查询
+min：最小值查询
+stats：返回以上所有信息，求统计
+cardinality 统计数据类似 count
+#多聚合
+语法：
+"aggs": {
+    "名称": {
+      "聚合类型": {
+        "field": "聚合字段"
+      }
+    }，
+    "名称": {
+      "聚合类型": {
+        "field": "聚合字段"
+      }
+    }
+  }
+#聚合嵌套
+语法：
+  "aggs": {
+    "名称": {
+      "聚合类型": {
+        "field": "聚合字段"
+      },
+      "aggs": {
+        "名称": {
+          "聚合类型": {
+            "field": "聚合字段"
+          }
+        }
+      }
+    }
+  }
 ```
+
+- 子聚合查询 - 即按照已分好的桶再按照子聚合查询往下聚合查询
+
+> 比如查询各游戏付费用户总付费金额
+
+```text
+GET /youi_idx/_search
+{
+  "query":{
+    "bool":{
+      "filter":[
+        {"term":{"ename":"pay"}}
+        ]
+    }
+  }
+  , "size": 0
+  , "aggs": {
+    "app_id": {
+      "terms": {
+        "field": "app_id",
+        "size": 10
+      },
+      "aggs": {
+        "amount": {
+          "sum": {
+            "field": "amount"
+          }
+        }
+      }
+
+    }
+  }
+}
+```
+
+> 注意：Metrics聚合不能子聚合查询
+
+
 
 ##### ES去重 - distinct
 
@@ -589,7 +793,7 @@ System.out.println("耗时: "+(end.getTime()-begin.getTime()));
 }
 ```
 
-##### ES的cardinality统计去重结果
+##### aggs的cardinality统计去重结果
 
 ```json
 #SELECT COUNT(DISTINCT(user_id)) FROM table WHERE user_id_type = 3;
@@ -623,6 +827,51 @@ System.out.println("耗时: "+(end.getTime()-begin.getTime()));
     }
   }
 }
+```
+
+
+
+```json
+#数量聚合
+eg: 根据村来统计文档的数目，相当于sql中的count(*)
+
+ select aab069, count(*) from xxx group by village
+ {
+   "query": {
+     "match_all": {}
+   },
+   "size": 0,
+   "aggs": {
+     "villages" : {
+       "terms" : {
+         "field" : "village.keyword"
+       }
+     }
+   }
+ }
+#统计结果为
+ {
+   "aggregations": {
+     "villages": {
+       "doc_count_error_upper_bound": 7109,
+       "sum_other_doc_count": 11029748,
+       "buckets": [
+         {
+           "key": "大庄村",
+           "doc_count": 30304
+         },
+         {
+           "key": "新庄村",
+           "doc_count": 20846
+         },
+         {
+           "key": "中庄村",
+           "doc_count": 9466
+         }
+       ]
+     }
+   }
+ }
 ```
 
 
@@ -674,9 +923,7 @@ System.out.println("耗时: "+(end.getTime()-begin.getTime()));
             "explain": false,
             "track_scores": true,
             "sort": [{  //折叠列表的排序,折叠列表中要把谁显示在第一个的排序,比如这样做是将该折叠列表的数据按字段level倒序排列.
-                "level": {
-                    "order": "desc"
-                }
+                "level": { "order": "desc" }
             }]
         }
   }
@@ -766,6 +1013,200 @@ srb = client.prepareSearch(indexName)
 
 
 ```
+
+##### 多个字段的聚合查询
+
+* 两种方式
+
+1、大桶套小桶，通过terms一层层聚合
+这个方法适用于需要统计每一项的数据，比如a中有多少种b
+
+2、函数扩展（script）聚合
+这个方法适用于直接统计有多少种组合
+
+* 下面是方法2的具体实现：
+
+统计：
+
+[![复制代码](https://common.cnblogs.com/images/copycode.gif)](javascript:void(0);)
+
+```json
+GET ****_20190926/_search
+{
+  "size": 0,
+  "aggs": {
+    "pre": {
+      "terms": {
+          // group by inChannel, resCode
+        "script": "doc['inChannel'].values +'####'+doc['resCode'].values",
+        "size": 5
+      } 
+    }
+  }
+}
+#结果
+{
+  "took": 2,
+  "timed_out": false,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": 18,
+    "max_score": 0,
+    "hits": []
+  },
+  "aggregations": {
+    "pre": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "[7220101]####[0]",
+          "doc_count": 13
+        },
+        {
+          "key": "[]####[]",
+          "doc_count": 2
+        },
+        {
+          "key": "[1020201]####[]",
+          "doc_count": 1
+        },
+        {
+          "key": "[10202]####[]",
+          "doc_count": 1
+        },
+        {
+          "key": "[7220101]####[]",
+          "doc_count": 1
+        }
+      ]
+    }
+  }
+}
+#java代码参考
+Script script = new Script("doc['inChannel'].values +'####'+ doc['resCode'].values");
+//用于统计每一项详细数据
+TermsAggregationBuilder app = AggregationBuilders.terms("app").script(script).size(10000);
+//用于统计有多少项
+CardinalityAggregationBuilder app = AggregationBuilders.cardinality("app").script(script).precisionThreshold(10000);
+```
+
+
+
+##### aggs的例子
+
+```json
+#一个aggs里可以有很多个聚合，每个聚合彼此间都是独立的
+{
+  "query": {
+    "match": {
+      "hobby": "网吧"
+    }
+  },
+  "aggs": {
+    "max_age": {
+      "max": {
+        "field": "age"
+      }
+    },
+    "min_age": {
+      "min": {
+        "field": "age"
+      }
+    },
+    "avg_age": {
+      "avg": {
+        "field": "age"
+      }
+    }
+  }
+}
+执行结果：
+{
+  "took" : 2,
+  "timed_out" : false,
+  "_shards" : {
+    "total" : 5,
+    "successful" : 5,
+    "skipped" : 0,
+    "failed" : 0
+  },
+  "hits" : {
+    "total" : 3,
+    "max_score" : 0.0,
+    "hits" : [ ]
+  },
+  "aggregations" : {
+    "max_age" : {
+      "value" : 30.0
+    },
+    "avg_age" : {
+      "value" : 18.333333333333332
+    },
+    "min_age" : {
+      "value" : 12.0
+    }
+  }
+}
+
+
+```
+
+##### sort排序
+
+```json
+select * from user_info order by field(gender, 'Male', 'Female'), id desc; 
+
+{
+    "from":0,
+    "size":10,
+    "query":{
+        "match_all": {}
+    },
+    "sort":[
+        {
+            "_script":{
+                "script":{
+                    "source":"params.sortMap[doc['gender'].value]",
+                    "lang":"painless",
+                    "params":{
+                        "sortMap":{
+                            "Male":1,
+                            "Female":2
+                        }
+                    }
+                },
+                "type":"number",
+                "order":"asc"
+            }
+        },
+        {
+            "_id":{
+                "order":"desc"
+            }
+        }
+    ]
+}
+
+ #文档字段的排序
+{
+  "query":{ 
+    "match_all": { 
+    }
+  },
+  "sort": [ 
+    {"create_time": { "order": "asc" }},
+    {"age": { "order": "desc" }}
+  ]
+}
+```
+
+
 
 ## Update操作
 
@@ -965,6 +1406,471 @@ POST {{di}}/audit_demo/_update_by_query
     },
     "size": 0,   // 因为是做聚合操作，所以直接无视query筛选出的数据
     "from": 0
+}
+```
+
+以上都是es的命令操作之类
+
+# springboot使用ElasticSearch搜索引擎
+
+* https://www.cnblogs.com/yijialong/p/9729988.html
+
+```shell
+执行logstash的命令
+# logstash -e 'input { stdin { } } output { stdout {} }'
+注:
+  -e          执行操作
+  input       标准输入
+  { input }   插件
+  output      标准输出
+  { stdout }  插件
+```
+
+
+
+## Logstash详解之——input模块
+
+实例
+
+```shell
+input {
+    stdin {
+    }
+    jdbc {
+      # mysql数据库连接
+      jdbc_connection_string => "jdbc:mysql://192.168.88.65:3306/online_operation?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull"
+      # mysqly用户名和密码
+      jdbc_user => "root"
+      jdbc_password => "2ojf#sojo23@29"
+      # 驱动配置
+      jdbc_driver_library => "/home/gzy/logstash-6.4.2/config/conf.d/mysql/mysql-connector-java-5.1.46.jar"
+      # 驱动类名
+      jdbc_driver_class => "com.mysql.jdbc.Driver"
+      jdbc_paging_enabled => true
+      jdbc_page_size => "500"
+      # 执行指定的sql文件
+      statement_filepath => "/home/gzy/logstash-6.4.2/config/conf.d/mysql/tb_notary.sql"
+      # 设置监听 各字段含义 分 时 天 月  年 ，默认全部为*代表含义：每分钟都更新
+      schedule => "*/10 * * * *"
+      # 索引类型
+      type => "tb_notary"
+      use_column_value => true
+      tracking_column_type => "timestamp"
+      tracking_column => "gmt_modified"
+      last_run_metadata_path => "/home/gzy/logstash-6.4.2/config/conf.d/mysql/lastrun/tb_notary.point"
+    }
+}
+
+filter {
+    json {
+        source => "message"
+        remove_field => ["message"]
+    }
+}
+
+output {
+    if[type]=="tb_notary"{
+      elasticsearch {
+        #es服务器
+        hosts => ["localhost:9200"]
+        #ES索引名称
+        index => "tb_notary"
+        #自增ID
+        document_id => "%{id}"
+        #manage_template => true  
+        #使用templates
+        template => "/home/gzy/logstash-6.4.2/config/templates/tb_notary.json"
+        template_name => "tb_notary"
+        template_overwrite => true
+      }
+    }
+    stdout {
+
+    }
+}
+
+```
+
+```shell
+logstash -f /etc/logstash.d/
+#logstash 会自动读取 /etc/logstash.d/ 目录下所有 *.conf的文本文件，然后在自己内存里拼接成一个完整的大配置文件，再去执行。
+#./logstash -f stdin.conf &  #后台启动 执行单个文本文件
+```
+
+
+
+```shell
+#日志文件的搭建
+input{
+    file{
+        #path属性接受的参数是一个数组，其含义是标明需要读取的文件位置
+        path => [‘pathA’，‘pathB’]
+        #表示多就去path路径下查看是够有新的文件产生。默认是15秒检查一次。
+        discover_interval => 15
+        #排除那些文件，也就是不去读取那些文件
+        exclude => [‘fileName1’,‘fileNmae2’]
+        #被监听的文件多久没更新后断开连接不在监听，默认是一个小时。
+        close_older => 3600
+        #在每次检查文件列 表的时候， 如果一个文件的最后 修改时间 超过这个值， 就忽略这个文件。 默认一天。
+        ignore_older => 86400
+        #logstash 每隔多 久检查一次被监听文件状态（ 是否有更新） ， 默认是 1 秒。
+        stat_interval => 1
+        #sincedb记录数据上一次的读取位置的一个index
+        sincedb_path => ’$HOME/. sincedb‘
+        #logstash 从什么 位置开始读取文件数据， 默认是结束位置 也可以设置为：beginning 从头开始
+        start_position => ‘beginning’
+        #注意：这里需要提醒大家的是，如果你需要每次都从同开始读取文件的话，关设置start_position => beginning是没有用的，你可以选择sincedb_path 定义为 /dev/null
+    }            
+
+}
+#数据库表的同步缓存
+input{
+    jdbc{
+    #jdbc sql server 驱动,各个数据库都有对应的驱动，需自己下载
+    jdbc_driver_library => "/etc/logstash/driver.d/sqljdbc_2.0/enu/sqljdbc4.jar"
+    #jdbc class 不同数据库有不同的 class 配置
+    jdbc_driver_class => "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+    #配置数据库连接 ip 和端口，以及数据库    
+    jdbc_connection_string => "jdbc:sqlserver://200.200.0.18:1433;databaseName=test_db"
+    #配置数据库用户名
+    jdbc_user =>   
+    #配置数据库密码
+    jdbc_password =>
+    #上面这些都不重要，要是这些都看不懂的话，你的老板估计要考虑换人了。重要的是接下来的内容。
+    # 定时器 多久执行一次SQL，默认是一分钟
+    # schedule => 分 时 天 月 年  
+    # schedule => * 22  *  *  * 表示每天22点执行一次
+    schedule => "* * * * *"
+    #是否清除 last_run_metadata_path 的记录,如果为真那么每次都相当于从头开始查询所有的数据库记录
+    clean_run => false
+    #是否需要记录某个column 的值,如果 record_last_run 为真,可以自定义我们需要表的字段名称，
+    #此时该参数就要为 true. 否则默认 track 的是 timestamp 的值.
+    use_column_value => true
+    #如果 use_column_value 为真,需配置此参数. 这个参数就是数据库给出的一个字段名称。当然该字段必须是递增的，可以是 数据库的数据时间这类的
+    tracking_column => create_time
+    #是否记录上次执行结果, 如果为真,将会把上次执行到的 tracking_column 字段的值记录下来,保存到 last_run_metadata_path 指定的文件中
+    record_last_run => true
+    #们只需要在 SQL 语句中 WHERE MY_ID > :last_sql_value 即可. 其中 :last_sql_value 取得就是该文件中的值
+    last_run_metadata_path => "/etc/logstash/run_metadata.d/my_info"
+    #是否将字段名称转小写。
+    #这里有个小的提示，如果你这前就处理过一次数据，并且在Kibana中有对应的搜索需求的话，还是改为true，
+    #因为默认是true，并且Kibana是大小写区分的。准确的说应该是ES大小写区分
+    lowercase_column_names => false
+    #你的SQL的位置，当然，你的SQL也可以直接写在这里。
+    #statement => SELECT * FROM tabeName t WHERE  t.creat_time > :last_sql_value
+    statement_filepath => "/etc/logstash/statement_file.d/my_info.sql"
+    #数据类型，标明你属于那一方势力。单了ES哪里好给你安排不同的山头。
+    type => "my_info"
+    }
+    #注意：外载的SQL文件就是一个文本文件就可以了，还有需要注意的是，一个jdbc{}插件就只能处理一个SQL语句，
+    #如果你有多个SQL需要处理的话，只能在重新建立一个jdbc{}插件。
+}
+#数据接口api
+input {
+  beats {
+    #接受数据端口
+    port => 5044
+    #数据类型
+    type => "logs"
+  }
+  #这个插件需要和filebeat进行配很这里不做多讲，到时候结合起来一起介绍。
+}
+```
+
+```shell
+
+```
+
+``` json
+#templates 文件tb_notary.json
+{
+    "index_patterns": [
+      "tb_tag"
+    ],
+    "settings": {
+      "index": {
+        "number_of_shards": 5,
+        "number_of_replicas": 1,
+        "codec": "best_compression"
+      },
+      "analysis" : {
+            "analyzer" : {
+                "pinyin_analyzer" : {
+                    "tokenizer" : "my_pinyin"
+                    },
+                "comma":{
+                  "type": "pattern",
+                  "pattern": ",",
+                  "lowercase": false
+                },
+                 "nohtml": {
+                  "tokenizer": "ik_max_word",
+                  "char_filter": ["html_strip"]
+                }
+            },
+            "tokenizer" : {
+                "my_pinyin" : {
+                    "type" : "pinyin",
+                    "keep_separate_first_letter" : false,
+                    "keep_full_pinyin" : true,
+                    "keep_original" : true,
+                    "limit_first_letter_length" : 16,
+                    "lowercase" : true,
+                    "remove_duplicated_term" : true
+                }
+            }
+        }
+    },
+    "mappings": {
+
+      "doc": {
+        "_meta": {
+          "logstash-version": "6.4.2"
+        },
+        "dynamic": "true",
+
+        "properties": {
+                    "tagName": {
+                      "type": "text",
+                      "analyzer":"ik_smart",
+                      "search_analyzer": "ik_smart",
+
+                      "fields": {
+                        "keyword": {
+                          "type": "keyword",
+                          "ignore_above": 4096
+                        },
+                        "pinyin":{
+                          "type": "text",
+                          "analyzer":"pinyin"
+                        }
+                      }
+                    },
+                    "gmtCreate": {
+                                        "type":   "date",
+                                        "format": "yyyy-MM-dd HH:mm:ss||epoch_millis"
+                                    },
+                    "gmtModified": {
+                                        "type":   "date",
+                                        "format": "yyyy-MM-dd HH:mm:ss||epoch_millis"
+                                    }
+                }
+      }
+    },
+    "aliases": {}
+}
+
+```
+
+
+
+## SpringBoot整合es
+
+```xml
+<!--es客户端-->
+<dependency>
+    <groupId>io.searchbox</groupId>
+    <artifactId>jest</artifactId>
+    <version>6.3.1</version>
+</dependency>
+<dependency>
+    <groupId>io.searchbox</groupId>
+    <artifactId>jest-common</artifactId>
+    <version>6.3.1</version>
+</dependency>
+<dependency>
+    <groupId>org.elasticsearch</groupId>
+    <artifactId>elasticsearch</artifactId>
+    <version>6.2.3</version>
+</dependency>
+```
+
+
+
+## 分词器IK
+
+```
+ik_max_word: 会将文本做最细粒度的拆分,比如会将 "中华人民共和国国歌"拆分为
+   例："中华人民共和国,中华人民,中华,华人,人民共和国,人民,人,民,共和国,共和,和,国国,国歌"，会穷尽各种可能的组合
+ik_smart: 会做最粗粒度的拆分, 比如会将 "中华人民共和国国歌"拆分为 "中华人民共和国,国歌" .
+```
+
+
+
+```
+下载地址：https://github.com/medcl/elasticsearch-analysis-ik/releases
+ik中文分词器的版本需要和你的elasticsearch的版本一致
+
+#命令下载
+./bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v6.2.3/elasticsearch-analysis-ik-6.2.3.zip
+# sudo /usr/share/elasticsearch/bin/elasticsearch-plugin install http://localhost:8000/elasticsearch-analysis-ik-6.2.3.zip -v
+
+插件安装在 /usr/share/elasticsearch/plugins/
+插件的配置文件在 /etc/elasticsearch/analysis-ik
+测试下 sudo ./bin/elasticsearch-plugin list 
+
+重启 elasticsearch
+service elasticsearch restart
+
+设置中文索引
+curl -X PUT http://localhost:9200/weibo #新建一个index
+
+curl -XPUT http://localhost:9200/weibo/_mapping/news -H 'Content-Type: application/json' -d'
+{
+  "properties": {
+    "summary": {
+      "type": "text",
+      "analyzer": "ik_smart"
+    },
+    "title": {
+      "type": "text",
+      "analyzer": "ik_smart"
+    }
+  }
+}'
+```
+
+2.安装ik分词器插件
+
+2.1将我们下载好的ik分词器的zip进行解压，
+
+2.2在elasticsearch的plugins目录下创建analysis-ik文件夹
+
+2.3将解压后的文件放到elasticsearch的铺放到analysis中
+
+### 忽略大小写查询
+
+```json
+{
+    "settings": {
+        "analysis": {
+            "analyzer": {
+                "caseSensitive": {
+                    "filter": "lowercase",
+                    "type": "custom",
+                    "tokenizer": "keyword"
+                }
+            }
+        }
+    },
+    "mappings": {
+        "personInfo": {
+            "properties": {
+                "userName": {
+                    "type": "string",
+                    "analyzer": "caseSensitive",
+                    "search_analyzer": "caseSensitive"
+                }
+            }
+        }
+    }
+}
+几种例子
+https://yuanwenjian.github.io/2018/03/09/Elasticsearch%E5%86%85%E7%BD%AE%E5%88%86%E8%AF%8D%E5%99%A8%E5%8F%8A%E5%AD%97%E7%AC%A6%E8%BF%87%E6%BB%A4%E5%99%A8/
+
+分析器（Analyzer）由三部分构成：
+
+0个或多个字符过滤器（ Character filters）按顺序应用。
+有且只有一个分词器（Tokenizer）
+0个或多个过滤器（Token filters），按顺序应用。
+```
+
+
+
+### **手动创建索**
+
+```json
+#1.进行创建（我这里借助的是Google的浏览器的插件postman）
+
+#PUT  es地址：9200/indexName
+{
+	"settings":{
+		 "analysis" : {
+            "analyzer" : {
+                "ik" : {
+                    "tokenizer" : "ik_max_word"
+                }
+            }
+        }
+	},
+	"mappings":{
+		"content":{
+			"_all": {
+                "enabled": false
+            },
+		"properties":{
+			"id":{
+				"type":"keyword"
+			},
+			"catid":{
+				"type":"keyword"
+			},
+			"classify":{
+				"type":"integer"
+			},
+			"title":{
+				"type":"text",
+				"analyzer": "ik_max_word"
+			},
+			"author":{
+				"type":"text",
+				"analyzer": "ik_max_word"
+			},
+			"published":{
+				"type":"date"
+			},
+			"article":{
+				"type":"text",
+				"analyzer": "ik_max_word"
+			}
+			}
+		}
+	}
+```
+
+java代码里的使用
+
+```java
+在Java实体类中的需要分词的字段上添加下面注解
+
+@Field(type = FieldType.Text, analyzer = "ik_max_word",searchAnalyzer="ik_smart")
+index：是否对该字段分词，默认true。
+analyzer：指定插入时的分词模式，一般为ik_max_words。
+type：字段类型。
+store：是否存储该字段，默认值为false。
+searchAnalyzer：指定查询时的分词模式，一般为ik_smart。
+```
+
+
+
+# 备份例子
+
+```
+{
+    "query": { 
+    	"term":{
+    		"riskName.keyword":"CVE-2007-2379"
+    	}
+    },
+    "from": 0,
+    "size": 10,
+
+    "aggs": {
+	   "riskName.keyword": {
+	      "terms": {"field": "riskName.keyword" },
+	     "aggs": {
+		   "containerInfoId": {
+		      "cardinality": {"field": "containerInfoId" }
+		    }
+	     }
+      }
+   },
+    "_source": {
+        "includes": [
+            "assetName",
+            "assetVersion"
+        ]
+    }
 }
 ```
 

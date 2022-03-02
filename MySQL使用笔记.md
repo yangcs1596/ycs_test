@@ -31,29 +31,51 @@
 对索引字段中文本的搜索进行优化
 ```
 
-### mysql连接命令
+### mysql的账号权限配置
 
-```shell
-》mysql -h+IP -u+root -p+password 注意不需要空格
-例如： mysql -uroot -p123 -h192.168.203.33 -P3306
-或者： mysql -ucloudpassport -pCtx1ytxA@3zdj
+mysql添加用户对指定库有权限, 权限控制信息存储在表mysql.user中
 
-命令：create user ‘qiangqiang’@’%’ identified by ‘123’;
-命令：管理员 mysqladmin -uroot password 123 
-命令：root普通用户 set password for ‘root’@’%’=password(“123456”);
+1、创建用户和密码
 
-备份表命令
-》mysqldump -u root -h host -p dbname tbname1, tbname2 > backdb.sql
-备份数据库
-》mysqldump -u root -h host -p dbname > backdb.sql
+```mysql
+create user 'acc'@'%' IDENTIFIED  by 'acc@password';
+-- acc是账号  '@%'是host
+```
+
+2、刷新授权
+
+```mysql
+flush privileges;　
+```
+
+3、设置对某个数据库的权限（增删改查可以设置一个或多个） access_control:数据库， acc：用户
+
+```mysql
+grant create , select ,  insert ,  update ,  delete on access_control.*  to acc@'%';
+#safedogcloud数据库的所有权限
+GRANT ALL PRIVILEGES ON `update_back`.* TO 'safedog_cloud'@'%'
+#所有数据库权限
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'
+```
+
+4, 刷新授权
+
+```mysql
+flush  privileges ;
 ```
 
 ```mysql
-#常用命令
-》show databases;
-》use database;
-》show tables;
-》describe tableName;
+-- 查看用户权限
+show grants for root@'localhost';
+-- 查看现有用户
+use mysql;
+select user,host, authentication_string from user;
+-- 
+GRANT USAGE ON *.* TO 'discuz'@'localhost' IDENTIFIED BY PASSWORD '123456'
+
+-- 删除用户
+delete from mysql.`user` where user ='';
+delete from mysql.`user` where host='192.168.2.2';
 ```
 
 
@@ -91,7 +113,8 @@ default-storage-engine=INNODB
 
 ```mysql
 #一、配置的方式是永久开启
-`log-slow-queries=mysql_slow.log``long_query_time=1`
+log-slow-queries=mysql_slow.log
+long_query_time=1
 
 #所有执行时间超过1秒的sql都将被记录到慢查询文件中（我这里就是 /data/mysql/mysql-slow.log
 
@@ -111,6 +134,25 @@ set global slow_query_log = off;
   ```mysql
   `set` `profiling = 1;`
   ```
+
+#### 查看是否锁表
+
+```mysql
+1、查询是否锁表
+show OPEN TABLES where In_use > 0;
+
+In_use列表示有多少线程正在使用某张表，Name_locked表示表名是否被锁
+2、查询进程
+show processlist
+查询到相对应的进程===然后 kill    id
+查看正在锁的事务
+SELECT * FROM INFORMATION_SCHEMA.INNODB_LOCKS;  
+
+查看等待锁的事务
+SELECT * FROM INFORMATION_SCHEMA.INNODB_LOCK_WAITS; 
+```
+
+
 
 #### select *的缺点
 
@@ -185,7 +227,70 @@ COALESCE ( expression1, expression2, ... expression-n );
 * length() 返回长度，空字符和null返回0 
 * trim() 去掉开头结尾的空字符
 
+#### 4、字符截取substring_index
+
+```mysql
+
+【MySQL】字符串截取之substring_index
+substring_index(str,delim,count)
+      str:要处理的字符串
+      delim:分隔符
+      count:计数
+substring_index(str,'.',1)
+结果是：www
+substring_index(str,'.',2)
+结果是：www.wikidm
+ 也就是说，如果count是正数，那么就是从左往右数，第N个分隔符的左边的全部内容
+```
+
+#### 5、LPAD函数
+
+```mysql
+lpad：函数语法：
+lpad(str1,length,str2)。
+其中str1是第一个字符串，length是结果字符串的长度，str2是一个填充字符串。如果str1的长度没有length那么长，则使用str2填充；如果str1的长度大于length，则截断。
+#rpad：同理 
+```
+
+
+
 ###  数据库操作
+
+#### mysql连接命令
+
+```shell
+》mysql -h+IP -u+root -p+password 注意不需要空格
+例如： mysql -uroot -p123 -h192.168.203.33 -P3306
+或者： mysql -ucloudpassport -pCtx1ytxA@3zdj
+
+命令：create user ‘qiangqiang’@’%’ identified by ‘123’;
+命令：管理员 mysqladmin -uroot password 123 
+命令：root普通用户 set password for ‘root’@’%’=password(“123456”);
+
+备份表命令
+》mysqldump -u root -h host -p dbname tbname1, tbname2 > backdb.sql
+备份数据库
+》mysqldump -u root -h host -p dbname > backdb.sql
+
+```
+
+#### 1、建库
+
+```mysql
+#建库
+>>CREATE DATABASE sonar CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+》show databases;
+》use database;
+
+》show tables;
+》describe tableName;
+
+
+select  User,authentication_string,Host from user;
+
+```
+
+
 
 #### 1、建表
 
@@ -333,6 +438,7 @@ CREATE DATABASE sonar CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 2、本地 Mysql 创建用户并分配权限
 CREATE USER 'sonar' IDENTIFIED BY 'sonar';
+
 GRANT ALL PRIVILEGES ON *.* TO 'sonar'@'%' IDENTIFIED BY 'sonar' WITH GRANT OPTION;
 GRANT ALL PRIVILEGES ON *.* TO 'sonar'@'localhost' IDENTIFIED BY 'sonar' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
@@ -381,9 +487,24 @@ declare i int default 0;
 ————————————————
 ### 执行存储过程
 call insert_emp(1,500)
+
+
+##事物回滚
+create procedure test(in a int)
+    BEGIN
+        DECLARE t_error INTEGER DEFAULT 0;
+        DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET t_error=1;-- 异常时设置为1
+        START TRANSACTION;
+        -- 需要执行的sql
+        IF t_error = 1 THEN
+            ROLLBACK;
+        ELSE
+            COMMIT;
+        END IF;
+    END
 ```
 
-#### 8、查看详细信息
+#### 8、查看表详细信息
 
 ```mysql
 show tables或show tables from database_name;
@@ -433,6 +554,10 @@ INSERT INTO table_name ( field1, field2,...fieldN )
 ### HAVING
 
 HAVING语句通常与GROUP BY语句联合使用，用来过滤由GROUP BY语句返回的记录集。
+
+1、where 后不能跟聚合函数，因为where执行顺序大于聚合函数。 
+2、where 子句的作用是在对查询结果进行分组前，将不符合where条件的行去掉，即在分组之前过滤数据，条件中不能包含聚组函数，使用where条件显示特定的行。 
+3、having 子句的作用是筛选满足条件的组，即在分组之后过滤数据，条件中经常包含聚组函数，使用having 条件显示特定的组，也可以使用多个分组标准进行分组。
 
 ### 时间默认值
 
@@ -485,7 +610,7 @@ CONVERT(value, type);
 
 
 
-### information_schema的表信息
+### information_schema的表信息 表名和表字段
 
 ```mysql
 #查询表的字段
@@ -530,6 +655,20 @@ DELETE FROM t_emp
 WHERE deptno=20 
 ORDER BY sal+IFNULL(comm,0) DESC;
 LIMIT 1;
+
+# 多表删除
+DELETE A, B from a_table, B_table 
+where ...
+```
+
+#### insert
+
+#### replace into
+
+```
+replace into 跟 insert 功能类似，不同点在于：replace into 首先尝试插入数据到表中， 1. 如果发现表中已经有此行数据（根据主键或者唯一索引判断）则先删除此行数据，然后插入新的数据。 2. 否则，直接插入新数据。
+
+要注意的是：插入数据的表必须有主键或者是唯一索引！否则的话，replace into 会直接插入数据，这将导致表中出现重复的数据
 ```
 
 
@@ -1011,5 +1150,8 @@ mysqldump -ucloudpassport -pCtx1ytxA@3zdj cloudpassport risk_sys_info --no-autoc
 ```mysql
 mysql -ucloudpassport -pCtx1ytxA@3zdj 数据库名 < 存放位置
 mysql -uroot -p123456 cloud_system<D:\\mysql\\LOL3.sql
+
+执行sql脚本文件
+mysql> source sql脚本所在目录
 ```
 

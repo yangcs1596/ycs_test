@@ -40,6 +40,10 @@
 
 **其它中间件工具**：  Logstash ， ElasticSearch ，
 
+容器技术： dockers、podman;     k8s、openshift;
+
+API调试工具： Apifox、 Postman      fiddler抓包工具：app或者电脑端的请求抓取
+
 
 
 Linx连接工具：全能终端神器 MobaXterm， X-shell,  FinalShell
@@ -91,6 +95,7 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 * **vs code**,  **webstorm** 边写前端js+html
 * **datagrip**， **navicat**  连接数据库
 * 构造原型工具 axure  生成的html文件放在tomcat的webapps下即可访问
+* icon的地址 https://fontawesome.com
 
 #### Jar工具包解决功能记录
 
@@ -1008,6 +1013,58 @@ XttblogService xttblogService = message -> System.out.println("Hello " + message
 
 
 
+##### 1-7-3   最佳内存缓存框架Caffeine
+
+```xml
+ <dependency>
+     <groupId>com.github.ben-manes.caffeine</groupId>
+     <artifactId>caffeine</artifactId>
+</dependency>
+
+@Configuration
+@EnableCaching
+public class CaffeineCacheConfig {
+    @Bean
+    public CacheManager cacheManager(){
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager();
+        //Caffeine配置
+        Caffeine<Object, Object> caffeine = Caffeine.newBuilder()
+                                            //最后一次写入后经过固定时间过期
+                                            .expireAfterWrite(10, TimeUnit.SECONDS)
+                                            //maximumSize=[long]: 缓存的最大条数
+                                            .maximumSize(1000);
+        cacheManager.setCaffeine(caffeine);
+        return cacheManager;
+    }
+}
+```
+
+
+
+Caffeine是一种高性能的缓存库，是基于Java 8的最佳（最优）缓存框架。
+
+```java
+采用 cache和 持久化数据库如 redis 缓存查询结果来消峰和降低成本
+//初始化cache对象
+private Cache<String, Object> cache = CaffeineCacheBuilder.createCaffeineCacheBuilder()
+    .limit(Integer.MAX_VALUE)
+    .expireAfterWrite(5,TimeUnit.MINUTES)
+    .buildCache();
+
+LoadingCache<Key, Graph> graphs = Caffeine.newBuilder()
+     .maximumSize(10_000)
+     .expireAfterWrite(5, TimeUnit.MINUTES)
+     .refreshAfterWrite(1, TimeUnit.MINUTES)
+     .build(key -> createExpensiveGraph(key));
+
+Cache<K， V>的get的方法定义
+V get(@NonNull K var1, @NonNull Function<? super K, ? extends V> var2);
+
+//备注 super代表的是下界范围，  extends代表的是上界范围
+```
+
+
+
 #### 1-8 多实现类的注入问题
 
 **1. 首先， Interface1 接口有两个实现类 Interface1Impl1 和 Interface1Impl2**
@@ -1552,6 +1609,76 @@ Mono.never().subscribe(System.out::println);
 
  2、通过Mono动态方法创建：
  通过 create()方法来使用 MonoSink 来创建 Mono。
+
+#### 2-4 countDownLatch
+
+- countDownLatch类中只提供了一个构造器：
+
+```cpp
+//参数count为计数值
+public CountDownLatch(int count) {  };  
+```
+
+- 类中有三个方法是最重要的：
+
+```java
+//调用await()方法的线程会被挂起，它会等待直到count值为0才继续执行
+public void await() throws InterruptedException { };   
+//和await()类似，只不过等待一定的时间后count值还没变为0的话就会继续执行
+public boolean await(long timeout, TimeUnit unit) throws InterruptedException { };  
+//将count值减1
+public void countDown() { };  
+```
+
+例子
+
+```csharp
+public class CountDownLatchTest {
+
+    public static void main(String[] args) {
+        final CountDownLatch latch = new CountDownLatch(2);
+        System.out.println("主线程开始执行…… ……");
+        //第一个子线程执行
+        ExecutorService es1 = Executors.newSingleThreadExecutor();
+        es1.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(3000);
+                    System.out.println("子线程："+Thread.currentThread().getName()+"执行");
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                latch.countDown();  //减一
+            }
+        });
+        es1.shutdown();
+
+        //第二个子线程执行
+        ExecutorService es2 = Executors.newSingleThreadExecutor();
+        es2.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                System.out.println("子线程："+Thread.currentThread().getName()+"执行");
+                latch.countDown(); //减一
+            }
+        });
+        es2.shutdown();
+        System.out.println("等待两个线程执行完毕…… ……");
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("两个子线程都执行完毕，继续执行主线程");
+    }
+}
+```
 
 ### System.getProperty()
 
@@ -2182,7 +2309,7 @@ System.getProperty("java.io.tmpdir")
 
 * 能使用StringBuffer就使用这个   线程同步,支持并发  安全
 * StringBuilder   可变的字符序列  比StringBuilder快，线程不同步的
-* 一般建议使用StringBuilder   
+* 一般建议使用StringBuffer
 
 ##### 4-1 split();注意分割
 
@@ -2431,6 +2558,15 @@ public V put(K key, V value) {
 
 
 
+#### 4、parallelStream使用
+
+```
+并行流
+由于并行流使用多线程，则一切线程安全问题都应该是需要考虑的问题，如：资源竞争、死锁、事务、可见性等等。
+```
+
+
+
 ### 5-1 Deque双向队列 和栈stack
 
 Deque有三种用途：
@@ -2521,6 +2657,52 @@ method.invoke(className.newInstance,"参数")；  //执行（实例对象， 参
 
 ```java
 BeanUtils.copyProperties(源对象, 目标对象);  //另一个实体
+```
+
+#### 只拷贝非null值
+
+```java
+public static String[] getNullPropertyNames (Object source) {
+        final BeanWrapper src = new BeanWrapperImpl(source);
+        java.beans.PropertyDescriptor[] pds = src.getPropertyDescriptors();
+
+        Set<String> emptyNames = new HashSet<String>();
+        for(java.beans.PropertyDescriptor pd : pds) {
+            Object srcValue = src.getPropertyValue(pd.getName());
+            if (srcValue == null) emptyNames.add(pd.getName());
+        }
+        String[] result = new String[emptyNames.size()];
+        return emptyNames.toArray(result);
+    }
+
+public static void copyPropertiesIgnoreNull(Object src, Object target){
+    BeanUtils.copyProperties(src, target, getNullPropertyNames(src));
+}
+```
+
+hutool开源库为我们提供了更为强大的Bean工具-BeanUtil，
+
+```
+<dependency>
+    <groupId>cn.hutool</groupId>
+    <artifactId>hutool-all</artifactId>
+    <version>4.1.14</version>
+</dependency> 
+```
+
+
+
+```java
+BeanUtil.copyProperties(oldDetail.get(),
+                        userDetail,
+                        true, 
+                        CopyOptions.create().setIgnoreNullValue(true).setIgnoreError(true));
+
+editable 限制的类或接口，必须为目标对象的实现接口或父类，用于限制拷贝的属性，例如一个类我只想复制其父类的一些属性，就可以将editable设置为父类。
+ignoreNullValue 是否忽略空值，当源对象的值为null时，true: 忽略而不注入此值，false: 注入null
+ignoreProperties 忽略的属性列表，设置一个属性列表，不拷贝这些属性值
+ignoreError 是否忽略字段注入错误
+可以通过CopyOptions.create()方法创建一个默认的配置项，通过setXXX方法设置每个配置项。  
 ```
 
 
@@ -3124,6 +3306,16 @@ public class XX(){
 }
 ```
 
+```
+【总结】
+（1）不用@Builder.Default，为成员变量设置默认值，new出来的对象自带默认值
+（2）启用@Builder.Default，new出来的对象为空对象，不带默认值
+（3）启用@Builder.Default，不设置-> Student.builder().build()，为默认值
+（4）启用@Builder.Default，设置-> Student.builder().age(4).build()，为设置的值
+```
+
+
+
 ##### `@SneakyThrows` 异常包装用法
 
 ```java
@@ -3487,13 +3679,15 @@ gzip_types text/plain application/x-javascript text/css application/xml text/jav
 gzip_vary off;
 ```
 
-
-
 ## Mybatis
+
+备注： mybatis的方法xml中和实体映射， 会执行对应属性的 set方法。
+
+
 
 #{}占位符    会带单引号''   模糊查询 “%”#{id}“%”
 
-${}拼接字符    只能用${value}  
+${}拼接字符    只能用${value}  ， 可能引起sql注入问题
 
 ```xml
 
@@ -3655,6 +3849,22 @@ if标签里面的test判断是可以使用工具类来做判断的，毕竟test�
 ```
 
 
+
+### 使用@Param 和不使用@Param的区别
+
+区别是：使用注解可以不用加parameterType
+
+mabatis
+
+1、如果传递过来是单参数，且没有以@Param注解进行命名，则直接将单参数作为真实的参数调用SqlSession的对应方法。
+
+2、如果传递过来的不是单参数或者是包含以@Param注解进行命名的参数，则会将对应的参数转换为一个Map进行传递。具体规则如下：
+
+   会把对应的参数按照顺序以param1、param2、paramN这样的形式作为Key存入目标Map中，第一个参数是param1，第N个参数是paramN。
+
+​    如果参数是以@Param注解命名的参数，则以@Param指定的名称作为Key存入目标Map中。
+
+​    如果参数不是以@Param注解命名的，则按照顺序以0、1、N这样的形式作为Key存入目标Map中，第一个参数是0，第N个参数是N。
 
 ## [MyBatis-Plus](https://mp.baomidou.com/)
 

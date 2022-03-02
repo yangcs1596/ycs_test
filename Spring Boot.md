@@ -455,6 +455,18 @@ pets:
 pets: [cat,dog,pig]
 ```
 
+### 3、松散绑定
+
+
+
+```yaml
+仅适用于实体
+在yml中使用中划线分割和驼峰命名可以对应上
+#也可以使用"_"
+first-name: dahuang
+
+```
+
 
 
 ## 3、配置文件值注入
@@ -2188,7 +2200,7 @@ spring.thymeleaf.cache=false
 
 拦截器的实现方式有两种：
 
-* 拦截器实现**HandlerInterceptor**接口，重写三个方法：preHandle，postHandle，afterCompletion
+* 拦截器继承**HandlerInterceptor**接口，重写三个方法：preHandle，postHandle，afterCompletion
 * 使用@WebFilter注解添加拦截路径， 实现**Filter**接口重写doFilter方法
 * Aop配置，并使用**自定义注解annotation**， 根据切面去拦截
 
@@ -3469,9 +3481,10 @@ docker run --name mytomcat -d tomcat:latest
 
 或者
 根据一个image, 启动一个容器(应用)
-docker run -d -e ENV=DEV -p 30000:20880 -e DUBBO_IP_TO_REGISTRY=10.1.0.54 -e DUBBO_PORT_TO_REGISTRY=30000 -e JAVA_OPTS='' healthapp-product-admin-rpc
+#docker run -d -e ENV=DEV -p 30000:20880 -e DUBBO_IP_TO_REGISTRY=10.1.0.54 -e DUBBO_PORT_TO_REGISTRY=30000 -e JAVA_OPTS='' healthapp-product-admin-rpc
 ————————————————
 #docker run --name mysq -idt -e MYSQL_ROOT_PASSWORD=123456 -p 1306:3306 -p 13060:33060 mysql:latest
+此处会自动先判断本地镜像，无则远程镜像仓库下载镜像并运行
 
 4、docker ps  #docker ps|grep order
 查看运行中的容器
@@ -3508,6 +3521,19 @@ docker exec -it 镜像id /bin/bash  #常用
 更多命令参看
 https://docs.docker.com/engine/reference/commandline/docker/
 可以参考每一个镜像的文档
+#查看容器的目录
+docker exec 容器name ls
+#docker inspect来查看该容器的详细信息。
+docker inspect 44fc0f0582d9 
+#查看挂载目录
+docker inspect container_id | grep Mounts -A 20
+docker inspect container_name | grep Mounts -A 20
+
+docker inspect container_id | grep Mounts -A 20
+#找到对应的容器merged, 宿主机所在的目录
+docker inspect 容器信息或者id | grep Merged
+
+找到宿主机所在的目录，直接修改，即改了容器的信息
 
 
 
@@ -3528,7 +3554,12 @@ systemctl restart docker
 
 ```json
 #进入容器文件夹命令
-docker exec -it 镜像id/bin/sh
+docker exec -it 镜像id /bin/sh
+##
+Ctrl + p + q 退出并在后台运行容器；或者 exit
+
+#查看镜像的DockerFile
+docker history 镜像id --format "{{.CreatedBy}}" --no-trunc |tac | awk '{if($3~/nop/){for(i=1;i<=3;i++){$i=""};print substr($0,4)}else{print "RUN",$0}}' 
 ```
 
 
@@ -3537,6 +3568,35 @@ docker exec -it 镜像id/bin/sh
 
 ```shell
 docker pull mysql
+```
+
+### 4） 安装tomcat并装一个war
+
+复制war包到tomcat容器中命令如下：
+
+```json
+#(什么是宿主机：自己当前的服务器centOS7称之为宿主机，宿主机上的docker可看作一个容器，也就是docker所在的服务器称为宿主机)
+
+
+
+#解释一下：docker cp xxx.war包路径 容器ID:/要复制过去的目录路径（其实还有另一种方法：使用挂载，
+#挂载的意思就是在宿主机上解压一个tomcat把这里面的webapps目录映射到docker内的tomcat容器中的webapps目录，这样直接把war包发送到宿主机的tomcat的webapps下面，docker的tomcat的webapps会共用此目录下的文件）
+
+
+
+docker cp /usr/local/testJavaProject/test01.war 9fccf0236619:/usr/local/tomcat/webapps
+
+
+###挂载操作
+、设置挂载目录，设置容器别名，设置此容器开机自启，现在用这几种条件启动tomcat容器
+、设置挂载目录：意思把宿主机的一个文件夹映射到容器的webapps目录，直接把war包上传到宿主机的文件夹，不用再复制到tomcat容器里面了，tomcat容器的webapps目录会直接使用这个文件夹下的文件。
+、设置容器别名：之前不设置别名，操作关闭容器，或进入容器内我们都要找到此容器ID，并根据此容器ID来操作，很不方便。--name xxx之后我们可以直接操作xxx别名
+、设置开机自启：--restart=always参数不用多说，意思就是开机自启
+
+1、为挂载目录之前做准备：
+	在usr/local/目录下创建一个dev目录，dev目录用来专门存放开发包什么的，dev目录下再创建一个docker-tomcat目录，行了，就用docker-tomcat进行映射到docker中的tomcat容器里的webapps目录
+#挂载usr/local/dev/docker-tomcat目录，并运行容器命令如下
+docker run -d -p 8088:8080 --name tomcat -v /usr/local/dev/docker-tomcat:/usr/local/tomcat/webapps --restart=always tomcat
 ```
 
 ## 5、Dockerfile文件命令介绍

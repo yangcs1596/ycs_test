@@ -12,6 +12,8 @@ MyAuthenticationFailureHandler，
 MyAuthenticationSuccessHandler，
 MyLogoutSuccessHandler
 
+### 配置——WebSecurityConfigurerAdapter
+
 ```java
 /**
  * @Author: Galen
@@ -95,7 +97,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 }
 ```
 
-
+### 认证UserDetailsService
 
 ```java
 @Service
@@ -127,7 +129,10 @@ public class HrService implements UserDetailsService {
         return hr;
     }
 }
+
 ```
+
+### 自定义权限过滤——FilterInvocationSecurityMetadataSource
 
 ```java
 /**
@@ -210,6 +215,8 @@ public class MyFilterInvocationSecurityMetadataSource implements FilterInvocatio
 }
 ```
 
+### 自定义权限决策——AccessDecisionManager
+
 ```java
 /**
  * @Author: Galen
@@ -269,6 +276,8 @@ public class MyAccessDecisionManager implements AccessDecisionManager {
 }
 ```
 
+### 自定义响应——AccessDeniedHandler
+
 ```java
 /**
      * @Author: Galen
@@ -290,6 +299,12 @@ public class MyAccessDecisionManager implements AccessDecisionManager {
         }
     }
 ```
+
+### 认证失败——AuthenticationFailureHandler
+
+### 认证成功——AuthenticationSuccessHandler
+
+### 登出——LogoutSuccessHandler
 
 ```java
 /**
@@ -362,4 +377,303 @@ public class MyLogoutSuccessHandler implements LogoutSuccessHandler {
 
 
 
+
+# Oauth2.0
+
+```xml
+ <!--security-->
+ <dependency>
+     <groupId>org.springframework.boot</groupId>
+     <artifactId>spring-boot-starter-security</artifactId>
+ </dependency>
+ <dependency>
+     <groupId>org.springframework.security.oauth</groupId>
+     <artifactId>spring-security-oauth2</artifactId>
+ </dependency>
+```
+
+### 配置——WebSecurityConfigurerAdapter 
+
+```java
+@EnableWebSecurity
+public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+    @Autowired
+    private MyUserDatailService userDatailService;
+
+    /**
+     * 指定加密方式
+     */
+    @Bean
+    public PasswordEncoder passwordEncoder(){
+        // 使用BCrypt加密密码
+        return new BCryptPasswordEncoder();
+    }
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+                .authorizeRequests()
+                .antMatchers(HttpMethod.POST, "/add-user").permitAll() // 允许post请求/add-user，而无需认证
+                .anyRequest().authenticated() // 所有请求都需要验证
+                .and()
+                .formLogin() // 使用默认的登录页面
+                .and()
+                .csrf().disable();// post请求要关闭csrf验证,不然访问报错；实际开发中开启，需要前端配合传递其他参数
+    }
+}
+```
+
+
+
+### 认证——UserDetailsService
+
+```java
+@Component
+public class MyUserDetailsService implements UserDetailsService {
+
+    @Reference(version = "2.0.0")
+    private UserService userService;
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        String passwd = "";
+        System.out.println("收到的账号"+username);
+        if (CheckFormat.isEmail(username)){
+             passwd = userService.selectPasswdByEmail(username);
+        }else if (CheckFormat.isPhone(username)){
+             passwd = userService.selectPasswdByPhone(username);
+        }else {
+            throw new RuntimeException("登录账号不存在");
+        }
+        System.out.println("查到的密码"+passwd);
+        return new User(username, passwd, AuthorityUtils.commaSeparatedStringToAuthorityList("ROLE_USER"));
+    }
+}
+这里重写了security认证UserDetailsService 的接口方法，添加了自定义数据库密码的查询和校验。
+```
+
+### 认证失败——SimpleUrlAuthenticationFailureHandler
+
+```java
+/**
+ * 自定义登录失败处理器
+ * Created by Fant.J.
+ */
+@Component
+public class MyAuthenticationFailHandler extends SimpleUrlAuthenticationFailureHandler {
+
+    private Logger logger = LoggerFactory.getLogger(getClass());
+
+    @Override
+    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
+
+        logger.info("登录失败");
+            //设置状态码
+            response.setStatus(500);
+            response.setContentType("application/json;charset=UTF-8");
+            //将 登录失败 信息打包成json格式返回
+            response.getWriter().write(JSON.toJSONString(ServerResponse.createByErrorMessage(exception.getMessage())));
+    }
+}
+```
+
+### 认证成功——SavedRequestAwareAuthenticationSuccessHandler
+
+```java
+/**
+ * Created by Fant.J.
+ */
+@Component
+public class MyAuthenticationSuccessHandler extends SavedRequestAwareAuthenticationSuccessHandler {
+    private Logger logger = LoggerFactory.getLogger(getClass());
+
+    @Autowired
+    private ClientDetailsService clientDetailsService;
+
+    @Autowired
+    private AuthorizationServerTokenServices authorizationServerTokenServices;
+
+
+    @Override
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+        logger.info("登录成功");
+
+
+        String header = request.getHeader("Authorization");
+        if (header == null && !header.startsWith("Basic")) {
+            throw new UnapprovedClientAuthenticationException("请求投中无client信息");
+        }
+        String[] tokens = this.extractAndDecodeHeader(header, request);
+
+        assert tokens.length == 2;
+
+        //获取clientId 和 clientSecret
+        String clientId = tokens[0];
+        String clientSecret = tokens[1];
+
+        //获取 ClientDetails
+        ClientDetails clientDetails = clientDetailsService.loadClientByClientId(clientId);
+
+        if (clientDetails == null){
+            throw new UnapprovedClientAuthenticationException("clientId 不存在"+clientId);
+            //判断  方言  是否一致
+        }else if (!StringUtils.equals(clientDetails.getClientSecret(),clientSecret)){
+            throw new UnapprovedClientAuthenticationException("clientSecret 不匹配"+clientId);
+        }
+        //密码授权 模式, 组建 authentication
+        TokenRequest tokenRequest = new TokenRequest(MapUtils.EMPTY_MAP,clientId,clientDetails.getScope(),"password");
+
+        OAuth2Request oAuth2Request = tokenRequest.createOAuth2Request(clientDetails);
+        OAuth2Authentication oAuth2Authentication = new OAuth2Authentication(oAuth2Request,authentication);
+
+        OAuth2AccessToken token = authorizationServerTokenServices.createAccessToken(oAuth2Authentication);
+
+        //判断是json 格式返回 还是 view 格式返回
+        //将 authention 信息打包成json格式返回
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(JSON.toJSONString(ServerResponse.createBySuccess(token)));
+    }
+
+
+    /**
+     * 解码请求头
+     */
+    private String[] extractAndDecodeHeader(String header, HttpServletRequest request) throws IOException {
+        byte[] base64Token = header.substring(6).getBytes("UTF-8");
+
+        byte[] decoded;
+        try {
+            decoded = Base64.decode(base64Token);
+        } catch (IllegalArgumentException var7) {
+            throw new BadCredentialsException("Failed to decode basic authentication token");
+        }
+
+        String token = new String(decoded, "UTF-8");
+        int delim = token.indexOf(":");
+        if (delim == -1) {
+            throw new BadCredentialsException("Invalid basic authentication token");
+        } else {
+            return new String[]{token.substring(0, delim), token.substring(delim + 1)};
+        }
+    }
+}
+```
+
+### 资源服务器——ResourceServerConfigurerAdapter
+
+### 认证服务器——AuthorizationServerConfigurerAdapter
+
+```java
+/**
+ * 资源服务器
+ * Created by Fant.J.
+ */
+@Configuration
+@EnableResourceServer
+public class MyResourceServerConfig extends ResourceServerConfigurerAdapter {
+
+    @Autowired
+    private MyAuthenticationSuccessHandler myAuthenticationSuccessHandler;
+    @Autowired
+    private MyAuthenticationFailHandler myAuthenticationFailHandler;
+    @Override
+    public void configure(HttpSecurity http) throws Exception {
+        //表单登录 方式
+        http.formLogin()
+                .loginPage("/authentication/require")
+                //登录需要经过的url请求
+                .loginProcessingUrl("/authentication/form")
+                .successHandler(myAuthenticationSuccessHandler)
+                .failureHandler(myAuthenticationFailHandler);
+
+        http
+                .authorizeRequests()
+                .antMatchers("/user/*")
+                .authenticated()
+                .antMatchers("/oauth/token").permitAll()
+                .anyRequest()
+                .permitAll()
+                .and()
+                //关闭跨站请求防护
+                .csrf().disable();
+    }
+}
+只需要认证/user/*开头的url。@EnableResourceServer这个注解就决定了这是个资源服务器。它决定了哪些资源需要什么样的权限。
+
+
+/**
+ * 认证服务器
+ * Created by Fant.J.
+ */
+@Configuration
+@EnableAuthorizationServer
+public class MyAuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
+
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
+
+    @Override
+    public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
+        super.configure(security);
+    }
+
+    /**
+     * 客户端配置（给谁发令牌）
+     * @param clients
+     * @throws Exception
+     */
+    @Override
+    public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+        clients.inMemory().withClient("internet_plus")
+                .secret("internet_plus")
+                //有效时间 2小时
+                .accessTokenValiditySeconds(72000)
+                //密码授权模式和刷新令牌
+                .authorizedGrantTypes({"refresh_token","password"})
+                .scopes( "all");
+    }
+
+    @Override
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+        endpoints
+                .authenticationManager(authenticationManager)
+                .userDetailsService(userDetailsService);
+        }
+    }
+}
+
+@EnableAuthorizationServer就代表了它是个认证服务端。
+```
+
+
+
+````json
+使用
+给/oauth/token 发送post请求获取token
+请求头：Authorization:Basic +clientid:secret 的base64加密字符串 (认证服务器中设置的client信息)
+请求参数：username password (用户登陆账号密码)
+{
+    "data": {
+        "refreshToken": {
+            "expiration": 1528892642111,
+            "value": "xxxxxx-xxxxxx-xxxxx-xxxxxxxx"
+        },
+        "scope": [
+            "all"
+        ],
+        "tokenType": "bearer",
+        "value": "xxxxxx-xxxxxx-xxxxx-xxxxxxxx"
+    },
+    "status": 200,
+    "success": true
+}
+
+给/oauth/token 发送post请求刷新token
+grant_type:refresh_token
+refresh_token:获取token时返回的refreshToken的value
+````
 
