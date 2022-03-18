@@ -109,3 +109,23 @@ robocopy d:\work e:\back /e /max:6000000
 　　xxcopy c: emp*.*/sz:0 /s /h /yy /rs
 ```
 
+
+
+
+
+### 简单的cmd脚本
+
+```cmd
+@echo off
+echo "%JAVA_HOME%"
+exit 0
+cmd /k
+
+
+#说明
+start cmd /k "cd/d D:\AA\service\redis &&redis-server.exe redis.windows.conf &&taskkill /f /t /im cmd.exe"
+start 是用来启动一个应用的，使用方式为：start 程序名
+cmd /k 表示cmd后面的命令执行完后不关闭窗口
+cmd /c 表示执行完cmd命令后关闭命令窗口
+```
+

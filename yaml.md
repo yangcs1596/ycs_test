@@ -682,6 +682,59 @@ redis-cli -c -h 127.0.0.1 -p 7000
 - `-c`表示集群模式；`-h` 指定 ip 地址；`-p` 指定端口。
 - 任意节点使用`cluster nodes` 查看节点列表
 
+#### springboot的配置
+
+~~~yaml
+#单机模式
+spring:
+  redis:
+    host: 192.168.40.201
+    port: 6379
+    password: passw0rd
+    database: 0 # 数据库索引，默认0
+    timeout: 5000  # 连接超时，单位ms
+    jedis:  # 或lettuce, 连接池配置，springboot2.0中使用jedis或者lettuce配置连接池，默认为lettuce连接池
+      pool:
+        max-active: 8 # 连接池最大连接数（使用负值表示没有限制）
+        max-wait: -1 # 连接池分配连接最大阻塞等待时间（阻塞时间到，抛出异常。使用负值表示无限期阻塞）
+        max-idle: 8 # 连接池中的最大空闲连接数
+        min-idle: 0 # 连接池中的最小空闲连接数
+
+#哨兵模式
+```yaml
+spring:
+  redis:
+    password: passw0rd
+    timeout: 5000
+    sentinel:
+      master: mymaster
+      nodes: 192.168.40.201:26379,192.168.40.201:36379,192.168.40.201:46379 # 哨兵的IP:Port列表
+    jedis: # 或lettuce
+      pool:
+        max-active: 8
+        max-wait: -1
+        max-idle: 8
+        min-idle: 0
+```
+
+```yaml
+spring:
+  redis:
+    password: passw0rd
+    timeout: 5000
+    database: 0
+    cluster:
+      nodes: 192.168.40.201:7100,192.168.40.201:7200,192.168.40.201:7300,192.168.40.201:7400,192.168.40.201:7500,192.168.40.201:7600
+      max-redirects: 3  # 重定向的最大次数
+    jedis:
+      pool:
+        max-active: 8
+        max-wait: -1
+        max-idle: 8
+        min-idle: 0
+```
+~~~
+
 ### **启动**
 
 ```json
@@ -782,7 +835,7 @@ logfile ""
 
 
 
-### **可视化工具的控制台语法**
+### **控制台语法**
 
 ```cmd
 连接redis命令 /bin/redis-cli
@@ -982,9 +1035,72 @@ public class ExecutableLock implements Lock {
 
 ```
 
+### Redis限流
+
+目的： 控制用户行为，避免垃圾请求（避免短时间多次操作）。比如一段时间内用户只能操作一个接口1次，或者一段时间内用户只能操作某个行为N次？
+
+![](E:\开发笔记\ycs_test\image\redis的限流漏斗.png)
 
 
-### 谷歌浏览器常用插件
+
+```java
+public enum CellCommand implements ProtocolCommand {
+    CLTHROTTLE("CL.THROTTLE");
+
+    private final byte[] raw;
+    CellCommand(String alt) {
+        raw = SafeEncoder.encode(alt);
+    }
+    public byte[] getRaw() {
+        return raw;
+    }
+}
+
+/**
+ * 测试
+ */
+public class ThrottleTest {
+    public static void main(String[] args) throws InterruptedException {
+        Jedis jedis = new Jedis("localhost", 6379);
+        jedis.auth("123456");
+        for (int i = 0; i < 50; i++) {
+            Connection client = jedis.getClient();
+            client.sendCommand(CellCommand.CLTHROTTLE, "user123", "15", "30", "60", "2");
+            List<Long> replay = client.getIntegerMultiBulkReply();
+            if (replay.get(0) == 0) {
+                System.out.println("系统可用，" + i + "号用户可以通过");
+                Thread.sleep(1000);
+            } else {
+                System.out.println("系统繁忙，" + i + "号用户限制通过，请稍候重试！");
+            }
+            client.close();
+        }
+    }
+}
+```
+
+### 分布式环境下限流器springboot实现，令牌桶
+
+令牌桶算法：
+生产逻辑：程序以恒定的速率产生令牌，然后把令牌放到令牌桶中，令牌桶有一个容量，当令牌桶满了的时候，无法再向桶中放置令牌；
+
+消费逻辑：当想要处理一个请求的时候，则从令牌桶中取出一个令牌，如果此时令牌桶中没有令牌，那么则拒绝处理请求。
+
+优点：既能限制数据的平均传输速率，又能允许某种程度的突发传输；
+
+
+
+```xml
+<dependency>
+    <groupId>org.redisson</groupId>
+    <artifactId>redisson</artifactId>
+    <version>3.14.1</version>
+</dependency>
+```
+
+
+
+## 谷歌浏览器常用插件
 
 * **postman**  网页调试与发送网页HTTP请求  接口测试
 * **Json Viewer** 格式化请求接口，返回Json数据格式
@@ -3562,10 +3678,7 @@ spring:
 
 
 
-### Kibana 可视化工具 
-
-* 与 搜索引擎Elasticsearch 合作
-* 日志可视化工具
+* 
 
 ## RabbitMQ 的使用
 
@@ -3582,7 +3695,11 @@ spring:
 
 ```
 
-##### 搭建集群  假设环境如下：
+##### 主从模式集群  
+
+缺点：主节点挂了，从节点也就挂了
+
+假设环境如下：
 
 1、两台Centos7的机器，hostname分别为：F , G .
 
@@ -3709,6 +3826,54 @@ spring.rabbitmq.password=guest
 
 
 
+#### SpringBoot配置说明
+
+```yaml
+ rabbitmq:
+    addresses: 127.0.0.1:6605,127.0.0.1:6606,127.0.0.1:6705 #指定client连接到的server的地址，多个以逗号分隔(优先取addresses，然后再取host)
+#    port:
+    ##集群配置 addresses之间用逗号隔开
+    # addresses: ip:port,ip:port
+    password: admin
+    username: 123456
+    virtual-host: / # 连接到rabbitMQ的vhost
+    requested-heartbeat: #指定心跳超时，单位秒，0为不指定；默认60s
+    publisher-confirms: #是否启用 发布确认
+    publisher-reurns: # 是否启用发布返回
+    connection-timeout: #连接超时，单位毫秒，0表示无穷大，不超时
+    cache:
+      channel.size: # 缓存中保持的channel数量
+      channel.checkout-timeout: # 当缓存数量被设置时，从缓存中获取一个channel的超时时间，单位毫秒；如果为0，则总是创建一个新channel
+      connection.size: # 缓存的连接数，只有是CONNECTION模式时生效
+      connection.mode: # 连接工厂缓存模式：CHANNEL 和 CONNECTION
+    listener:
+      simple.auto-startup: # 是否启动时自动启动容器
+      simple.acknowledge-mode: # 表示消息确认方式，其有三种配置方式，分别是none、manual和auto；默认auto
+      simple.concurrency: # 最小的消费者数量
+      simple.max-concurrency: # 最大的消费者数量
+      simple.prefetch: # 指定一个请求能处理多少个消息，如果有事务的话，必须大于等于transaction数量.
+      simple.transaction-size: # 指定一个事务处理的消息数量，最好是小于等于prefetch的数量.
+      simple.default-requeue-rejected: # 决定被拒绝的消息是否重新入队；默认是true（与参数acknowledge-mode有关系）
+      simple.idle-event-interval: # 多少长时间发布空闲容器时间，单位毫秒
+      simple.retry.enabled: # 监听重试是否可用
+      simple.retry.max-attempts: # 最大重试次数
+      simple.retry.initial-interval: # 第一次和第二次尝试发布或传递消息之间的间隔
+      simple.retry.multiplier: # 应用于上一重试间隔的乘数
+      simple.retry.max-interval: # 最大重试时间间隔
+      simple.retry.stateless: # 重试是有状态or无状态
+    template:
+      mandatory: # 启用强制信息；默认false
+      receive-timeout: # receive() 操作的超时时间
+      reply-timeout: # sendAndReceive() 操作的超时时间
+      retry.enabled: # 发送重试是否可用
+      retry.max-attempts: # 最大重试次数
+      retry.initial-interval: # 第一次和第二次尝试发布或传递消息之间的间隔
+      retry.multiplier: # 应用于上一重试间隔的乘数
+      retry.max-interval: #最大重试时间间隔
+```
+
+
+
  https://www.jianshu.com/p/188453d4b79c 浏览器端的使用
 
 对于 @RabbitListener 这个注解要注意
@@ -3744,6 +3909,8 @@ rabbitmq-server -detached 后台启动
 rabbitmq-server status
 
 ```
+
+
 
 #### 配置信息
 
@@ -4112,6 +4279,125 @@ vim /usr/local/nginx/conf/nginx.conf
 [root@localhost ~]# vim /usr/local/nginx/conf/nginx.conf
 ```
 
+#### NGINX主从备份
+
+ NGINX实现主从备份目前主流方案是Keepalived+Nginx实现双机热备。
+
+[　　Keepalived](http://www.keepalived.org/)是一个免费开源的，用C编写的类似于layer3, 4 & 7交换机制软件, 而高可用是通过VRRP协议实现多台机器之间的故障转移服务。
+
+
+
+* Keepalived的配置
+
+　　配置NGINX的主备自动重启
+
+　　1、对配置文件进行修改：vim /etc/keepalived/keepalived.conf
+
+　　　　1）修改master NGINX配置
+
+```bash
+! Configuration File for keepalived
+
+global_defs {
+router_id bhz005 ##标识节点的字符串，通常为hostname
+}
+## keepalived会定时执行脚本并且对脚本的执行结果进行分析，动态调整vrrp_instance的优先级。这里的权重weight 是与下面的优先级priority有关，如果执行了一次检查脚本成功，则权重会-20，也就是由100 - 20 变成了80，Master 的优先级为80 就低于了Backup的优先级90，那么会进行自动的主备切换。
+如果脚本执行结果为0并且weight配置的值大于0，则优先级会相应增加。
+如果脚本执行结果不为0 并且weight配置的值小于0，则优先级会相应减少。
+vrrp_scriptchk_nginx {
+    script "/etc/keepalived/nginx_check.sh" ##执行脚本位置
+    interval 2 ##检测时间间隔
+    weight -20 ## 如果条件成立则权重减20（-20）
+}
+## 定义虚拟路由 VI_1为自定义标识。
+vrrp_instance VI_1 {
+state MASTER   ## 主节点为MASTER，备份节点为BACKUP
+## 绑定虚拟IP的网络接口（网卡），与本机IP地址所在的网络接口相同（我这里是eth6）
+interface eth6  
+virtual_router_id 172  ## 虚拟路由ID号
+mcast_src_ip 192.168.1.172  ## 本机ip地址
+priority 100  ##优先级配置（0-254的值）
+Nopreempt  ## 
+advert_int 1 ## 组播信息发送间隔，俩个节点必须配置一致，默认1s
+authentication {  
+auth_type PASS
+auth_passbhz ## 真实生产环境下对密码进行匹配
+    }
+
+track_script {
+chk_nginx
+    }
+
+virtual_ipaddress {
+        192.168.1.170 ## 虚拟ip(vip)，可以指定多个
+    }
+}
+```
+
+2）修改Backup NGINX配置
+
+```bash
+! Configuration File for keepalived
+
+global_defs {
+router_id bhz006
+}
+
+vrrp_scriptchk_nginx {
+script "/etc/keepalived/nginx_check.sh"
+interval 2
+weight -20
+}
+
+vrrp_instance VI_1 {
+state BACKUP
+interface eth7
+virtual_router_id 173
+mcast_src_ip 192.168.1.173
+priority 90 ##优先级配置
+advert_int 1
+authentication {
+auth_type PASS
+auth_passbhz
+    }
+
+track_script {
+chk_nginx
+    }
+
+virtual_ipaddress {
+        192.168.1.170
+    }
+}
+```
+
+3）nginx_check.sh 脚本
+
+```bash
+#!/bin/bash
+A=`ps -C nginx–no-header |wc -l`
+if [ $A -eq 0 ];then
+    /usr/local/nginx/sbin/nginx
+sleep 2
+if [ `ps -C nginx --no-header |wc -l` -eq 0 ];then
+killallkeepalived
+fi
+fi
+```
+
+再把master的keepalived配置文件 copy到master机器（172）的/etc/keepalived/ 文件夹下，在把backup的keepalived配置文件copy到backup机器（173）的 /etc/keepalived/ 文件夹下，最后把nginx_check.sh脚本分别copy到两台机器的 /etc/keepalived/文件夹下。
+
+eepalived常用命令
+
+```bash
+servicekeepalived start
+servicekeepalived stop
+```
+
+
+
+
+
 #### 配置
 
 Nginx 是一款自由的、开源的、高性能的 HTTP **服务器和反向代理服务器**；同时也是一个 IMAP、POP3、SMTP 代理服务器。
@@ -4202,6 +4488,17 @@ http {
 }
 
 ```
+
+#### Nginx的一些导出超时问题
+
+```nginx
+ #请求时间
+ proxy_connect_timeout     60s;
+ proxy_read_timeout        1m;
+ proxy_send_timeout        1m;
+```
+
+
 
 #### 其它说明配置
 
@@ -4353,6 +4650,14 @@ http {
 }
 
 ```
+
+#### 
+
+
+
+
+
+
 
 
 
@@ -4668,11 +4973,245 @@ enable_all  disable_all 't.8'
 #退出exit
 ```
 
+## zookeeper
 
+### 集群搭建
+
+由于zookeeper集群的运行需要Java运行环境，所以需要首先安装 JDK
+
+在 /usr/local 目录下新建 software 目录，然后将 zookeeper 压缩文件上传到该目录中，然后通过如下命令解压。
+
+```
+tar -zxvf zookeeper-3.3.6.tar.gz
+```
+
+将 zoo_sample.cfg 文件复制并重命名为 zoo.cfg 文件。
+
+```
+cp zoo_sample.cfg zoo.cfg
+```
+
+编辑zoo.cfg的配置
+
+```bash
+tickTime=2000
+initLimit=10
+syncLimit=5
+dataDir=data
+clientPort=2181
+
+server.1=hdfs1.safedog.cn:2888:3888
+server.2=hdfs2.safedog.cn:2888:3888
+server.3=hdfs3.safedog.cn:2888:3888
+
+
+配置解释
+#tickTime：
+这个时间是作为 Zookeeper 服务器之间或客户端与服务器之间维持心跳的时间间隔，也就是每个 tickTime 时间就会发送一个心跳。
+#initLimit：
+这个配置项是用来配置 Zookeeper 接受客户端（这里所说的客户端不是用户连接 Zookeeper 服务器的客户端，而是 Zookeeper 服务器集群中连接到 Leader 的 Follower 服务器）初始化连接时最长能忍受多少个心跳时间间隔数。当已经超过 5个心跳的时间（也就是 tickTime）长度后 Zookeeper 服务器还没有收到客户端的返回信息，那么表明这个客户端连接失败。总的时间长度就是 5*2000=10 秒
+#syncLimit：
+这个配置项标识 Leader 与Follower 之间发送消息，请求和应答时间长度，最长不能超过多少个 tickTime 的时间长度，总的时间长度就是5*2000=10秒
+#dataDir：
+快照日志的存储路径
+除非另有说明，否则指向数据库更新的事务日志。注意：应该谨慎的选择日志存放的位置，使用专用的日志存储设备能够大大提高系统的性能，如果将日志存储在比较繁忙的存储设备上，那么将会很大程度上影像系统性能。
+#dataLogDir：
+事物日志的存储路径，如果不配置这个那么事物日志会默认存储到dataDir制定的目录，这样会严重影响zk的性能，当zk吞吐量较大的时候，产生的事物日志、快照日志太多
+#clientPort：
+这个端口就是客户端连接 Zookeeper 服务器的端口，Zookeeper 会监听这个端口，接受客户端的访问请求。修改他的端口改大点
+#
+server.A=B:C:D 配置，其中 A 对应下面我们即将介绍的myid 文件。B是集群的各个IP地址，C:D 是端口配置。
+```
+
+#### 创建myid文件
+
+例子 ： server.0=192.168.146.200:2888:3888
+
+那么就必须在 192.168.146.200 机器的的 /usr/local/software/zookeeper-3.3.6/data 目录下创建 myid 文件，然后在该文件中写上 0 即可。
+
+后面的机器依次在相应目录创建myid文件，写上相应配置数字即可。
+
+```
+#myid文件
+0
+```
+
+命令
+
+```
+echo "0" > /opt/zookeeper/zkdata/myid
+```
+
+* 全局配置zk命令，非必要
+
+  首先进入到 /etc/profile 目录，添加相应的配置信息：
+
+  ```bash
+  #set zookeeper environment
+  export ZK_HOME=/usr/local/software/zookeeper-3.3.6
+  export PATH=$PATH:$ZK_HOME/bin
+  ```
+
+  　　然后通过如下命令使得环境变量生效：
+
+  ```bash
+  source /etc/profle
+  ```
+
+启动命令：
+
+```
+zkServer.sh start
+```
+
+　　停止命令：
+
+```
+zkServer.sh stop
+```
+
+　　重启命令：
+
+```
+zkServer.sh restart
+```
+
+　　查看集群节点状态：
+
+```
+zkServer.sh status
+```
 
 ## Kafka 
 
-springboot集成
+### 概念
+
+1、主题（Topic）：一个主题类似新闻中的体育、娱乐、教育等分类概念，在实际工程中通常一个业务一个主题。
+
+2、分区（Partition）：一个Topic中的消息数据按照多个分区组织，分区是kafka消息队列组织的最小单位，一个分区可以看作是一个FIFO（ First Input First Output的缩写，先入先出队列）的队列。
+
+### 集群搭建
+
+重要点
+
+旧版本依赖zookeeper， 新版本kafka v2.8之后不再依赖zookeeper， 查看server.properties的连接配置
+
+```
+#集群连接
+zookeeper.connect=hdfs1.safedog.cn:2181,hdfs2.safedog.cn:2181,hdfs3.safedog.cn:2181/kafka
+# Timeout in ms for connecting to zookeeper
+# 客户端等待与 ZooKeeper 建立连接的最长时间
+zookeeper.connection.timeout.ms=30000
+# ZooKeeper 会话超时时间
+zookeeper.session.timeout.ms=20000
+```
+
+
+
+Kafka集群是把状态保存在Zookeeper中的，首先要搭建Zookeeper集群。
+
+* zookeeper的conf文件配置
+
+```
+tickTime=2000
+initLimit=10
+syncLimit=5
+dataDir=/opt/zookeeper/zkdata
+dataLogDir=/opt/zookeeper/zkdatalog
+clientPort=12181
+server.1=192.168.7.100:12888:13888
+server.2=192.168.7.101:12888:13888
+server.3=192.168.7.107:12888:13888
+#server.1 这个1是服务器的标识也可以是其他的数字， 表示这个是第几号服务器，用来标识服务器，这个标识要写到快照目录下面myid文件里
+#192.168.7.107为集群里的IP地址，第一个端口是master和slave之间的通信端口，默认是2888，第二个端口是leader选举的端口，集群刚启动的时候选举或者leader挂掉之后进行新的选举的端口默认是3888
+```
+
+* 创建myid文件
+
+```
+
+#server1
+echo "1" > /opt/zookeeper/zkdata/myid
+#server2
+echo "2" > /opt/zookeeper/zkdata/myid
+#server3
+echo "3" > /opt/zookeeper/zkdata/myid
+
+ 4、重要配置说明
+1、myid文件和server.myid  在快照目录下存放的标识本台服务器的文件，他是整个zk集群用来发现彼此的一个重要标识。
+2、zoo.cfg 文件是zookeeper配置文件 在conf目录里。
+3、log4j.properties文件是zk的日志输出文件 在conf目录里用java写的程序基本上有个共同点日志都用log4j，来进行管理。
+```
+
+* zkEnv.sh和zkServer.sh文件
+
+zkServer.sh 主的管理程序文件
+
+zkEnv.sh 是主要配置，zookeeper集群启动时配置环境变量的文件
+
+* 还有一个需要注意
+
+ZooKeeper server **will not remove old snapshots and log files** when using the default configuration (see autopurge below), this is the responsibility of the operator
+
+zookeeper不会主动的清除旧的快照和日志文件，这个是操作者的责任。
+
+但是可以通过命令去定期的清理。
+
+```
+#!/bin/bash 
+#snapshot file dir 
+dataDir=/opt/zookeeper/zkdata/version-2
+#tran log dir 
+dataLogDir=/opt/zookeeper/zkdatalog/version-2
+#Leave 66 files 
+count=66 
+count=$[$count+1] 
+ls -t $dataLogDir/log.* | tail -n +$count | xargs rm -f 
+ls -t $dataDir/snapshot.* | tail -n +$count | xargs rm -f 
+
+#以上这个脚本定义了删除对应两个目录中的文件，保留最新的66个文件，可以将他写到crontab中，设置为每天凌晨2点执行一次就可以了。
+#zk log dir   del the zookeeper log
+#logDir=
+#ls -t $logDir/zookeeper.log.* | tail -n +$count | xargs rm -f
+
+其他方法：
+第二种：使用ZK的工具类PurgeTxnLog，它的实现了一种简单的历史文件清理策略，可以在这里看一下他的使用方法 http://zookeeper.apache.org/doc/r3.4.6/zookeeperAdmin.html 
+第三种：对于上面这个执行，ZK自己已经写好了脚本，在bin/zkCleanup.sh中，所以直接使用这个脚本也是可以执行清理工作的。
+第四种：从3.4.0开始，zookeeper提供了自动清理snapshot和事务日志的功能，通过配置 autopurge.snapRetainCount 和 autopurge.purgeInterval 这两个参数能够实现定时清理了。这两个参数都是在zoo.cfg中配置的：
+autopurge.purgeInterval  这个参数指定了清理频率，单位是小时，需要填写一个1或更大的整数，默认是0，表示不开启自己清理功能。
+autopurge.snapRetainCount 这个参数和上面的参数搭配使用，这个参数指定了需要保留的文件数目。默认是保留3个。
+
+
+```
+
+**5、启动服务并查看**
+
+1、启动服务
+
+```bash
+#进入到Zookeeper的bin目录下
+cd /opt/zookeeper/zookeeper-3.4.6/bin
+#启动服务（3台都需要操作）
+./zkServer.sh start
+```
+
+2、检查服务状态
+
+```bash
+#检查服务器状态
+./zkServer.sh status
+```
+
+通过status就能看到状态：
+
+```
+./zkServer.sh status
+JMX enabled by default
+Using config: /opt/zookeeper/zookeeper-3.4.6/bin/../conf/zoo.cfg  #配置文件
+Mode: follower  #他是否为领导
+```
+
+### springboot集成
 
 ```xml
 <!--引入kafak和spring整合的jar-->
@@ -4681,6 +5220,19 @@ springboot集成
     <artifactId>spring-kafka</artifactId>
     <version>2.2.7.RELEASE</version>
 </dependency>
+```
+
+```yaml
+#application.yaml 集群连接配置
+spring:
+    kafka:
+      bootstrap-servers: http://master:9092,http://worker1:9092,http://worker2:9092
+      producer:
+        retries: 0
+        batch-size: 16384
+        buffer-memory: 33554432
+        key-serializer: org.apache.kafka.common.serialization.StringSerializer
+        value-serializer: org.apache.kafka.common.serialization.StringSerializer
 ```
 
 
@@ -4716,6 +5268,18 @@ public class Consumer {
 ```
 
 ### 客户端命令
+
+
+
+注意点：
+
+```
+#bootstrap-servers vs zookeeper
+都是指的是目标集群的服务器地址
+zookeeper - 旧版Kafka的参数
+bootstrap.server - 新版Kafka的参数
+Kafka开发团队重写了ZooKeeper的Quorum控制器代码并嵌入到Kafka中。所以从v2.8版本开始，Kafka不再依赖ZooKeeper
+```
 
 1、启动kafka服务
 
@@ -4766,14 +5330,16 @@ kafka_2.10-0.8.2.2.jar
 
 6、删除一个话题
 
-```
+```bash
 ./kafka-topics.sh --zookeeper localhost:2181 --delete  --topic test
+
 ```
 
 7、创建一个叫test的话题，有两个分区，每个分区3个副本
 
-```
+```bash
 ./kafka-topics.sh --zookeeper localhost:2181 --create --topic test --replication-factor 3 --partitions 2
+./kafka-topics.sh --bootstrap-servers localhost:2181 --create --topic test --replication-factor 3 --partitions 2
 ```
 
  8、测试kafka发送和接收消息（启动两个终端）
@@ -5448,7 +6014,7 @@ exec
 
 ### POM配置私服maven地址
 
-Nexus搭建私有仓库
+### Nexus搭建私有仓库
 
 Nexus的type说明
 
@@ -5816,7 +6382,7 @@ maven 默认的打包类型为 jar，
 </distributionManagement>
 ```
 
-#### mvn命令jar包发到私服命
+#### mvn deploy命令jar或者pom文件发到私服
 
 ```shell
 #实际执行的时候都在同一行，也不要多空格，在pom的根目录下执行
@@ -5826,14 +6392,13 @@ mvn deploy:deploy-file
 -DgroupId=groupID 
 -DartifactId=artifacid 
 -Dversion=版本号 
--Dpackaging=jar 
+-Dpackaging=jar 此处可以是pom或者jar
 -Durl=http://ip:port/nexus/content/repositories/thirdparty/ 
--DrepositoryId=nexus
+-DrepositoryId=nexus 指定仓库
 这个是为了避免打包多时间戳
 -DuseUniqueVersions=false
 
-说明：
-DrepositoryId : 身份信息。可能是setting里的配置
+说明：DrepositoryId : 身份信息。可能是maven的setting.xml里，注意<server>的配置
 ```
 
 **备注： 注意不要换行和多余空格**
@@ -5884,6 +6449,160 @@ deploy去掉时间戳
     </configuration>
 </plugin>
 ```
+
+#### mvn构建的配置
+
+```xml
+<build>
+
+    <!-- 产生的构件的文件名，默认值是${artifactId}-${version}。 --> 
+    <finalName>myPorjectName</finalName> 
+
+    <!-- 构建产生的所有文件存放的目录,默认为${basedir}/target，即项目根目录下的target --> 
+    <directory>${basedir}/target</directory> 
+    
+    <!-- 当项目没有规定目标（Maven2 叫做阶段（phase））时的默认值，
+        必须跟命令行上的参数相同例如jar:jar，或者与某个阶段（phase）相同例如install、compile等 --> 
+    <defaultGoal>install</defaultGoal>
+        
+    <!-- 当filtering开关打开时，使用到的过滤器属性文件列表。
+        项目配置信息中诸如${spring.version}之类的占位符会被属性文件中的实际值替换掉 --> 
+    <filters>
+            <filter>../filter.properties</filter>
+    </filters> 
+    
+    <!-- 项目相关的所有资源路径列表，例如和项目相关的配置文件、属性文件，这些资源被包含在最终的打包文件里。 --> 
+    <resources> 
+        <resource> 
+        
+            <!-- 描述了资源的目标路径。该路径相对target/classes目录（例如${project.build.outputDirectory}）。
+            举个例子，如果你想资源在特定的包里(org.apache.maven.messages)，你就必须该元素设置为org/apache/maven/messages。
+            然而，如果你只是想把资源放到源码目录结构里，就不需要该配置。 --> 
+            <targetPath>resources</targetPath> 
+            
+            <!-- 是否使用参数值代替参数名。参数值取自properties元素或者文件里配置的属性，文件在filters元素里列出。 --> 
+            <filtering>true</filtering> 
+            
+            <!-- 描述存放资源的目录，该路径相对POM路径 --> 
+            <directory>src/main/resources</directory> 
+            
+            <!-- 包含的模式列表 --> 
+            <includes>  
+                <include>**/*.properties</include>  
+                <include>**/*.xml</include>  
+            </includes>  
+            
+            <!-- 排除的模式列表
+                如果<include>与<exclude>划定的范围存在冲突，以<exclude>为准 --> 
+            <excludes>  
+                <exclude>jdbc.properties</exclude>  
+                </excludes> 
+        
+        </resource> 
+    </resources> 
+    
+    <!-- 单元测试相关的所有资源路径，配制方法与resources类似--> 
+    <testResources> 
+        <testResource> 
+            <targetPath /><filtering /><directory /><includes /><excludes /> 
+        </testResource> 
+    </testResources> 
+    
+    <!-- 项目源码目录，当构建项目的时候，构建系统会编译目录里的源码。该路径是相对于pom.xml的相对路径。 --> 
+    <sourceDirectory>${basedir}\src\main\java</sourceDirectory> 
+    
+    <!-- 项目脚本源码目录，该目录和源码目录不同，
+        绝大多数情况下，该目录下的内容会被拷贝到输出目录(因为脚本是被解释的，而不是被编译的)。 --> 
+    <scriptSourceDirectory>${basedir}\src\main\scripts</scriptSourceDirectory>
+    
+    <!-- 项目单元测试使用的源码目录，当测试项目的时候，构建系统会编译目录里的源码。该路径是相对于pom.xml的相对路径。 --> 
+    <testSourceDirectory>${basedir}\src\test\java</testSourceDirectory>
+    
+    <!-- 被编译过的应用程序class文件存放的目录。 --> 
+    <outputDirectory>${basedir}\target\classes</outputDirectory>
+    
+    <!-- 被编译过的测试class文件存放的目录。 --> 
+    <testOutputDirectory>${basedir}\target\test-classes</testOutputDirectory> 
+    
+    <!-- 项目的一系列构建扩展,它们是一系列build过程中要使用的产品，会包含在running bulid‘s classpath里面。
+        他们可以开启extensions，也可以通过提供条件来激活plugins。
+        简单来讲，extensions是在build过程被激活的产品--> 
+    <extensions> 
+    
+        <!-- 例如，通常情况下，程序开发完成后部署到线上Linux服务器，可能需要经历打包、
+            将包文件传到服务器、SSH连上服务器、敲命令启动程序等一系列繁琐的步骤。
+            实际上这些步骤都可以通过Maven的一个插件 wagon-maven-plugin 来自动完成
+            下面的扩展插件wagon-ssh用于通过SSH的方式连接远程服务器，
+            类似的还有支持ftp方式的wagon-ftp插件 --> 
+        <extension> 
+            <groupId>org.apache.maven.wagon</groupId>
+            <artifactId>wagon-ssh</artifactId>
+            <version>2.8</version>
+        </extension> 
+    
+    </extensions> 
+
+    <!-- 使用的插件列表 。 --> 
+    <plugins> 
+        <plugin> 
+            <groupId></groupId>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <version>2.5.5</version>
+            
+            <!-- 在构建生命周期中执行一组目标的配置。每个目标可能有不同的配置。 --> 
+            <executions>
+                <execution>
+                
+                        <!-- 执行目标的标识符，用于标识构建过程中的目标，或者匹配继承过程中需要合并的执行目标 --> 
+                    <id>assembly</id>
+                    
+                    <!-- 绑定了目标的构建生命周期阶段，如果省略，目标会被绑定到源数据里配置的默认阶段 --> 
+                    <phase>package</phase>
+                    
+                    <!-- 配置的执行目标 --> 
+                    <goals>
+                        <goal>single</goal>
+                    </goals>
+                    
+                    <!-- 配置是否被传播到子POM --> 
+                    <inherited>false</inherited> 
+                    
+                </execution>
+            </executions>
+            
+            <!-- 作为DOM对象的配置,配置项因插件而异 -->
+            <configuration>
+                <finalName>${finalName}</finalName>
+                <appendAssemblyId>false</appendAssemblyId>
+                <descriptor>assembly.xml</descriptor>
+            </configuration>
+        
+            <!-- 是否从该插件下载Maven扩展（例如打包和类型处理器），
+                由于性能原因，只有在真需要下载时，该元素才被设置成true。 --> 
+            <extensions>false</extensions> 
+            
+            <!-- 项目引入插件所需要的额外依赖 --> 
+            <dependencies> 
+                <dependency>...</dependency> 
+            </dependencies> 
+            
+            <!-- 任何配置是否被传播到子项目 --> 
+            <inherited>true</inherited>
+        
+        </plugin> 
+    </plugins> 
+ 
+    <!-- 主要定义插件的共同元素、扩展元素集合，类似于dependencyManagement，
+        所有继承于此项目的子项目都能使用。该插件配置项直到被引用时才会被解析或绑定到生命周期。
+        给定插件的任何本地配置都会覆盖这里的配置 --> 
+    <pluginManagement> 
+        <plugins>...</plugins>
+    </pluginManagement>
+    
+</build>
+```
+
+
 
 #### java打包项目的配置
 
@@ -6978,6 +7697,293 @@ spec:
 [root@node1 rc]# kubectl rolling-update myweb myweb2 --rollback
 ```
 
+## K8s部署springcloud的学习
+
+### deploy配置
+
+```yaml
+#deploy
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arachni
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: arachni
+  template:
+    metadata:
+      labels:
+        app: arachni
+    spec:
+      containers:
+      - image: arachni/arachni
+        imagePullPolicy: Always
+        name: arachni
+        ports:
+        - containerPort: 9292
+          protocol: TCP
+        - containerPort: 7331
+          protocol: TCP        
+
+
+#service
+apiVersion: v1
+kind: Service
+metadata:
+  name: arachni
+  namespace: default
+spec:
+  ports:
+  - name: web
+    nodePort: 30003
+    port: 9292
+    protocol: TCP
+    targetPort: 9292
+  - name: api
+    nodePort: 30004
+    port: 7331
+    protocol: TCP
+    targetPort: 7331
+  selector:
+    app: arachni
+  sessionAffinity: None
+  type: NodePort
+
+
+
+```
+
+网上例子资料学习
+
+* 环境准备
+
+```bash
+安装jdk和maven环境
+[root@k8s-master ~]# yum install java-1.8.0-openjdk maven -y
+[root@k8s-master ~]# java -version
+openjdk version "1.8.0_242"
+OpenJDK Runtime Environment (build 1.8.0_242-b08)
+OpenJDK 64-Bit Server VM (build 25.242-b08, mixed mode)
+[root@k8s-master ~]# mvn -version
+Apache Maven 3.0.5 (Red Hat 3.0.5-17)
+Maven home: /usr/share/maven
+Java version: 1.8.0_242, vendor: Oracle Corporation
+Java home: /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/jre
+Default locale: en_US, platform encoding: UTF-8
+OS name: "linux", version: "3.10.0-957.el7.x86_64", arch: "amd64", family: "unix"
+
+设置maven的国内镜像源
+/etc/maven/settings.xml
+
+<mirror>
+  <id>nexus-aliyun</id>
+  <mirrorOf>*</mirrorOf>
+  <name>Nexus aliyun</name>
+  <url>http://maven.aliyun.com/nexus/content/groups/public</url>
+</mirror>
+```
+
+
+
+```shell
+#Dockerfile例子
+FROM lizhenliang/java:8-jdk-alpine
+LABEL maintainer www.ctnrs.com
+ENV JAVA_ARGS="-Dfile.encoding=UTF8 -Duser.timezone=GMT+08"
+COPY ./target/gateway-service.jar ./
+COPY pinpoint /pinpoint
+EXPOSE 9999
+CMD java -jar -javaagent:/pinpoint/pinpoint-bootstrap-1.8.3.jar -Dpinpoint.agentId=$(echo $HOSTNAME | awk -F- '{print "gateway-"$NF}') -Dpinpoint.applicationName=ms-gateway $JAVA_ARGS $JAVA_OPTS /gateway-service.jar
+
+
+#docker.builder.sh
+kubectl create ns ms
+docker_registry=192.168.73.137
+kubectl create ns ms
+kubectl create secret docker-registry registry-pull-secret --docker-server=$docker_registry --docker-username=admin --docker-password=Harbor12345 --docker-email=admin@ctnrs.com -n ms
+service_list="eureka-service gateway-service order-service product-service stock-service portal-service"
+service_list=${1:-${service_list}}
+work_dir=$(dirname $PWD)
+current_dir=$PWD
+
+cd $work_dir
+mvn clean package -Dmaven.test.skip=true
+
+for service in $service_list; do
+   cd $work_dir/$service
+   if ls |grep biz &>/dev/null; then
+      cd ${service}-biz
+   fi
+   service=${service%-*}
+   image_name=$docker_registry/microservice/${service}:$(date +%F-%H-%M-%S)
+   docker build -t ${image_name} .
+   docker push ${image_name}
+done
+[root@k8s-master k8s]# ./docker_build.sh
+
+
+#服务编排
+[root@k8s-master k8s]# cat gateway.yaml
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: gateway
+  namespace: ms
+spec:
+  rules:
+    - host: gateway.ctnrs.com
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: gateway
+            servicePort: 9999
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: ms
+spec:
+  ports:
+  - port: 9999
+    name: gateway
+  selector:
+    project: ms
+    app: gateway
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: ms
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      project: ms
+      app: gateway
+  template:
+    metadata:
+      labels:
+        project: ms
+        app: gateway
+    spec:
+      imagePullSecrets:
+      - name: registry-pull-secret
+      containers:
+      - name: gateway
+        image: 192.168.73.137/microservice/gateway:2020-03-08-16-40-54  #注意修改镜像地址
+        imagePullPolicy: Always
+        ports:
+          - protocol: TCP
+            containerPort: 9999
+        env:
+          - name: JAVA_OPTS
+            value: "-Xmx1g"
+        resources:
+          requests:
+            cpu: 0.5
+            memory: 256Mi
+          limits:
+            cpu: 1
+            memory: 1Gi
+        readinessProbe:
+          tcpSocket:
+            port: 9999
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 9999
+          initialDelaySeconds: 60
+          periodSeconds: 10
+#portal
+ [root@k8s-master k8s]# cat product.yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: portal
+  namespace: ms
+spec:
+  rules:
+    - host: portal.ctnrs.com
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: portal
+            servicePort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portal
+  namespace: ms
+spec:
+  ports:
+  - port: 8080
+    name: portal
+  selector:
+    project: ms
+    app: portal
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portal
+  namespace: ms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      project: ms
+      app: portal
+  template:
+    metadata:
+      labels:
+        project: ms
+        app: portal
+    spec:
+      imagePullSecrets:
+      - name: registry-pull-secret
+      containers:
+      - name: portal
+        image: 192.168.73.137/microservice/portal:2020-03-08-16-41-31  #此处的镜像地址，可配置成lastest？
+        imagePullPolicy: Always
+        ports:
+          - protocol: TCP
+            containerPort: 8080
+        env:
+          - name: JAVA_OPTS
+            value: "-Xmx1g"
+        resources:
+          requests:
+            cpu: 0.5
+            memory: 256Mi
+          limits:
+            cpu: 1
+            memory: 1Gi
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+#部署前端（portal）
+"注意修改yaml中的镜像地址"
+[root@k8s-master k8s]# kubectl create -f portal.yaml
+
+```
+
 
 
 #### 组件
@@ -7870,7 +8876,7 @@ public final class SysSession {
 
 
 
-### MYCAT爬坑
+## MYCAT爬坑
 
 总结：  因为mycat中分片表中的分片字段是不能更新的，所以减少left join 的复杂SQL
 
@@ -7887,6 +8893,7 @@ public final class SysSession {
 
 下载地址： https://github.com/MyCATApache/Mycat-download
 
+## Sharding-jdbc
 
 
 
@@ -7985,6 +8992,15 @@ git checkout -- aaa.html
 
 
 
+## 日志服务器的搭建
+
+* syslog4j
+
+### Kibana 可视化工具 
+
+* 与 搜索引擎Elasticsearch 合作, logstash
+* 日志可视化工具
+
 # 工具总结
 
 pdman 数据库设计
@@ -7995,9 +9011,13 @@ onlyOffice开源文档编辑器  [kkFileView](https://gitee.com/kekingcn/file-on
 
 **后端：**Redis、MQ、SringBoot、Dubbo、SringCloud、Nacos、Mycat、Mybatis-PLUS、
 
-**Linux：**Nginx、Docker、Kubernetes、Jenkins、kibana、elasticsearch、fastDFS、Portainer
+**Linux：**Nginx、Docker、Kubernetes、Jenkins、kibana、elasticsearch、fastDFS、Portainer(docker管理工具)
 
 **代码管理：** SVNtortoise、Git、GitLable、私服Nexus
+
+
+
+思维导图软件：XMind， GitMind
 
 
 

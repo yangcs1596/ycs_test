@@ -733,6 +733,18 @@ Object obj=method.invoke(clazz.newInstance(), methodparams);//obj为clazz类的m
 3、equals 一般常量放在前面比较
 ```
 
+##### 1-1-3运行java文件
+
+```cmd
+#编译
+javac Test.java  //涉及编码问题 javac -encoding UTF-8 Test.java
+#运行
+java Test // 文件名不能带.class；  文件不能够有 package；  文件里要有main方法；
+
+```
+
+
+
 
 
 #### 1-2 成员变量
@@ -1011,6 +1023,10 @@ public interface XttblogService {
 XttblogService xttblogService = message -> System.out.println("Hello " + message);
 ```
 
+#### Spring本地缓存
+
+本地缓存：GuavaCache、ehcache、CaffeineCache，分布式缓存(网络缓存)：redis、memcached
+
 
 
 ##### 1-7-3   最佳内存缓存框架Caffeine
@@ -1061,6 +1077,33 @@ Cache<K， V>的get的方法定义
 V get(@NonNull K var1, @NonNull Function<? super K, ? extends V> var2);
 
 //备注 super代表的是下界范围，  extends代表的是上界范围
+
+#使用
+@Autowired
+Cache<String, Object> caffeineCache;
+
+@Override
+public void addUserInfo(UserInfo userInfo) {
+    // 加入缓存
+    caffeineCache.put(String.valueOf(userInfo.getId()),userInfo);
+}
+
+@Override
+public UserInfo getByName(Integer id) {
+    // 先从缓存读取
+    caffeineCache.getIfPresent(id);
+    UserInfo userInfo = (UserInfo) caffeineCache.asMap().get(String.valueOf(id));
+    if (userInfo != null){
+        return userInfo;
+    }
+    // 如果缓存中不存在，则从库中查找
+    userInfo = userInfoMap.get(id);
+    // 如果用户信息不为空，则加入缓存
+    if (userInfo != null){
+        caffeineCache.put(String.valueOf(userInfo.getId()),userInfo);
+    }
+    return userInfo;
+}
 ```
 
 
@@ -1142,9 +1185,12 @@ public void method();
 
 
 
-### 2 创建线程都用实现接口 Runnable
+### 2 多线程
 
- 	线程的创建方式中有两种，一种是实现Runnable接口，另一种是继承Thread，但是这两种方式都有个缺点，那就是在任务执行完成之后无法获取返回结果，于是就有了Callable接口，Future接口与FutureTask类的配和取得返回的结果。 
+ 	线程的创建方式中有三种，
+ 	一种是实现Runnable接口，
+ 	一种是继承Thread，但是这两种方式都有个缺点，那就是在任务执行完成之后无法获取返回结果，
+ 	于是就有第三种了Callable、Future接、FutureTask、ExecutorService取得返回的结果。 
 
 ```java
 class XX implements Runnable
@@ -1679,6 +1725,198 @@ public class CountDownLatchTest {
     }
 }
 ```
+
+#### 2-5 锁和同步
+
+锁和同步，学习多线程避不开的两个问题，Java提供了synchronized关键字来同步方法和代码块，还提供了很多方便易用的并发工具类，例如：LockSupport、CyclicBarrier、CountDownLatch、Semaphore…
+
+
+
+同步机制包括: 锁, volatile 关键字, final 关键字,static 关键字,以及相关的 API,如 Object.wait()/Object.notify()等
+
+##### 锁的实现
+
+**加锁的过程必须是原子操作，否则会导致多个线程同时加锁成功。**
+
+自旋是实现加锁最简单的方式，但是缺点也很明显：
+
+- 自旋时CPU空转，浪费CPU资源。
+- 如果使用不当，线程一直获取不到锁，会造成CPU使用率极高，甚至系统崩溃。
+
+**yield+自旋**
+要解决自旋锁的性能问题，首先就是尽可能的防止CPU空转，让获取不到锁的线程主动让出CPU资源。
+
+获取不到锁的线程主动让出CPU资源，可以通过Thread.yield()实现。
+
+bye()可以做如下优化：
+
+```java
+public void bye(){
+    while (!lock()) {
+        //获取不到锁，主动让出CPU资源
+        Thread.yield();
+    }
+    String name = Thread.currentThread().getName();
+    //加锁成功，执行业务逻辑
+    System.out.println(name + ":加锁成功...");
+    System.out.println(name + ":开始抢票...");
+    //SleepUtil.sleep(1000);
+    ticketCount--;
+    System.out.println(name + ":抢到了，库存:" + ticketCount);
+    System.out.println(name + ":释放锁.");
+    unlock();
+}
+```
+
+Thread.yield()虽然让出了CPU资源，但还是会继续争夺，很可能CPU下次还会继续分配时间片给该线程。
+
+yield+自旋适用于**两个线程竞争**的情况，如果线程太多，频繁的yield也会增加CPU的调度开销。
+
+**Sleep+自旋**
+除了使用yield让出CPU资源外，还可以使用Sleep将获取不到锁的线程暂时休眠，不占用CPU的资源。
+
+bye()可以做如下优化：
+
+```java
+public void bye(){
+    while (!lock()) {
+       //获取不到锁的线程,暂时休眠1ms，释放CPU资源
+        SleepUtil.sleep(1);
+    }
+    String name = Thread.currentThread().getName();
+    //加锁成功，执行业务逻辑
+    System.out.println(name + ":加锁成功...");
+    System.out.println(name + ":开始抢票...");
+    //SleepUtil.sleep(1000);
+    ticketCount--;
+    System.out.println(name + ":抢到了，库存:" + ticketCount);
+    System.out.println(name + ":释放锁.");
+    unlock();
+}
+```
+
+使用Sleep可以减轻CPU的压力，但是缺点也很明显：
+
+- **sleep时间不可控**
+
+###### **park+自旋**
+
+```java
+/**
+ * @Description 抢票-park+自旋
+ */
+public class TicketPark {
+    //加锁标记
+    private AtomicBoolean isLock = new AtomicBoolean(false);
+    //票库存
+    private int ticketCount = 10;
+    //等待线程队列
+    private final Queue<Thread> WAIT_THREAD_QUEUE = new LinkedBlockingQueue<>();
+
+    //抢票
+    public void bye(){
+        while (!lock()) {
+            //获取不到锁的线程,添加到队列，并休眠
+            lockWait();
+        }
+        String name = Thread.currentThread().getName();
+        //加锁成功，执行业务逻辑
+        System.out.println(name + ":加锁成功...");
+        System.out.println(name + ":开始抢票...");
+        ticketCount--;
+        System.out.println(name + ":抢到了，库存:" + ticketCount);
+        System.out.println(name + ":释放锁.");
+        unlock();
+    }
+
+    //加锁的过程必须是原子操作，否则会导致多个线程同时加锁成功。
+    public boolean lock(){
+        return isLock.compareAndSet(false, true);
+    }
+
+    //释放锁
+    public void unlock() {
+        isLock.set(false);
+        //唤醒队列中的第一个线程
+        LockSupport.unpark(WAIT_THREAD_QUEUE.poll());
+    }
+
+    public void lockWait(){
+        //将获取不到锁的线程添加到队列
+        WAIT_THREAD_QUEUE.add(Thread.currentThread());
+        //并休眠
+        LockSupport.park();
+    }
+}
+```
+
+##### synchronized 同步
+
+```java
+package com.wbg;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class kt {
+    public static void main(String[] args) {
+        System.out.println("使用关键字synchronized");
+        SyncThread syncThread = new SyncThread();
+        Thread thread1 = new Thread(syncThread, "SyncThread1");
+        Thread thread2 = new Thread(syncThread, "SyncThread2");
+        thread1.start();
+        thread2.start();
+    }
+}
+class SyncThread implements Runnable {
+    private static int count;
+    public SyncThread() {
+        count = 0;
+    }
+    public  void run() {
+       synchronized (this){
+            for (int i = 0; i < 5; i++) {
+                try {
+                    System.out.println("线程名:"+Thread.currentThread().getName() + ":" + (count++));
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    public int getCount() {
+        return count;
+    }
+}
+
+
+//同步函数
+public sysnchronized void func(){
+    
+}
+//同步函数用的锁就是this
+
+//解决单例效率地的问题，用双重判断的形式。
+class Single{
+    private static Single s=null;
+    private Single(){}
+    public static Single getInstance(){
+        if(s==null){
+            sysnchronized(Single.clasee){
+                if(s==null){
+                    s=new Single();
+                }
+            }            
+        }
+        return s;
+    }
+}
+```
+
+
+
+
 
 ### System.getProperty()
 
@@ -2971,6 +3209,10 @@ classpath:只会在第一个加载的类路径下查找，而classpath*:会扫�
 
 
 
+
+
+
+
 ------
 
 
@@ -3076,6 +3318,8 @@ private List<Organization> doOrgIterator(Organization oneOrganization, List<Orga
 　　return childList;
 }
 ```
+
+### 
 
 
 

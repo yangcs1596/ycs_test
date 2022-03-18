@@ -252,6 +252,36 @@ lpad(str1,length,str2)。
 #rpad：同理 
 ```
 
+#### 自定义函数
+
+```mysql
+-- 最简单的仅有一条sql的函数
+create function myselect2() returns int return 666;
+select myselect2(); -- 调用函数
+
+--
+create function myselect3() returns int
+begin 
+    declare c int;
+    select id from class where cname="python" into c;
+    return c;
+end;
+select myselect3();
+-- 带传参的函数
+create function myselect5(name varchar(15)) returns int
+begin 
+    declare c int;
+    select id from class where cname=name into c;
+    return c;
+end;
+select myselect5("python");
+
+查看函数创建语句：show create function 函数名;
+查看所有函数：show function status [like 'pattern'];
+修改alter function 函数名 选项；
+删除drop function 函数名;
+```
+
 
 
 ###  数据库操作
@@ -380,6 +410,14 @@ show index from tableName
 - 存储引擎会为Hash索引中的每一列都计算hash码，Hash索引中存储的即hash码，所以每次读取都会进行两次查询
 - Hash索引无法用于排序
 - Hash不适用于区分度小的列上，如性别字段
+
+###### 1-1-3 清空表数据
+
+```
+truncate table 表名
+```
+
+
 
 ##### 1-2 查询强制索引
 
@@ -709,6 +747,8 @@ Using temporary（十死无生）
 
 ### 特殊查询
 
+
+
 #### 1 统计查询
 
 ```mysql
@@ -737,6 +777,13 @@ SELECT * FROM table WHERE id BETWEEN 1000000 AND 1000010;
 
 ```mysql
 select colum, count(1) as count from xx group by colum
+```
+
+#### 4 分页查询
+
+```mysql
+#查询第1条到第10条的数据的sql是： 
+select * from table limit 0,10; 对应-》 select * from table limit (1-1)*10,10;
 ```
 
 

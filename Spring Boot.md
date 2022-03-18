@@ -3465,6 +3465,49 @@ systemctl stop docker
 
 https://hub.docker.com/
 
+* 容器打包成镜像
+
+```shell
+docker commit [OPTIONS] CONTAINER [REPOSITORY[:TAG]]
+OPTIONS说明：
+-a :提交的镜像作者；
+-c :使用Dockerfile指令来创建镜像；
+-m :提交时的说明文字；
+-p :在commit时，将容器暂停。
+例1
+docker commit -a "runoob.com" -m "my apache" a404c6c174a2  mymysql:v1 
+例2
+docker commit -m  ""   -a  "" [CONTAINER ID]  [给新的镜像命名]
+docker commit -m  ""   -a  "" aa myelasticsearch:1.0
+#镜像保存到本地jar
+docker save -o mytest.tar mytest:v1  # 保存到本地，就是当前文件路径。
+=====================其他人电脑上运行加载镜像===
+docker load --input mytest.tar
+```
+
+* registry仓库安装
+
+```shell
+$ sudo docker run -d -p 5000:5000  --name dockerServer --restart=always -v /opt/registry-var/:/var/lib/registry/ --privileged=true registry:2.4.1 
+
+--restart=always 重启设置
+registry[:tag] 需要启动到仓库名称（不添加tag，默认拉取最新版:latest）
+#docker添加私服仓库地址
+vi /etc/docker/daemon.json #没有目录自己创建
+{ "insecure-registries":["bxy-registry:5000"] }
+vi /etc/hosts　　#添加主机名映射
+192.168.75.191 bxy-registry
+#重启docker容器，查看registry是否添加
+systemctl daemon-reload  #重载docker配置
+systemctl restart docker    #重启docker服务
+docker info #查看docker信息确认仓库是否添加
+#将本地镜像打上标签
+docker tag tomcat bxy-registry:5000/tomcat:v1 　　#tag操作
+docker push bxy-registry:5000/tomcat:v1　　　　    #推送镜像
+```
+
+
+
 ### 2）、容器操作
 
 软件镜像（QQ安装程序）----运行镜像----产生一个容器（正在运行的软件，运行的QQ）；
@@ -3499,6 +3542,7 @@ docker start 容器id
  docker rm 容器id
 9、启动一个做了端口映射的tomcat
 [root@localhost ~]# docker run -d -p 8888:8080 tomcat
+#docker run --name nginx-test -p 8080:80 -d nginx
 -d：后台运行
 -p: 将主机的端口映射到容器的一个端口    主机端口:容器内部的端口
 
@@ -3555,6 +3599,7 @@ systemctl restart docker
 ```json
 #进入容器文件夹命令
 docker exec -it 镜像id /bin/sh
+加载新的配置项
 ##
 Ctrl + p + q 退出并在后台运行容器；或者 exit
 
@@ -3583,7 +3628,7 @@ docker pull mysql
 #挂载的意思就是在宿主机上解压一个tomcat把这里面的webapps目录映射到docker内的tomcat容器中的webapps目录，这样直接把war包发送到宿主机的tomcat的webapps下面，docker的tomcat的webapps会共用此目录下的文件）
 
 
-
+拷贝到容器内
 docker cp /usr/local/testJavaProject/test01.war 9fccf0236619:/usr/local/tomcat/webapps
 
 
@@ -3597,7 +3642,21 @@ docker cp /usr/local/testJavaProject/test01.war 9fccf0236619:/usr/local/tomcat/w
 	在usr/local/目录下创建一个dev目录，dev目录用来专门存放开发包什么的，dev目录下再创建一个docker-tomcat目录，行了，就用docker-tomcat进行映射到docker中的tomcat容器里的webapps目录
 #挂载usr/local/dev/docker-tomcat目录，并运行容器命令如下
 docker run -d -p 8088:8080 --name tomcat -v /usr/local/dev/docker-tomcat:/usr/local/tomcat/webapps --restart=always tomcat
+
+#启动tomcat容器，并与mysql建立连接，tomcat镜像的名字是myweb，创建命令如下：
+#创建mysql的一个容器，容器的名字是db001，创建命令如下：
+docker run --name db001 -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 -d mysql:5.7
+docker run -it -p 8080:8080 --link db001:dbhost -d tomcat
+1）db001是步骤3中创建的mysql容器的名字，可以通过其访问数据库;
+2）dbhost是个别名，web程序访问mysq数据可以通过其访问;
+3）此时，在容器内部，会在/etc/hosts文件中用别名创建几个条目
+进入 容器查看 /etc/hosts
+
 ```
+
+4-1将容器打包镜像
+
+
 
 ## 5、Dockerfile文件命令介绍
 
@@ -3605,14 +3664,11 @@ docker run -d -p 8088:8080 --name tomcat -v /usr/local/dev/docker-tomcat:/usr/lo
 FROM openjdk:8-jdk  //指定基础镜//在镜像内部执行一些命令，比如安装软件，配置环境等，换行可以使用RUN groupadd -r mysql && useradd -r -g mysql mysql
 
 
-
 //设置变量的值，ENV MYSQL_MA JOR 5.7，可以通过docker run --e key=value修改，后面可以直接使用${MYSQL_MA JOR}
 ENV MYSQL_MAJOR 5.7
-VOLUME /var/lib/mysql   //指定数据的挂在目录
+VOLUME:/var/lib/mysql   //指定数据的挂在目录
 　　
  
-
-
 //将主机的文件复制到镜像内，如果目录不存在，会自动创建所需要的目录，注意只是复制，不会提取和解压
 COPY docker-entrypoint.sh /usr/local/bin/
  
@@ -3620,8 +3676,6 @@ COPY docker-entrypoint.sh /usr/local/bin/
 ADD application.yml /etc/it/
 　
  
-
-
 //指定镜像的工作目录，之后的命令都是基于此目录工作，若不存在则创建
 WORKDIR /usr/local
 WORKDIR tomcat RUN
@@ -3700,13 +3754,25 @@ ad10e4bc5c6a        mysql               "docker-entrypoint.sh"   4 seconds ago  
 
 几个其他的高级操作
 
-```
+```shell
 docker run --name mysql03 -v /conf/mysql:/etc/mysql/conf.d -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag
 把主机的/conf/mysql文件夹挂载到 mysqldocker容器的/etc/mysql/conf.d文件夹里面
 改mysql的配置文件就只需要把mysql配置文件放在自定义的文件夹下（/conf/mysql）
 
 docker run --name some-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 指定mysql的一些配置参数
+```
+
+
+
+5)挂载卷 volume
+
+```shell
+docker volume create 卷名
+#查看
+docker volume inspect nginx
+#创建容器  并挂载卷nginx:/etc/nginx  -v是挂载 本机目录和容器目录
+docker run -d -v nginx:/etc/nginx -p 80:80 --name nginx nginx:1.14
 ```
 
 

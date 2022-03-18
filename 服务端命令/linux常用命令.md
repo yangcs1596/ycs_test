@@ -124,7 +124,7 @@ chown -R yangyuanliang:staff  test/
 
 ### 一些linux命令
 
-解压缩查看日志
+##### 解压缩查看日志
 
 ```shell
 # 查看文件，实时显示最后一页
@@ -176,9 +176,14 @@ su username   #切换后的环境变量大部分还是切换前用户的环境
 # tar -zcvf renwolesshel.tar.gz /renwolesshel
 解压tar.gz格式压缩包
 # tar zxvf renwolesshel.tar.gz
+
 #.zip 
 解压：unzip FileName.zip 
 压缩：zip FileName.zip DirName 
+1.查看压缩文件中包含的文件:unzip -l 压缩文件名
+2.查看压缩文件的目录信息:unzip -v 压缩文件名
+3.解压到当前文件夹unzip 压缩文件名
+4.解压到指定文件夹unzip 压缩文件名 -d 指定目录
 ——————————————— 
 
 .war
@@ -521,6 +526,12 @@ sudo echo "信息" >> test.csv
 sudo /bin/sh -c 'echo "hahah" >> test.asc'
 
 利用 "sh -c" 命令，它可以让 bash 将一个字串作为完整的命令来执行，这样就可以将 sudo 的影响范围扩展到整条命令。
+```
+
+#### passwd 修改用户密码
+
+```shell
+passwd mybk
 ```
 
 
@@ -903,5 +914,207 @@ ssh实现自动登录,并停在登录服务器上
  spawn ssh root@192.168.1.130 
  Last login: Fri Sep 7 10:47:43 2012 from 192.168.1.142 
  [root@linux ~]# 
+```
+
+
+
+### 7、脚本引入文件参数例子
+
+```shell
+#xx.sh
+cd /sdyunlei/apps/webAgent
+. /sdyunlei/apps/webAgent/cloudagent.cfg
+echo "Starting cloudAgent......"
+nohup /sdyunlei/apps/jdk/bin/java -Xms128M -Xmx1G -jar cloudAgent.jar --server.port=9160 --sd.vip=$local_ip --sd.name=$appid --sd.manager-host=$manager_ip/manager --sd.passport-host=$passport_ip/passport  >> /dev/null 2>&1 &
+
+
+#cloudagent.cfg文件
+# appid
+appid=djdfFH2JK
+# local addr
+local_ip="192.168.72.83"
+# manager addr
+manager_ip="192.168.89.246"
+# passport addr
+passport_ip="192.168.89.246"
+```
+
+### 8、ssh传输文件命令
+
+```shell
+#上传
+scp cloudAgent.jar 192.168.72.83:/sdyunlei/apps/webAgent/
+
+输入密码： Lmm7xyxWjsx@qs
+#下载
+scp -p 22 root@ip:/usr/local/src/lnmp.gz /home/lnmp.gz
+```
+
+### 9、rsync命令备注
+
+```shell
+export RSYNC_PASSWORD="n:P57N.,\"\`4bYSHMO-#I*2cXai|:q@X^"  && rsync -rlptD -vih -a  --port 22873  --delete mybk@192.168.88.45::cpatch//centos /home/data/patch_library;
+
+-v：显示rsync过程中详细信息。可以使用"-vvvv"获取更详细信息。
+-P：显示文件传输的进度信息。(实际上"-P"="--partial --progress"，其中的"--progress"才是显示进度信息的)。
+-n --dry-run  ：仅测试传输，而不实际传输。常和"-vvvv"配合使用来查看rsync是如何工作的。
+-a --archive  ：归档模式，表示递归传输并保持文件属性。等同于"-rtopgDl"。
+-r --recursive：递归到目录中去。
+-t --times：保持mtime属性。强烈建议任何时候都加上"-t"，否则目标文件mtime会设置为系统时间，导致下次更新
+          ：检查出mtime不同从而导致增量传输无效。
+-o --owner：保持owner属性(属主)。
+-g --group：保持group属性(属组)。
+-p --perms：保持perms属性(权限，不包括特殊权限)。
+-D        ：是"--device --specials"选项的组合，即也拷贝设备文件和特殊文件。
+-l --links：如果文件是软链接文件，则拷贝软链接本身而非软链接所指向的对象。
+-z        ：传输时进行压缩提高效率。
+-R --relative：使用相对路径。意味着将命令行中指定的全路径而非路径最尾部的文件名发送给服务端，包括它们的属性。用法见下文示例。
+--size-only ：默认算法是检查文件大小和mtime不同的文件，使用此选项将只检查文件大小。
+-u --update ：仅在源mtime比目标已存在文件的mtime新时才拷贝。注意，该选项是接收端判断的，不会影响删除行为。
+-d --dirs   ：以不递归的方式拷贝目录本身。默认递归时，如果源为"dir1/file1"，则不会拷贝dir1目录，使用该选项将拷贝dir1但不拷贝file1。
+--max-size  ：限制rsync传输的最大文件大小。可以使用单位后缀，还可以是一个小数值(例如："--max-size=1.5m")
+--min-size  ：限制rsync传输的最小文件大小。这可以用于禁止传输小文件或那些垃圾文件。
+--exclude   ：指定排除规则来排除不需要传输的文件。
+--delete    ：以SRC为主，对DEST进行同步。多则删之，少则补之。注意"--delete"是在接收端执行的，所以它是在
+            ：exclude/include规则生效之后才执行的。
+-b --backup ：对目标上已存在的文件做一个备份，备份的文件名后默认使用"~"做后缀。
+--backup-dir：指定备份文件的保存路径。不指定时默认和待备份文件保存在同一目录下。
+-e          ：指定所要使用的远程shell程序，默认为ssh。
+--port      ：连接daemon时使用的端口号，默认为873端口。
+--password-file：daemon模式时的密码文件，可以从中读取密码实现非交互式。注意，这不是远程shell认证的密码，而是rsync模块认证的密码。
+-W --whole-file：rsync将不再使用增量传输，而是全量传输。在网络带宽高于磁盘带宽时，该选项比增量传输更高效。
+--existing  ：要求只更新目标端已存在的文件，目标端还不存在的文件不传输。注意，使用相对路径时如果上层目录不存在也不会传输。
+--ignore-existing：要求只更新目标端不存在的文件。和"--existing"结合使用有特殊功能，见下文示例。
+--remove-source-files：要求删除源端已经成功传输的文件。
+```
+
+### 10、java代码执行命令注意点
+
+```java
+//linux平台 java执行command需要带上命令的全部路径 
+
+public static String run(String command) throws IOException {
+        Scanner input = null;
+        String result = "";
+        Process process = null;
+        try {
+            process = Runtime.getRuntime().exec(command);
+            try {
+                //等待命令执行完成
+                process.waitFor(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            InputStream is = process.getInputStream();
+            input = new Scanner(is);
+            while (input.hasNextLine()) {
+                result += input.nextLine() + "\n";
+            }
+            result = command + "\n" + result; //加上命令本身，打印出来
+        } finally {
+            if (input != null) {
+                input.close();
+            }
+            if (process != null) {
+                process.destroy();
+            }
+        }
+        return result;
+    }
+```
+
+
+
+启动shell进程后，发现进程长时间运行无法结束，同时失去响应。这个问题的原因是shell脚本或者命令在运行的过程中会向标准输出或者标准错误输出写出数据，但JVM又没有去读，导致缓冲区满，进而导致进程阻塞。这个问题的解决的方法比较简单，既然问题是缓冲区满之后没有及时清理，那么只要在Java代码里去读一下数据，保证缓冲区不会满即可.
+
+```java
+public static void executeCMD(final String cmdStrArr) {
+		Runtime rt = Runtime.getRuntime();
+		System.out.println("开始执行脚本");
+		System.out.println("脚本内容为:" + cmdStrArr);
+
+		try {
+			Process p = rt.exec(cmdStrArr);
+			// 防止缓冲区满, 导致卡住
+			new Thread() {
+				@Override
+				public void run() {
+					super.run();
+					String line;
+					try {
+						BufferedReader stderr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+						while ((line = stderr.readLine()) != null) {
+							System.out.println("stderr:" + line);
+						}
+					}
+					catch (Exception e) {
+
+					}
+
+				}
+			}.start();
+
+
+			new Thread() {
+				@Override
+				public void run() {
+					super.run();
+					String line;
+					try {
+						BufferedReader stdout = new BufferedReader(new InputStreamReader(p.getInputStream()));
+						while ((line = stdout.readLine()) != null) {
+							System.out.println("stdout:" + line);
+						}
+					}
+					catch (Exception e) {
+
+					}
+				}
+			}.start();
+
+
+			int exitVal = p.waitFor();
+			if (0 != exitVal) {
+				System.out.println("执行脚本失败");
+			}
+			System.out.println("执行脚本成功");
+
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+```
+
+
+
+### 11、rsync脚本例子
+
+```shell
+#!/bin/bash
+set -o nounset
+set -o errexit
+# -o 参数将特殊特性打开.在某些选项之后使用
+# +o 参数将关闭某些特性,不带任何参数的set命令将显示shell的全部变量.除非遇到非法的选项,否则set总是返回true
+# 上面个两句set可以简写成 set -ue
+# 参数定义
+r_pass=$1
+r_port=$2
+r_user=$3
+r_ip=$4
+r_module=$5
+r_pathc=$6
+
+# 执行命令
+export RSYNC_PASSWORD="$r_pass"  && rsync -rlptD -vih -a  --port $r_port  --delete $r_user@$r_ip::$r_module $r_pathc
+if [[ $? -ne 0 ]]; then # $?表示上一条命zhidao令返回值，$0表示第一个参数，-ne表示不等于  如果上一条命令成功执行，返回0，否则返回1
+    echo "error"
+    exit 1
+else
+    echo "success"
+    exit 0
+fi
 ```
 
