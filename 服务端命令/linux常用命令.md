@@ -66,16 +66,18 @@ cat -n hrun.log | grep "新增用户" -C 10
 
 
 
-### 全局环境变量设置
+## Linux在任意目录下执行指定的脚本
 
 ```shell
 #一种全局默认的路径为/etc/profile在profile中，它默认会再加载/etc/bash.bashrc。
 #另一种用户自己的就是$HOME目录下的.profile它默认会载加载.bashrc文件。
-#
+#方式一
 view /etc/profile
 export PATH="变量路径"
 
-#修改.bashrc
+source profile
+
+#方式二修改.bashrc
  vim /root/.bashrc
 export PATH="变量路径"
 
@@ -103,6 +105,8 @@ sudo /etc/init.d/networking restart
 
 
 
+
+
 ### 文件权限操作
 
 ```shell
@@ -123,6 +127,34 @@ chown -R yangyuanliang:staff  test/
 
 
 ### 一些linux命令
+
+#### 命令详解
+
+```shell
+$# 是传给脚本的参数个数
+$0是脚本本身的名字
+$1是传递给该shell脚本的第一个参数
+$2是传递给该shell脚本的第二个参数
+$@ 是传给脚本的所有参数的列表
+$*是以一个单字符串显示所有向脚本传递的参数，与位置变量不同，参数可超过9个
+$$ 是脚本运行的当前进程ID号
+
+if[[ -f $home/$1 ]] 表示的是判断$home/$1是不是文件,并且存在 $1表示的是你执行脚本的第一个参
+-e filename 如果 filename存在，则为真
+-d filename 如果 filename为目录，则为真
+-f filename 如果 filename为常规文件，则为真
+-L filename 如果 filename为符号链接，则为真
+-r filename 如果 filename可读，则为真
+-w filename 如果 filename可写，则为真
+-x filename 如果 filename可执行，则为真
+-s filename 如果文件长度不为0，则为真
+-h filename 如果文件是软链接，则为真
+
+逻辑非 !条件表达式的相反
+if [ ! 表达式 ]
+```
+
+
 
 ##### 解压缩查看日志
 
@@ -184,6 +216,13 @@ su username   #切换后的环境变量大部分还是切换前用户的环境
 2.查看压缩文件的目录信息:unzip -v 压缩文件名
 3.解压到当前文件夹unzip 压缩文件名
 4.解压到指定文件夹unzip 压缩文件名 -d 指定目录
+
+-r	递归压缩目录，及将制定目录下的所有文件以及子目录全部压缩。
+-m	将文件压缩之后，删除原始文件，相当于把文件移到压缩文件中。
+-v	显示详细的压缩过程信息。
+-q	在压缩的时候不显示命令的执行过程。
+-压缩级别	压缩级别是从 1~9 的数字，-1 代表压缩速度更快，-9 代表压缩效果更好。
+-u	更新压缩文件，即往压缩文件中添加新文件。
 ——————————————— 
 
 .war
@@ -1115,6 +1154,32 @@ if [[ $? -ne 0 ]]; then # $?表示上一条命zhidao令返回值，$0表示第�
 else
     echo "success"
     exit 0
+fi
+```
+
+#### 12、简单自定义rm实现
+
+```shell
+#!/bin/bash
+filename=$1
+now=`date +%Y%m%d%H%M`
+
+read -p "Are you sure to delete the file or diectory ${filename} ? yes|no: " input 
+
+if [ "$input" == "yes" ] || [ "$input" == "y" ]
+then
+  if [ ! -d "/data/.${now}"]
+  then
+     mkdir /data/.${now}
+  fi
+  rsync -aR ${filename} /data/.${now}
+  /bin/rm -rf ${filename}
+elif [ "$input" == no ] || [ "$input" == "n" ]
+then
+  exit 0
+else
+  echo "Only input yes or no"
+  exit
 fi
 ```
 

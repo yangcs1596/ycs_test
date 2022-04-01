@@ -987,6 +987,24 @@ public T orElse(T other) {
 }
 ```
 
+##### 例子：
+
+```java
+Optional.ofNullable(user)
+    .ifPresent(u -> { dosomething();});
+
+User user =Optional.ofNullable(user)
+    .filter( u -> "zhang".equals(u.getUserName()))
+    .orElseGet(() -> { return new User();});
+
+String city = Optional.ofNullable(user)
+    .map(u -> u.getAddress())
+    .map(a -> a.getCity())
+    .orElseThrow(() -> new Exception("取值错误"));
+```
+
+
+
 ##### 1-7-2 @@FunctionalInterface都能实现Lambda，不加的话再运行期会校验是否是函数接口，加了编译的时候就会校验
 
 * 什么是函数式接口  
@@ -3194,7 +3212,11 @@ spring-boot-configuration-processor依赖就可以做到，它的基本原理是
 
 /** 可以包含多级
 
+./表示当前目录
 
+../表示上层目录
+
+/表示根目录
 
 ### 15 classpath:和classpath\*:的含义
 
@@ -4535,7 +4557,7 @@ scop的说明https://www.itdaan.com/blog/2014/05/08/461c414960ac472bcff63dd95c19
 <!--
 constructor-arg：通过构造函数注入。 
 property：通过setter对应的方法注入。-->
-使用方式一：
+使用方式一： 还可以用 factory-method指定构造方法
 <bean id="student" class="com.rc.sp.Student">
     <constructor-arg name="id" value="1"/>
     <constructor-arg name="name" value="student"/>

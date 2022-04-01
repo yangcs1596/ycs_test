@@ -12,3 +12,30 @@
 
 
 王建伟 招商海通
+
+
+[
+  {
+    "args": {
+      "include_id": [
+        "*"
+      ],
+      "exclude_id": [],
+      "include_soft": [
+        "*"
+      ],
+      "exclude_soft": []
+    },
+    "func": "VulScan",
+    "extra": {
+      "*": [
+        100000000000000000
+      ]
+    },
+    "class": "Vul"
+  }
+]
+
+
+马志博  应急漏洞全部主机扫描问题
+官网需求

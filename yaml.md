@@ -89,9 +89,7 @@ prefix = “person”：配置文件中哪个下面的所有属性进行一一�
 
   文档 ：https://www.cnblogs.com/zlbx/p/4888312.html
   
-  ```maven脚手架生成命令
-  mvn archetype:create-from-project
-  ```
+  
 
 ### SVN的命令
 
@@ -791,7 +789,7 @@ save 300 10          #在300秒(5分钟)之后，如果至少有10个key发生�
 save 60 10000        #在60秒(1分钟)之后，如果至少有10000个key发生变化，Redis就会自动触发BGSAVE命令创建快照。
 ```
 
-### redis.conf部分配置详解
+### redis.conf的启动
 
 ```shell
 # 启动redis，显示加载配置redis.conf
@@ -840,6 +838,8 @@ logfile ""
 ```cmd
 连接redis命令 /bin/redis-cli
 >> redis-cli -h 127.0.0.1 -p 6379 -a 密码 -u 用户名
+#密码修改
+打开redis.conf<如果没有此文件，需自己下载，放置到redis目录下>,找到requirepass值修改密码， 端口为port
 如果需要搭建redis集群，千万别忘了修改端口号。
 注意如果是集群的话 要有-c >> redis-cli -h 192.168.25.153 -p 7002 –c
 创建集群。redis的三种集群，主从复制，哨兵模式，cluster模式
@@ -1097,6 +1097,178 @@ public class ThrottleTest {
     <version>3.14.1</version>
 </dependency>
 ```
+
+### 三种压缩数据
+
+#### redis配置
+
+```java
+@Configuration
+public class RedisConfig {
+    @Bean
+    public RedisTemplate redisTemplate(RedisConnectionFactory factory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(factory); 
+        Jackson2JsonRedisSerializer jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer(Object.class); 
+        ObjectMapper om = new ObjectMapper();
+        om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL); 
+        jackson2JsonRedisSerializer.setObjectMapper(om); 
+        StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();        
+        // key采用String的序列化方式
+        template.setKeySerializer(stringRedisSerializer); 
+        // hash的key也采用String的序列化方式
+        template.setHashKeySerializer(stringRedisSerializer); 
+        // value序列化方式采用jackson
+        template.setValueSerializer(jackson2JsonRedisSerializer); 
+        // hash的value序列化方式采用jackson
+        template.setHashValueSerializer(jackson2JsonRedisSerializer); 
+        template.afterPropertiesSet();
+        return template;
+    }
+}
+```
+
+#### jackson方式
+
+// value序列化方式采用jackson
+template.setValueSerializer(jackson2JsonRedisSerializer);
+
+#### Gzip方式或者Snappy方式
+
+```xml
+<dependency>
+    <groupId>org.xerial.snappy</groupId>
+    <artifactId>snappy-java</artifactId>
+    <version>1.1.73</version>
+</dependency>
+```
+
+```java
+@Bean
+    public RedisTemplate<Object, Object> redisTemplate(LettuceConnectionFactory connectionFactory) {
+        RedisTemplate<Object, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+ 
+        //Gzip Set a custom serializer that will compress/decompress data to/from redis
+        RedisSerializerGzip serializerGzip = new RedisSerializerGzip();
+        template.setValueSerializer(serializerGzip);
+        template.setHashValueSerializer(serializerGzip);
+ 
+ 
+        //Snappy RedisSerializerSnappy serializerSnappy = new RedisSerializerSnappy(null);
+        //redisTemplate.setValueSerializer(serializerSnappy);
+        //redisTemplate.setHashValueSerializer(serializerSnappy);
+ 
+        return template;
+    }
+```
+
+## Zip4j介绍
+
+```xml
+<dependency>
+    <groupId>net.lingala.zip4j</groupId>
+    <artifactId>zip4j</artifactId>
+    <version>1.3.2</version>
+</dependency>
+```
+
+```java
+private static void zipFile() throws ZipException {
+    // 生成的压缩文件
+    ZipFile zipFile = new ZipFile("D:\\test.zip");
+    ZipParameters parameters = new ZipParameters();
+    // 压缩方式
+    parameters.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);
+    // 压缩级别
+    parameters.setCompressionLevel(Zip4jConstants.DEFLATE_LEVEL_NORMAL);
+    // 要打包的文件夹
+    File currentFile = new File("D:\\test");
+    File[] fs = currentFile.listFiles();
+    // 遍历test文件夹下所有的文件、文件夹
+    for (File f : fs) {
+        if (f.isDirectory()) {
+            zipFile.addFolder(f.getPath(), parameters);
+        } else {
+            zipFile.addFile(f, parameters);
+        }
+    }
+}
+
+/**
+    注释：
+
+    压缩方式
+    COMP_STORE = 0;（仅打包，不压缩）
+    COMP_DEFLATE = 8;（默认）
+    COMP_AES_ENC = 99; 加密压缩
+    压缩级别
+    DEFLATE_LEVEL_FASTEST = 1; (速度最快，压缩比最小)
+    DEFLATE_LEVEL_FAST = 3; (速度快，压缩比小)
+    DEFLATE_LEVEL_NORMAL = 5; (一般)
+    DEFLATE_LEVEL_MAXIMUM = 7;
+    DEFLATE_LEVEL_ULTRA = 9;
+*/
+```
+
+## Zstd-jni
+
+```xml
+<dependency>
+    <groupId>com.github.luben</groupId>
+    <artifactId>zstd-jni</artifactId>
+    <version>1.4.0-1</version>
+</dependency>
+```
+
+## commons-fileupload
+
+```xml
+<dependency>
+    <groupId>commons-io</groupId>
+    <artifactId>commons-io</artifactId>
+    <version>2.4</version>
+</dependency>
+<dependency>
+    <groupId>commons-fileupload</groupId>
+    <artifactId>commons-fileupload</artifactId>
+    <version>1.3.1</version>
+</dependency>
+
+form编码格式必须为multipart/form-data
+```
+
+```java
+判断是否为文件上传请求
+boolean isMultipart = ServletFileUpload.isMultipartContent(request);
+ // 创建产生item的工厂
+DiskFileItemFactory diskFileItemFactory = new DiskFileItemFactory();
+// 设置存放临时文件的目录（大文件）
+File repository = (File) getServletContext().getAttribute("javax.servlet.context.tempdir");
+// 设置阈值，区分大文件还是小文件
+diskFileItemFactory.setSizeThreshold(1024 * 1024 * 1024 * 1024);
+// 设置临时文件仓库
+diskFileItemFactory.setRepository(repository);
+// 创建文件上传句柄
+ServletFileUpload servletFileUpload = new ServletFileUpload(diskFileItemFactory);
+// 解析请求，生成items列表，待后续处理
+List<FileItem> fileItems = servletFileUpload.parseRequest(req);
+
+为了节省服务器资源，对于存放在临时目录下的大文件（超过我们设置的阈值的），我们可以设置处理器定时去清楚他们。QQ群里面的大文件，一段时间后就会被自动清除就是这个道理。
+简单配置即可：
+<web-app>
+  ...
+  <listener>
+    <listener-class>
+      org.apache.commons.fileupload.servlet.FileCleanerCleanup
+    </listener-class>
+  </listener>
+  ...
+</web-app>
+```
+
+
 
 
 
@@ -1958,6 +2130,119 @@ public Annotation[] getAnnotations()
 
   被注解的接口可以有默认方法/静态方法，或者重写Object的方法
 
+### Spring
+
+#### bean的初始化方式
+
+spring初始化bean有几种方式：
+
+```kotlin
+1. 实现InitializingBean接口，重写afterPropertiesSet方法
+2. <Bean>元素上添加init-method初始化
+3. 使用@PostConstruct注解
+```
+
+
+
+接口定义如下：
+
+```java
+public interface InitializingBean {
+        void afterPropertiesSet() throws Exception;
+    }
+```
+
+执行顺序：Constructor > @PostConstruct > InitializingBean > init-method
+
+
+
+## Springboot整合
+
+### springboot实现CORS 跨域请求
+
+* https://blog.csdn.net/pjmike233/article/details/82461911
+
+#### （全部跨域）
+
+```java
+#在webconfi中添加配置
+@Configuration
+@EnableWebMvc
+public class WebConfig implements WebMvcConfigurer {
+/*
+* 实现跨域
+*/
+@Bean
+public FilterRegistrationBean corsFilter() {	
+     //1. 添加 CORS配置信息
+    CorsConfiguration config = new CorsConfiguration();
+    //放行哪些原始域
+    config.addAllowedOrigin("*");
+    //是否发送 Cookie
+    config.setAllowCredentials(true);
+    //放行哪些原始请求头部信息
+    config.addAllowedHeader("*");
+    //放行哪些请求方式
+    config.addAllowedMethod("*");
+    //2. 添加映射路径
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", config);
+    FilterRegistrationBean bean = new FilterRegistrationBean(new CorsFilter(source));
+    bean.setOrder(0);
+    return bean;
+}
+}
+```
+
+####  （局部跨域）
+
+1、在控制器上使用注解 @CrossOrigin:
+
+```java
+@RestController
+@CrossOrigin(origins = "*")
+public class HelloController {
+    @RequestMapping("/hello")
+    public String hello() {
+        return "hello world";
+    }
+}
+```
+
+2、使用 HttpServletResponse 对象添加响应头(Access-Control-Allow-Origin)来授权原始域，这里 Origin的值也可以设置为 “*”,表示全部放行。
+
+```java
+@RequestMapping("/index")
+public String index(HttpServletResponse response) {
+    response.addHeader("Access-Allow-Control-Origin","*");
+    return "index";
+}
+```
+
+### EasyExcel使用
+
+```xml
+poi消耗更大的内存，可能oom
+<!--EasyExcel相关依赖-->
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>easyexcel</artifactId>
+    <version>3.0.5</version>
+</dependency>
+```
+
+
+
+### ThreadLocal使用场景
+
+```java
+public final class SysSession {
+    private static ThreadLocal<AuthenticatedUser> authenticatedUserLocal = new ThreadLocal<AuthenticatedUser>();
+//### 所以只有那些一次请求有可能使用到多次的变量才存储到ThreadLocal中
+```
+
+
+
 ### 单点登录的实现
 
 * **jsonwebtoken跨域登录**
@@ -1994,7 +2279,7 @@ https://www.jianshu.com/p/5858b2a9b509
 
 
 
-### Node使用
+## Node使用
 
 #### 环境搭建
 
@@ -3105,6 +3390,15 @@ export CATALINA_BASE=/usr/local/tomcat${tomcat_version}/$i #服务地址
 
 例子：http://freemarker.foofun.cn/dgui_quickstart_basics.html
 
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-freemarker</artifactId>
+</dependency>
+```
+
+
+
 ```java
 @GetMapping(value = {"/index.do"})
 public String index(HttpServletRequest request,String orderId, String orderStatus) throws Exception {
@@ -3126,7 +3420,9 @@ spring:
   freemarker:
     suffix: .ftl
     enabled: true
+    #关闭缓存，及时刷新，上线生产环境需要修改为true
     cache: false
+    tempalte-loader-path: classpath:/templates
     settings:
      template_update_delay: 0
   resources:
@@ -4158,7 +4454,7 @@ firewall-cmd --zone=public --add-port=2181/tcp --permanent #网页端口
 firewall-cmd --zone=public --add-port=5672/tcp --permanent  #AMQP端口,java使用
 firewall-cmd --reload # 重新加载
 //关闭某个端口
-"sudo iptables -A INPUT -p tcp --dport $PORT -j DROP"
+"sudo iptables -A INPUT -p tcp --dport $PORT -J DROP"
 "sudo iptables -A OUTPUT -p tcp --dport $PORT -j DROP" 
 //linux或者
 /sbin/iptables -I INPUT -p tcp --dport 9092 -j ACCEPT  
@@ -4514,7 +4810,7 @@ http {
 
 **2、nginx作为反向代理服务器配置**
 
-```json
+```nginx
 #反向代理示例
 upstream test {
    server 192.168.10.20;
@@ -4524,8 +4820,13 @@ server {
    listen   80;
    server_name  192.168.10.20;
    index  index.html index.htm;
-   location / {
-         proxy_pass http://test;
+   location ^~/home/ {
+         proxy_pass http://test;    
+    	#access_log logs/xxx.log;
+        #error_log  logs/xxx.log;
+        #proxy_set_header  Host $host
+        #proxy_set_header  X-Real_Ip $remote_addr
+        #proxy_set_header  X-Forwarder-For $proxy_add_x_forwarder_for;        
 	}
 }
 #正向代理实例
@@ -4542,6 +4843,12 @@ server {
         proxy_send_timeout 60;
         proxy_read_timeout 60;
         proxy_next_upstream error timeout invalid_header http_502;
+    }
+    location /xxx {
+        root   D:\Tomcat\apache-tomcat-8.5.69\webapps\guide;
+        index  index.html index.htm;
+        #解决vue的去掉# 刷新报404
+        try_files $uri $uri/ /index.html;
     }
 }
 ```
@@ -5283,7 +5590,7 @@ Kafka开发团队重写了ZooKeeper的Quorum控制器代码并嵌入到Kafka中�
 
 1、启动kafka服务
 
-```
+```shell
 bin/kafka-server-start.sh config/server.properties &
 
 
@@ -5308,7 +5615,7 @@ kafka_2.10-0.8.2.2.jar
 
 3、查看所有的话题
 
-```
+```shell
 ./kafka-topics.sh --list --zookeeper localhost:2181
 
 ./kafka-topics.sh --zookeeper localhost:2181 --list
@@ -5325,7 +5632,7 @@ kafka_2.10-0.8.2.2.jar
 ```
 ./kafka-topics.sh --zookeeper localhost:2181 --describe  --topic demo
 #根据组查询
-./kafka-consumer-groups.sh --bootstrap-server kafka.safedog.cn:9092 --describe  --group cloudnet_plugCallback_mysql
+./kafka-consumer-groups.sh --bootstrap-server kafka.safedog.cn:9092 --describe  --group cloudnet_serverBaseInfo_mysql_heartbeat
 ```
 
 6、删除一个话题
@@ -5344,10 +5651,11 @@ kafka_2.10-0.8.2.2.jar
 
  8、测试kafka发送和接收消息（启动两个终端）
 
-```
+```shell
 #发送消息（注意端口号为配置文件里面的端口号）
 ./kafka-console-producer.sh --broker-list localhost:9092 --topic test
 #消费消息（可能端口号与配置文件保持一致，或与发送端口保持一致）
+#查看消息内容
 ./kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --from-beginning   #加了--from-beginning 重头消费所有的消息./kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test         #不加--from-beginning 从最新的一条消息开始消费
 ```
 
@@ -5357,6 +5665,9 @@ kafka_2.10-0.8.2.2.jar
 ./kafka-run-class.sh cloudbis.cluster.component.risk.mysql --broker-list localhost:9092 --topic test --time -1
 
 Current-offset与log-end-offset 相等表示kafka topic 消息已全部消费完
+
+#创建topic
+./bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions ...
 ```
 
 10、显示所有消费者
@@ -5378,7 +5689,86 @@ Current-offset与log-end-offset 相等表示kafka topic 消息已全部消费完
 #用 |grep  关键字查询
 ```
 
-## kafka可视化工具
+12、查看topic最新数据
+
+```shell
+ kafka-avro-console-consumer 查看全部消息
+ 
+ ./bin/kafka-avro-console-consumer --bootstrap-server localhost:9092 --topic testGetN \
+  --property schema.registry.url="http://localhost:50002" \
+  --property print.key=true --from-beginning
+  
+#获取topic的最大offset和最小offset
+  
+#查看各个分区的最小offset(这个意思就是，这个offset之前的消息已经被清除了，现在consumer是从这个offset之后开始消费):
+./bin/kafka-run-class kafka.tools.GetOffsetShell --broker-list localhost:9092 --topic testGetN --time -2
+#查看各个分区的最大offset(这个意思就是，producer下一次写入信息时的offset):
+./bin/kafka-run-class kafka.tools.GetOffsetShell --broker-list localhost:9092 --topic serverBaseInfo.mysql --time -1
+
+
+#比如想要获取最近N=8条数据，offset=12-N=4，所以就从offset为4开始消费
+./bin/kafka-avro-console-consumer --bootstrap-server localhost:9092 --topic testGetN \
+	--property schema.registry.url="http://localhost:50002" \
+	--property print.key=true --partition 0 --offset 4
+	
+kafka-avro-console-consumer --bootstrap-server localhost:9092 --topic cloudnet.baseline.scan.stat.mysql --property print.key=true --partition 0 --offset 4
+
+
+```
+
+### springboot优雅创建kafka
+
+```java
+代码量变的庞大；
+/**
+  * 通过注入一个 NewTopic 类型的 Bean 来创建 topic，如果 topic 已存在，则会忽略。
+  */
+@Bean
+public NewTopic myTopic() {
+    return new NewTopic(myTopic, 2, (short) 1);
+}
+
+kafka:
+  topics:
+    - name: topic1
+      num-partitions: 3
+      replication-factor: 1
+    - name: topic2
+      num-partitions: 1
+      replication-factor: 1
+          
+@ConfigurationProperties(prefix = "kafka")
+class TopicConfigurations {
+    private List<Topic> topics;
+}
+
+// 现在yaml做好配置， 然后@Configure注入
+@Configure
+private final TopicConfigurations configurations;
+
+    private final GenericWebApplicationContext context;
+
+    public TopicAdministrator(TopicConfigurations configurations, GenericWebApplicationContext genericContext) {
+
+        this.configurations = configurations;
+
+        this.context = genericContext;
+
+    }
+     @PostConstruct
+    public void init() {
+        initializeBeans(configurations.getTopics());
+    }
+
+    private void initializeBeans(List<TopicConfigurations.Topic> topics) {
+        topics.forEach(t -> context.registerBean(t.name, NewTopic.class, t::toNewTopic));
+    }
+}
+```
+
+
+
+### kafka可视化工具
 
 ```
 #Offset exploer
@@ -6783,6 +7173,48 @@ nohup java -jar cloud-upgrade.jar --spring.profiles.active=prod -Dcatalina.base=
 nohup java -jar xxx.jar > msg.log  2>&1 &
 ```
 
+### archetype脚手架生成
+
+```cmd
+mvn archetype:create-from-project
+```
+
+* 生成文件后主要编写  archetype-metadata.xml 文件
+
+  属性变量定义
+
+  ```xml
+  <requiredProperties>
+      <requiredProperty key="groupId">
+          <defaultValue>com.thebeastshop</defaultValue>
+      </requiredProperty>
+      <requiredProperty key="artifactId">
+          <defaultValue>test</defaultValue>
+      </requiredProperty>
+      <requiredProperty key="package">
+          <defaultValue>com.thebeastshop.test</defaultValue>
+      </requiredProperty>
+  </requiredProperties>
+  ```
+
+  这些属性能够在资源元文件里的任意一个文件里经过${var}来引用，因此的元文件最终均可以选择经过velocity引擎来执行替换后生成。
+  默认的属性有：groupId，artifactId，packeage，version等
+
+* 通过mvn clean install 命令把该jar包安装到本地仓库
+
+* 生成一个项目看看效果，使用以下命令：
+
+```cmd
+ mvn archetype:generate 
+　　-DgroupId=comthebeastshop 
+　　-DartifactId=beast-test 
+　　-Dpackage="com.thebeastshop.test" 
+　　-DarchetypeGroupId=com.thebeastshop 
+　　-DarchetypeArtifactId=beast-archetype -DarchetypeVersion=1.1 -X -DarchetypeCatalog=local
+```
+
+
+
 
 
 ------
@@ -7395,7 +7827,7 @@ podTemplate(label: label, containers: [
 
 ```
 
-
+### Jenkins持续集成 之 hook自动触发构建
 
 ### 例子2
 
@@ -8650,6 +9082,8 @@ ENTRYPOINT java -jar -javaagent:/agent/skywalking-agent.jar -Dskywalking.agent.s
 * jenkins 构建信息推送
 * jira 信息通知推送
 
+## Swagger
+
 ### Swagger2的 实时生成文档api
 
 ```xml
@@ -8732,7 +9166,7 @@ ApiImplicitParams
 * https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner+for+Jenkins
 * https://www.jianshu.com/p/b0b19368e4a8
 
-### springboot 整合 sitemesh3
+### springboot 整合swagger-sitemesh3
 
 Sitemesh 是一个网页布局和修饰的框架，基于 Servlet 中的 Filter
 
@@ -8805,74 +9239,6 @@ public FilterRegistrationBean filterRegistrationBean(@Qualifier("sitemesh3")WebS
 #### 3、swagger和gateway的聚合多服务swagger
 
 
-
-### springboot实现CORS 跨域请求
-
-* https://blog.csdn.net/pjmike233/article/details/82461911
-
-#### （全部跨域）
-
-```java
-#在webconfi中添加配置
-@Configuration
-@EnableWebMvc
-public class WebConfig implements WebMvcConfigurer {
-/*
-* 实现跨域
-*/
-@Bean
-public FilterRegistrationBean corsFilter() {	
-     //1. 添加 CORS配置信息
-    CorsConfiguration config = new CorsConfiguration();
-    //放行哪些原始域
-    config.addAllowedOrigin("*");
-    //是否发送 Cookie
-    config.setAllowCredentials(true);
-    //放行哪些原始请求头部信息
-    config.addAllowedHeader("*");
-    //放行哪些请求方式
-    config.addAllowedMethod("*");
-    //2. 添加映射路径
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", config);
-    FilterRegistrationBean bean = new FilterRegistrationBean(new CorsFilter(source));
-    bean.setOrder(0);
-    return bean;
-}
-}
-```
-
-####  （局部跨域）
-
-1、在控制器上使用注解 @CrossOrigin:
-
-```java
-@RestController
-@CrossOrigin(origins = "*")
-public class HelloController {
-    @RequestMapping("/hello")
-    public String hello() {
-        return "hello world";
-    }
-}
-```
-
-2、使用 HttpServletResponse 对象添加响应头(Access-Control-Allow-Origin)来授权原始域，这里 Origin的值也可以设置为 “*”,表示全部放行。
-
-```java
-@RequestMapping("/index")
-public String index(HttpServletResponse response) {
-    response.addHeader("Access-Allow-Control-Origin","*");
-    return "index";
-}
-```
-### ThreadLocal使用场景
-
-```java
-public final class SysSession {
-    private static ThreadLocal<AuthenticatedUser> authenticatedUserLocal = new ThreadLocal<AuthenticatedUser>();
-//### 所以只有那些一次请求有可能使用到多次的变量才存储到ThreadLocal中
-```
 
 
 
@@ -9024,6 +9390,8 @@ onlyOffice开源文档编辑器  [kkFileView](https://gitee.com/kekingcn/file-on
 **安全扫描：**
 
 * NESSUS https://zhuanlan.zhihu.com/p/395459622
+
+Typora的破解下载地址： https://dyyidc.jb51.net/202112/tools/typorapj_jb51.rar
 
 
 
