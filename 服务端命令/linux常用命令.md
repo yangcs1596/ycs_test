@@ -14,7 +14,7 @@ rm -rf '文件夹'  //千万注意不能使用【 rm -rf /* 】会导致系统�
 #复制文件
 cp /root/a.txt  /tmp/
 #复制目录
-cp -r /root /root
+cp -r /root /root2
 #移动文件或者修改文件名
 mv source target
 ```
@@ -156,7 +156,7 @@ if [ ! 表达式 ]
 
 
 
-##### 解压缩查看日志
+##### 解压缩
 
 ```shell
 # 查看文件，实时显示最后一页
@@ -346,6 +346,8 @@ top
 vmstat 
 #查看磁盘
 df -h
+#查看是哪个目录占的空间
+du -h --max-depth=1 
 #查看内存
 free  
 
@@ -432,6 +434,9 @@ $ top -u oracle
 　　%MEM：进程使用的物理内存和总内存的百分比
 　　TIME+：该进程启动后占用的总的CPU时间，即占用CPU使用时间的累加值。
 　　COMMAND：进程启动命令名称
+　　
+  top -n 2 -d 2.5 |grep Cpu 表示 -d 每2.5刷新一次，总共刷新-n 2次
+  top -b p 2>/tmp/top.txt   表示将top进程表在/tmp/top.txt中打印两次。
 #
 vmstat 2 5
 如果发现等待的进程和处在非中断睡眠状态的进程数非常多，并且发送到块设备的块数和从块设备接收到的块数非常大，那就说明磁盘io比较多。
@@ -603,6 +608,11 @@ firewall-cmd --reload # 重新加载
 netstat -aon|findstr "8081"
 tasklist|findstr "9088"
 
+systemctl status firewalld
+systemctl stop firewalld
+systemctl disable firewalld
+systemctl enable firewalld
+
 service iptables status
 启动指令:service iptables start   
 重启指令:service iptables restart   
@@ -717,6 +727,32 @@ curl -s http://sukbeta.github.io/web/shell.sh | bash -s --
 #不止是curl的输入，其他方式的输入也满足。可以通过以下例子深入理解下
 echo 'i=1; for a in $@; do echo "$i = $a"; i=$((i+1)); done' | bash -s -- -a1 -a2 -a3 --long some_text
 ```
+
+示例
+
+```shell
+curl -H  "Content-Type: application/json"  -d  '{
+  "appId": "x",
+  "sign": "782bdd5089e595eeb0bc3437bd9cdf40ed02f8e8",
+  "datetime": "2022-04-12 12:10:00",
+  "data": {
+    "riskLevelList": [
+      -1
+    ],
+    "osPatchList": [
+      "-1"
+    ],
+    "mdWarePatchList": [
+      "-1"
+    ],
+    "dbPatchList": [
+      "-1"
+    ]
+  }
+}' -X POST  https://10.164.148.23/thirdApi/getPatchManagerPage -k
+```
+
+
 
 
 

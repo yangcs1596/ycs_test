@@ -904,6 +904,10 @@ Optional<Integer> b = Optional.of(value2);
 //获取类名称
 Object.getClass().getSimpleName();
 
+
+//#
+Optional<Object> optional = list.stream().findFirst()
+
 ```
 
 ```java
@@ -987,7 +991,7 @@ public T orElse(T other) {
 }
 ```
 
-##### 例子：
+例子：
 
 ```java
 Optional.ofNullable(user)

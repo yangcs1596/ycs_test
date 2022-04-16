@@ -413,7 +413,7 @@ show index from tableName
 - Hash索引无法用于排序
 - Hash不适用于区分度小的列上，如性别字段
 
-###### 1-1-3 清空表数据
+###### 1-1-3 清空表数据truncate
 
 ```
 truncate table 表名
@@ -570,6 +570,16 @@ INSERT INTO table_name ( field1, field2,...fieldN )
 INSERT INTO table_name ( field1, field2,...fieldN )
       select xx from table;
 ```
+
+#### 10、视图
+
+```mysql
+CREATE OR REPLACE VIEW yourViewName AS SELECT *FROM yourTableName;
+```
+
+
+
+
 
 ## mysql命令行执行sql文件时忽略异常继续执行
 

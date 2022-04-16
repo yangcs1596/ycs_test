@@ -1098,6 +1098,52 @@ public class ThrottleTest {
 </dependency>
 ```
 
+### Springboot session使用
+
+在单应用中我们的session来保存用户信息，通常会保存在服务器中（如tomcat），但是我们把应用搭建成分布式的集群，然后利用LVS或Nginx做负载均衡，那么来自同一用户的Http请求将有可能被分发到两个不同的应用中。
+
+实际上，我们不使用Tomcat的HttpSession，而是将session Id值持久化到Redis中。Spring Session将使用由Redis支持的实现替换HttpSession。
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.session</groupId>
+    <artifactId>spring-session-core</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.session</groupId>
+    <artifactId>spring-session-data-redis</artifactId>
+</dependency>
+```
+
+```properties
+#application.properties配置
+#session存储类型
+spring.session.store-type=redis
+#设置session超时时间
+server.session.timeout=2000
+spring.redis.host=127.0.0.1
+spring.redis.port=6379
+```
+
+```java
+@EnableRedisHttpSession
+@EnableRedisHttpSession(maxInactiveIntervalInSeconds = 800)  //800秒过期时间
+
+
+session 常用命令
+
+1.获取session对象：request.getSession();
+2.给session设置值：session.setAttribute("变量名",值对象);
+3.获取session中的值:session.getAttribute("变量名");
+4.删除session中的值：session.removeAttribute("变量名");session.invalidate();//删除所有session中保存的键
+```
+
+
+
 ### 三种压缩数据
 
 #### redis配置
@@ -1163,6 +1209,10 @@ template.setValueSerializer(jackson2JsonRedisSerializer);
         return template;
     }
 ```
+
+### 
+
+
 
 ## Zip4j介绍
 
@@ -3088,7 +3138,7 @@ devDependencies 节点下的模块是我们在开发时需要用的，比如项�
 > }
 > ```
 
-#### npm编写组件
+#### npm编写组件步骤
 
 ##### 起步
 
@@ -3294,7 +3344,7 @@ module.exports = {
 
 ### Tomcat
 
-#### 结构
+#### 一个tomcat部署多个服务的结构
 
 ```shell
 #windows例子
@@ -3314,6 +3364,16 @@ CATALINA_TMPDIR指向临时目录temp的位置
 catalina.home指向公用信息的位置，就是bin和lib的父目录。
 catalina.base指向每个Tomcat目录私有信息的位置，就是conf、logs、temp、webapps和work的父目录
 #ps: 所以我们要运行多个应用时，就更改catalina.base , 然后启动tomcat就可以 startup.sh了？
+
+sdtomcat的shell例子：
+ pushd /usr/local/tomcat${tomcat_version}/$i &> /dev/null
+ export CATALINA_BASE=/usr/local/tomcat${tomcat_version}/$i
+ > /usr/local/tomcat${tomcat_version}/$i/logs/catalina.out
+ chmod +x /usr/local/tomcat${tomcat_version}/bin/startup.sh
+ /usr/local/tomcat${tomcat_version}/bin/startup.sh
+ logexpect /usr/local/tomcat${tomcat_version}/$i/logs/catalina.out "Server startup"
+ popd &> /dev/null
+ sleep 2
 ```
 
 
@@ -9366,6 +9426,41 @@ git checkout -- aaa.html
 
 * 与 搜索引擎Elasticsearch 合作, logstash
 * 日志可视化工具
+
+
+
+# 如何开发一个桌面应用
+
+## electron
+
+Electron是一个能够让你使用JavaScript 调用丰富的原生 APIs 来创造桌面应用
+
+```cmd
+npm config set registry https://registry.npm.taobao.org
+npm install -g electron 
+npm install -g electron-forge 
+#新建项目
+electron-forge init myapp 
+#启动
+npm start
+#打包，执行 
+npm run make
+桌面应用即完成
+```
+
+```json
+https://blog.csdn.net/weixin_40629244/article/details/116429201
+```
+
+* pc端微信开发是 C++ 基于 duilib实现的  Win32 API结合DUI库
+
+**NW.js**、 **AppJS**、**Meteor**、**Proton Native**
+
+https://baijiahao.baidu.com/s?id=1680087990414788282&wfr=spider&for=pc
+
+
+
+
 
 # 工具总结
 
