@@ -60,7 +60,10 @@ spring:
 
 Sentinel提供了多种数据源的支持，包括Nacos、Zookeeper、文件数据源等。
 
-# <span style="border-left: 5px solid rgb(248, 57, 41);">springboot项目接入nacos</span>
+* 使用Nacos存储规则并实时更新
+  Sentinel提供了多种数据源的支持，包括Nacos、Zookeeper、文件数据源等。
+
+## <span style="border-left: 5px solid rgb(248, 57, 41);">springboot项目接入nacos
 
 ### 引入依赖
 
@@ -820,8 +823,6 @@ gateway:
 #          name: myfallback
 #          fallbackUri: forward:/defaultfallback
 ```
-#          
-
 ### ribon配置
 
 ```yaml
@@ -934,6 +935,76 @@ info:
   author: Coding Farmer
   blog: http://www.coding-farmer.cn
 ```
+
+
+
+# 分表分库
+
+## mycat使用
+
+安装
+
+```
+下载地址为：http://dl.mycat.org.cn/1.6.7.5/2020-4-10/
+tar -zxvf  Mycat-server-1.6.7.5-release-20200422133810-linux.tar.gz -C /usr/local
+配置环境变量
+vi /etc/profile
+添加如下配置信息：
+export MYCAT_HOME=/usr/local/mycat
+export PATH=$MYCAT_HOME/bin:$PATH:$JAVA_HOME/bin
+```
+
+配置mycat
+
+```xml
+1.修改server.xml文件
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- - - Licensed under the Apache License, Version 2.0 (the "License"); 
+	- you may not use this file except in compliance with the License. - You 
+	may obtain a copy of the License at - - http://www.apache.org/licenses/LICENSE-2.0 
+	- - Unless required by applicable law or agreed to in writing, software - 
+	distributed under the License is distributed on an "AS IS" BASIS, - WITHOUT 
+	WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. - See the 
+	License for the specific language governing permissions and - limitations 
+	under the License. -->
+<!DOCTYPE mycat:server SYSTEM "server.dtd">
+<mycat:server xmlns:mycat="http://io.mycat/">
+	<user name="root" defaultAccount="true">
+		<property name="password">123456</property>
+		<property name="schemas">TESTDB</property>
+		<property name="defaultSchema">TESTDB</property>
+	</user>
+</mycat:server>
+
+2.修改schema.xml文件
+<?xml version="1.0"?>
+<!DOCTYPE mycat:schema SYSTEM "schema.dtd">
+<mycat:schema xmlns:mycat="http://io.mycat/">
+        <schema name="TESTDB" checkSQLschema="false" sqlMaxLimit="100" dataNode="dn1">
+        </schema>
+        <dataNode name="dn1" dataHost="host1" database="msb" />
+        <dataHost name="host1" maxCon="1000" minCon="10" balance="0"
+                          writeType="0" dbType="mysql" dbDriver="native" switchType="1"  slaveThreshold="100">
+                <heartbeat>select user()</heartbeat>
+                <writeHost host="hostM1" url="192.168.85.111:3306" user="root"
+                                   password="123456">
+                        <readHost host="hostS1" url="192.168.85.112:3306" user="root" password="123456"></readHost>
+                </writeHost>
+        </dataHost>
+</mycat:schema>
+```
+
+```
+mycat的启动有两种方式，一种是控制台启动，一种是后台启动，在初学的时候建议大家使用控制台启动的方式，当配置文件写错之后，可以方便的看到错误，及时修改，但是在生产环境中，使用后台启动的方式比较稳妥。
+​ 控制台启动：去mycat/bin目录下执行 ./mycat console
+​ 后台启动：去mycat/bin目录下执行 ./mycat start
+
+
+从另外的虚拟机去登录访问当前mycat，输入如下命令即可
+mysql -uroot -p123456 -P 9066 -h 192.168.85.111
+```
+
+
 
 
 

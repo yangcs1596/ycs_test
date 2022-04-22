@@ -461,7 +461,7 @@ merge
 
 
 
-### Dubbo 
+## Dubbo 
 
 * 文档： http://dubbo.apache.org/zh-cn/docs/user/quick-start.html
 * 
@@ -481,9 +481,110 @@ merge
 3. 服务消费者在启动时，向注册中心订阅自己所需的服务。
 4. 注册中心返回服务提供者地址列表给消费者，如果有变更，注册中心将基于长连接推送变更数据给消费者。
 5. 服务消费者，从提供者地址列表中，基于软负载均衡算法，选一台提供者进行调用，如果调用失败，再选另一台调用。
-6. 服务消费者和提供者，在内存中累计调用次数和调用时间，定时每分钟发送一次统计数据到监控中心。 
+6. 服务消费者和提供者，在内存中累计调用次数和调用时间，定时每分钟发送一次统计数据到监控中心。
 
-### BeetlSQL
+### 使用步骤
+
+```xml
+<!--Springboot 集成 Dubbo依赖-->
+<dependency>
+    <groupId>com.alibaba.boot< /groupId>
+    <artifactId>dubbo-spring-boot-starter< /artifactId>
+    <version>0.2.0< /version>
+</dependency>       
+    <!--dubbo框架 一般与上者二选一看环境-->
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>dubbo</artifactId>
+    <version>2.6.4</version>
+</dependency>
+<!-- 引入Zookeeper服务注册中心依赖（可选，取决于用什么注册中心，如果是Redis，就换成Jedis依赖） -->
+<dependency>
+    <groupId>org.apache.dubbo</groupId>
+    <artifactId>dubbo-dependencies-zookeeper</artifactId>
+    <version>${dubbo.version}</version>
+    <type>pom</type>
+    <exclusions>
+        <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+<!--zk依赖 与上面二选一？-->
+        <dependency>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper</artifactId>
+            <version>3.4.13</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.sgroschupf</groupId>
+            <artifactId>zkclient</artifactId>
+            <version>0.1</version>
+        </dependency>
+```
+
+```yaml
+#application.yml配置 服务提供方
+dubbo:
+  application:
+    name: demo-provider
+    qos-enable: false #用于运维的监控服务， 默认是开启状态，并且端口是22222。开发环境为了避免端口冲突，建议直接关掉
+  registry:
+    address: zookeeper://10.10.14.120:2181?client=curator
+  protocol:
+    name: dubbo
+    port: 20883
+    host: 10.10.14.236
+#服务消费方的配置    
+dubbo:
+  application:
+    name: demo-consumer
+    qos-enable: false
+  registry:
+    address: zookeeper://10.10.14.120:2181?client=curator
+
+java种提供者
+@EnableDubbo(scanBasePackages = "com.lanou3g.dubbo.service.impl")
+@Service(version = "1.0.0")  // @Service为dubbo提供的Service注解，非Spring提供的
+
+java种消费者注入
+@Reference(version = "1.0.0")
+```
+
+
+
+###  dubbo-admin的使用
+
+**2.1、下载dubbo-admin**
+
+```ruby
+git clone https://github.com/apache/dubbo-admin/tree/master
+```
+
+**2.2、修改dubbo-admin配置**
+
+修改 src\main\resources\application.properties 指定zookeeper地址
+
+```properties
+dubbo.registry.address=zookeeper://127.0.0.1:2181
+dubbo.admin.root.password=root
+dubbo.admin.guest.password=guest
+```
+
+**2.3、打包dubbo-admin**
+
+```kotlin
+mvn clean package -Dmaven.test.skip=true
+```
+
+**2.4、运行dubbo-admin**
+
+```undefined
+java -jar dubbo-admin-0.0.1-SNAPSHOT.jar
+```
+
+## BeetlSQL
 
 * 文档 ： http://ibeetl.com/guide/#beetlsql
 
@@ -4921,7 +5022,7 @@ proxy_redirect参数说明：
 
 #### host攻击防御
 
-```
+```nginx
 
 
 server {
@@ -4941,6 +5042,43 @@ server {
 !~*为不区分大小写不匹配
 ^~ 如果把这个前缀用于一个常规字符串,那么告诉nginx 如果路径匹配那么不测试正则表达式。
 ```
+
+#### 打开目录浏览功能
+
+```nginx
+添加上autoindex on;来启用目录流量
+#整个虚拟主机开启目录流量,或者可以放在server下
+location / {
+    autoindex on;
+    autoindex_localtime on; #之类的参数写这里 默认为 off，显示的文件时间为 GMT 时间。改为 on 后，显示的文件时间为文件的服务器时间。
+    autoindex_exact_size off; #默认为 on，显示出文件的确切大小，单位是 bytes。改为 off 后，显示出文件的大概大小，单位是 kB 或者 MB 或者 GB。
+    charset utf-8,gbk; #展示中文文件名，这个可以不要？解决中文问题
+}
+目录美化之类
+location / {
+    #跨域设置
+    add_header Access-Control-Allow-Origin "*";
+    add_header Access-Control-Allow-Methods "GET,POST,PUT,DELETE,OPTIONS";
+    add_header Access-Control-Allow-Headers "*";
+    add_header Access-Control-Allow-Credentials true;
+    #以上几行设置跨域与目录美化无关
+    add_after_body /.Nginx/footer.html; #.Nginx这个路径自定义的
+}
+
+#单独目录开启目录流量
+2.1：直接二级目录开启目录流量
+location /down/ {
+autoindex on;
+}
+
+2.2：虚拟目录开启目录流量
+location /down/ {
+alias /home/wwwroot/lnmp/test/;
+autoindex on;
+}
+```
+
+
 
 #### vue静态代理例子
 
@@ -5211,6 +5349,7 @@ HBase可以用来做数据的固化，也就是数据存储，做这个他非常
   2、Phoenix 区分大小写，切默认情况下会将小写转成大写，所以表名、列簇、列名需要用双引号。
   3、Phoenix 4.10 版本之后，在创建表映射时需要将 COLUMN_ENCODED_BYTES 置为 0。
   4、删除映射表，会同时删除原有 HBase 表。所以如果只做查询炒作，建议做视图映射。
+* 访问： http://ip:50070/explorer.html#/
 
 
 #### phoenix命令
@@ -5448,6 +5587,8 @@ zkServer.sh restart
 ```
 zkServer.sh status
 ```
+
+
 
 ## Kafka 
 
@@ -8278,7 +8419,7 @@ OS name: "linux", version: "3.10.0-957.el7.x86_64", arch: "amd64", family: "unix
 </mirror>
 ```
 
-
+### Dockerfile例子
 
 ```shell
 #Dockerfile例子
@@ -8475,6 +8616,85 @@ spec:
 [root@k8s-master k8s]# kubectl create -f portal.yaml
 
 ```
+
+### 制作微服务的镜像
+
+打出springboot可执行jar包，上传至docker环境
+
+```
+cd /rousem/temp/rousem-portal 
+#将jar文件rousem-portal.jar拷贝到这里``vim Dockerfile
+```
+
+
+
+Dockerfile内容如下：
+
+```
+#基础镜像,openjdk8
+FROM adoptopenjdk/openjdk8:latest
+#维护者信息
+MAINTAINER maocai@rousem.com
+#工作目录,后续的指令都基于这个目录
+WORKDIR /rousem
+#拷贝打包的jar文件
+COPY rousem-portal.jar jar/app.jar
+#需要对外暴露的端口
+EXPOSE 6021
+#需要挂载的目录,内嵌 Tomcat 容器默认使用/tmp作为工作目录
+VOLUME ["/rousem/logs","/tmp"]
+#添加镜像元信息
+LABEL version="0.0.1" descripton="测试版本"
+#环境变量(jasypt密钥,查看账号配置文档)
+ENV JASYPT_ENCRYPTOR_PASSWORD hahawoshimiyue
+#容器启动执行的命令,如果定义了多次，则以最后一次为准
+#为了缩短 Tomcat 启动时间，添加一个系统属性指向/dev/./urandom
+#-XX:+UnlockExperimentalVMOptions 和 -XX:+UseCGroupMemoryLimitForHeap设置jvm根据容器内存上限来自动分配jvm内存
+ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom"\
+,"-server"\
+,"-XX:+UnlockExperimentalVMOptions"\
+,"-XX:+UseCGroupMemoryLimitForHeap"\
+,"-Duser.timezone=GMT+8"\
+,"-jar","jar/app.jar"\
+,"--spring.profiles.active=prod"\
+,"> /dev/null","2>&1"]
+```
+
+
+
+2、根据Dockerfile构建镜像
+
+```
+#构建镜像
+docker build -t rousem``/portal``:0.0.1 -f Dockerfile ./
+#查看构建的镜像
+docker images
+```
+
+
+
+3、启动自己构建的镜像,同时设置host配置
+**说明：**用openjdk8作为基础镜像，加上启动jvm时设置了自适应容器内存，所以只需限制容器的内存就可以，jvm会根据容器的内存自动设置jvm内存
+
+```
+docker run --name rousem-portal --restart=always \
+-v /rousem/logs/applications/portal:/rousem/logs \
+--add-host=nacos.rousem.com:10.200.0.4 \
+--add-host=sentinel.rousem.com:10.200.0.4 \
+-d -p 6311:6311 \
+-m 128m \
+rousem/portal:0.0.1
+```
+
+
+
+4、查看运行时控制台日志
+
+```
+docker logs -f rousem-portal
+```
+
+
 
 
 
@@ -9427,36 +9647,166 @@ git checkout -- aaa.html
 * 与 搜索引擎Elasticsearch 合作, logstash
 * 日志可视化工具
 
+## CodeMirror使用小结
 
+CodeMirror可以在线编辑代码，风格包括js, java, php, c++等等100多种语言。
+
+ https://codemirror.net/index.html 
+
+https://blog.csdn.net/haoyanyu_/article/details/82252583 学习地址
 
 # 如何开发一个桌面应用
 
 ## electron
 
-Electron是一个能够让你使用JavaScript 调用丰富的原生 APIs 来创造桌面应用
+Electron是一个能够让你使用JavaScript 调用丰富的原生 APIs 来创造桌面应用。 **一个 Electron 有且只有一个主进程**
 
 ```cmd
 npm config set registry https://registry.npm.taobao.org
-npm install -g electron 
-npm install -g electron-forge 
+npm install -g electron  #默认使用 --save,  dev表示仅在开发过程中使用
+npm install -g electron-forge --save-dev  #好像也是打包工具
 #新建项目
 electron-forge init myapp 
 #启动
 npm start
-#打包，执行 
+#打包，执行(下载的包失败，可以下载放在目录下) 
 npm run make
 桌面应用即完成
 ```
 
+```cmd
+#打包2
+npm install  electron-builder --save-dev
+#打包3
+npm install -g electron-packager --save-dev
+##命令（注意把要下载的zip包放在目录下
+electron-packager . MyApp --platform=win32 --arch=x64 --out=./out --icon=./app.ico --app-version=0.01 --overwrite --electron-zip-dir=../
+基本代码命令说明：
+electron-packager <sourcedir> <appname> --platform=<platform> --arch=<arch> --out=out --icon=assets/app.ico --asar --overwrite --ignore=.git
+说明：
+sourcedir：项目源文件所在路径（唯一的必须参数）
+appname：项目名称（直接使用package.json文件中的name属性更方便）
+platform：要构建哪个平台的应用（Windows、Mac 还是 Linux）
+arch：构建架构 包含ia32,x64,armv7l,arm64
+out：打包后的地址
+icon：打包图标
+asar：是否生成app.asar, 不然就是自己的源码
+overwrite：覆盖上次打包
+ignore：不进行打包的文件
+设置了比较简单的打包代码（在scipts节点添加下面代码）
+"packager": "electron-packager ./ testapp --win --out ./outputs"
+./：sourcedir，项目路径
+testapp：appname，打包后可执行程序(.exe)的名字
+–win：platform，构建win平台的打包
+–out：打包后的地址，./outputs 就是打包后的地址
+————————————————
+版权声明：本文为CSDN博主「漫-流」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/u013116210/article/details/107809014
+
+```
+
+
+
 ```json
 https://blog.csdn.net/weixin_40629244/article/details/116429201
 ```
+
+* 通讯 electron 的进程分为 **主进程** 和 **渲染进程**
+
+```cmd
+#main.js为主进程
+你在入口文件的index.js创建的 BrowserWindow 些为渲染进程
+
+const { remote, shell, ipcRenderer } = require('electron');
+
+ipcRenderer.send('window-close') // 发送命令
+ipcRenderer.send('asynchronous-message', '顶你个肺') // 发送消息
+
+#渲染进程之间是不可以直接通讯的！可以通过主进程做桥梁
+// 主进程监听渲染进程消息
+ipcMain.on('asynchronous-message', (event, arg) => {
+  // event.sender.send('asynchronous-reply', arg) // 返回当前进程消息：'顶你个肺'
+  // 指定另一个渲染进程接收 ，这里的目标进程 
+  mainWindow.webContents.send('asynchronous-reply', arg) // 返回一个'顶你个肺'
+})
+//渲染线程监听主进程发送消息
+ipcRenderer.on('asynchronous-reply',, (event, arg) => {...})
+```
+
+* dialog读写文件的操作
+
+```js
+//引入需要的包
+const { dialog } = require('electron')
+const fs = require("fs");
+
+//详细学习node的fs模块方法 
+
+//导出文件
+ipcMain.on('file_export',(event,arg)=>{
+    //调用dialog的showSaveDialog
+    var filePath = dialog.showSaveDialog(mainWindow, {
+        title: "保存文件",
+        defaultPath: "",
+        //这里选择saveFile
+        properties: ['saveFile'],
+        filters: [
+            //根据需要设置文件类型
+            { name: '.txt', extensions: ['txt'] }
+        ]
+    }).then(result => {
+        //打开选择的保存文件路径
+        var fd = fs.openSync(result.filePath, 'w');
+        //将数据写入文件
+        fs.writeSync(fd, arg);
+        //关闭文件
+        fs.closeSync(fd);
+        //告诉显示进程，文件写入完成
+        mainWindow.webContents.send('log_export_success')
+    }).catch(err => {
+        console.log(err)
+    })
+})
+//导入文件
+ipcMain.on('file_import',(event,arg)=>{
+    //调用showOpenDialog
+    dialog.showOpenDialog({
+        title: "选择导入文件",
+        defaultPath: "",
+        //选择openFile
+        properties: ['openFile'],
+        filters: [
+            //设置文件类型
+            { name: 'txt', extensions: ['txt'] }
+        ]
+    }).then(result => {
+        console.log(result.filePaths[0]);
+        //文本方式读取文件
+        fs.readFile(result.filePaths[0], 'utf-8', (err, data) => {
+            if (err) {
+                console.log("An error ocurred reading the file :" + err.message)
+                return
+            }
+            //数据发送到显示进程
+            mainWindow.webContents.send('file_import_success',data)
+        })
+    }).catch(err => {
+        console.log(err)
+    })
+})
+```
+
+
 
 * pc端微信开发是 C++ 基于 duilib实现的  Win32 API结合DUI库
 
 **NW.js**、 **AppJS**、**Meteor**、**Proton Native**
 
 https://baijiahao.baidu.com/s?id=1680087990414788282&wfr=spider&for=pc
+
+* 桌面开发
+
+https://www.zhihu.com/question/453979660/answer/2397193140
 
 
 
@@ -9489,5 +9839,7 @@ onlyOffice开源文档编辑器  [kkFileView](https://gitee.com/kekingcn/file-on
 Typora的破解下载地址： https://dyyidc.jb51.net/202112/tools/typorapj_jb51.rar
 
 
+
+* hutool开源地址：https://github.com/dromara/hutool   https://gitee.com/dromara/hutool
 
  

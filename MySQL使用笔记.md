@@ -802,6 +802,13 @@ where ...
 
 #### insert
 
+```
+insert ignore into ...
+表示数据库如果存在主键，则跳过该条
+```
+
+
+
 #### replace into
 
 ```

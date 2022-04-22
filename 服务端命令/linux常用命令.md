@@ -5,6 +5,10 @@
 ```shell
 #新增文件
 touch fileName
+同时创建两个文件
+touch test1.txt test2.txt
+批量创建文件（如创建2000个文件）
+touch test{0001..2000}.txt
 #查看当前路径
 pwd
 #创建目录
@@ -31,6 +35,13 @@ cp [选项] 源文件 目标文件
 -p：复制后目标文件保留源文件的属性（包括所有者、所属组、权限和时间）；
 -r：递归复制，用于复制目录；
 -u：若目标文件比源文件有差异，则使用该选项可以更新目标文件，此选项可用于对文件的升级和备用。
+```
+
+
+
+```
+locate命令用于查找符合条件的文档
+只需要输入 locate your_file_name 即可查找指定文件。
 ```
 
 
@@ -63,6 +74,16 @@ grep -C 10 ‘具体行的唯一表示’ /etc/tomcat.log
 #查看一条前后10行
 cat -n hrun.log | grep "新增用户" -C 10
 ```
+
+### lrzsz
+
+```
+lrzsz是一款程序，在linux中可以代替ftp的上传和下载
+
+yum install -y lrzsz
+```
+
+
 
 
 

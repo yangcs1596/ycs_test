@@ -3565,6 +3565,8 @@ docker exec -it 镜像id /bin/bash  #常用
 更多命令参看
 https://docs.docker.com/engine/reference/commandline/docker/
 可以参考每一个镜像的文档
+
+
 #查看容器的目录
 docker exec 容器name ls
 #docker inspect来查看该容器的详细信息。
@@ -3642,7 +3644,7 @@ docker cp /usr/local/testJavaProject/test01.war 9fccf0236619:/usr/local/tomcat/w
 	在usr/local/目录下创建一个dev目录，dev目录用来专门存放开发包什么的，dev目录下再创建一个docker-tomcat目录，行了，就用docker-tomcat进行映射到docker中的tomcat容器里的webapps目录
 #挂载usr/local/dev/docker-tomcat目录，并运行容器命令如下
 docker run -d -p 8088:8080 --name tomcat -v /usr/local/dev/docker-tomcat:/usr/local/tomcat/webapps --restart=always tomcat
-
+   
 #启动tomcat容器，并与mysql建立连接，tomcat镜像的名字是myweb，创建命令如下：
 #创建mysql的一个容器，容器的名字是db001，创建命令如下：
 docker run --name db001 -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 -d mysql:5.7
@@ -3770,8 +3772,11 @@ docker run --name some-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag --
 ```shell
 docker volume create 卷名
 #查看
+docker volume ls
 docker volume inspect nginx
-#创建容器  并挂载卷nginx:/etc/nginx  -v是挂载 本机目录和容器目录
+#删除卷
+docker rm volume
+#创建容器  并挂载卷nginx:/etc/nginx  -v是挂载卷，也可以使用本机目录：容器目录
 docker run -d -v nginx:/etc/nginx -p 80:80 --name nginx nginx:1.14
 ```
 

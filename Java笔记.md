@@ -28,11 +28,13 @@
 
 服务注册中心、配置中心: nacos,   springcloud config, zookeeper
 
-服务的熔断降级： Netflix的开源组件Hystrix, feign
+分布式事物：seata、tx-lcn、hmily
+
+服务的熔断降级： Netflix的开源组件Hystrix,  openfeign
 
 网关技术： springcloud Gateway技术  Zuul网关
 
-客服端负载均衡： Netflix Ribbon
+客户端负载均衡： Netflix Ribbon
 
 代码规范： sonarqube、 审查 upsource
 
@@ -3507,7 +3509,29 @@ Ctrl + Alt + U  向上继承关系 diagram
   31、bxsh:w          -webkit-box-shadow:0 0 0 #000;
 ```
 
-#### Lombox插件
+### RestfulToolkit插件
+
+### MyBatis Log Plugin
+
+### Translation
+
+### GsonFormat
+
+### Alibaba Java Coding Guidelines
+
+### Maven Helper
+
+解决Maven依赖冲突的好帮手，可以快速查找项目中的依赖冲突，并予以解决！
+
+### Vue.js
+
+Vue.js支持插件，写过前端的朋友肯定用过，可以根据模板创建.vue文件，也可以对Vue相关代码进行智能提示
+
+### element
+
+Element-UI支持插件，可以对Element-UI中的标签进行智能提示，有了它就不用盲写相关代码了
+
+### Lombox插件
 
 - idea — setting — plugins, 
   搜索栏中输入**Lombok**。
