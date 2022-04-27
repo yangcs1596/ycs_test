@@ -39,11 +39,6 @@ cp [选项] 源文件 目标文件
 
 
 
-```
-locate命令用于查找符合条件的文档
-只需要输入 locate your_file_name 即可查找指定文件。
-```
-
 
 
 ### 清空文件内容
@@ -1214,7 +1209,7 @@ else
 fi
 ```
 
-#### 12、简单自定义rm实现
+### 12、简单自定义rm实现
 
 ```shell
 #!/bin/bash
@@ -1238,5 +1233,78 @@ else
   echo "Only input yes or no"
   exit
 fi
+```
+
+### 13、push和popd堆栈切换目录
+
+```shell
+dirs -v -l  查看目录
+
+
+pushd -n /home/dave  #写入堆栈
+pushd +3  #通过旋转堆栈更改目录
+pushd #没有参数时，交互目录栈
+pushd -0 #如果要更改到堆栈底部的目录，可以使用以下命令：
+
+
+popd 1 #将目录栈移除
+
+```
+
+
+
+
+
+# shell语法学习
+
+学习记录
+
+```shell
+echo $#
+echo $@
+$@ 表示所有参数
+$# 表示所有参数的个数
+
+chown -R mybk. /home/mybk/files/plugshell #chown将指定文件的拥有者改为指定的用户或组，用户可以是用户名或者用户ID
+su - mybk -c "/home/mybk/files/plugshell/upload_vul.sh"  #能切换到一个用户中去执行一个指令或脚本
+
+
+if [[ $? -eq 0 ]]; then # 该句的命令判断上条命令是否成功
+# echo "old_pass:" $old_pass
+ export MYSQL_PWD=$old_pass
+else
+# echo "new_pass:" $new_pass
+ export MYSQL_PWD=$new_pass
+fi
+
+if [[ $(id -u) == 0 ]]; #判断是否root权限
+if [[ $(whoami) == mybk ]] #判断当前用户是否为mybk
+
+> plugmd5.sql  #生成文件
+echo ''>> plugmd5.sql  #写入内容进入文件	
+```
+
+```shell
+locate命令用于查找符合条件的文档
+Locate [选择参数] [样式]
+-e 将排除在寻找的范围之外。
+-1 如果 是 1．则启动安全模式。在安全模式下，使用者不会看到权限无法看到 的档案。这会始速度减慢，因为 locate 必须至实际的档案系统中取得档案的权限资料。
+-f 将特定的档案系统排除在外，例如我们没有到理要把 proc 档案系统中的档案 放在资料库中。
+-q 安静模式，不会显示任何错误讯息。
+-n 至多显示 n个输出。
+-r 使用正规运算式 做寻找的条件。
+-o 指定资料库存的名称。
+-d 指定资料库的路径
+-h 显示辅助讯息
+-V 显示程式的版本讯息
+只需要输入 locate your_file_name 即可查找指定文件。
+
+find命令是一个实时查找工具，通过遍历指定路径而完成对文件的查找；在使用该命令时，如果不选定参数，则在当前目录下查找子目录与文件并显示之
+find [OPTION]... [查找路径] [查找条件] [处理动作]
+查找路径：指定具体目标路径，默认为当前目录
+查找条件：指定的查找标准，可以是文件名、大小、类型、权限等标准进行；默认为找出指定路径下的所有文件
+处理动作：对符合条件的文件做操作，默认输出至屏幕
+
+find /etc/ -size +1M -type f  查找/etc目录下大于1M且类型为普通文件的所有文件
 ```
 

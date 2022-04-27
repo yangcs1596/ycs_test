@@ -252,6 +252,16 @@ lpad(str1,length,str2)。
 #rpad：同理 
 ```
 
+#### 6、垂直显示
+
+```mysql
+只能命令行sql语句增加 \G
+\g 等同于 ;
+\G 与 \g、; 差异的地方只是 垂直显示 。
+```
+
+
+
 #### 自定义函数
 
 ```mysql
@@ -337,6 +347,7 @@ CREATE TABLE IF NOT EXISTS `tb_message` (
   `is_deleted` int(1) DEFAULT NULL COMMENT '删除状态(0:正常,1:删除)',
   `deleted_time` datetime DEFAULT NULL COMMENT '删除时间',
    `gmt_create` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 默认时间
+   `update_create` timestamp DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP, -- 更新时默认时间
     PRIMARY KEY (`id`) USING BTREE,-- 下面对BTREE索引说明，创建索引时使用的索引方式,有btree和hash两种
     KEY `user_id` (`user_id`) USING BTREE  -- 建表时添加索引
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT COMMENT='消息';

@@ -2643,6 +2643,27 @@ String.split("分割1|分割2");
 
 - 属性（Properties） 继承hashTable
 
+  
+
+#### 5-1枚举
+
+```java
+ public static LinkedHashMap<String, String> values = null;
+
+PaymentEnum(String value, String desc) {
+    this.value = value;
+    this.desc = desc;
+}
+
+static {
+    values = Maps.newLinkedHashMapWithExpectedSize(values().length);
+    for (PaymentEnum payment : values()
+        ) {
+        values.put(payment.value, payment.desc);
+    }
+}
+```
+
 
 
 #### 1、List,Set继承接口Collection
@@ -2888,24 +2909,7 @@ Tip:
 
 队列：先进先出
 
-#### 6.1 枚举和常量
 
-```java
- public static LinkedHashMap<String, String> values = null;
-
-PaymentEnum(String value, String desc) {
-    this.value = value;
-    this.desc = desc;
-}
-
-static {
-    values = Maps.newLinkedHashMapWithExpectedSize(values().length);
-    for (PaymentEnum payment : values()
-        ) {
-        values.put(payment.value, payment.desc);
-    }
-}
-```
 
 
 
@@ -2920,6 +2924,28 @@ method.invoke(className.newInstance,"参数")；  //执行（实例对象， 参
 ```java
 BeanUtils.copyProperties(源对象, 目标对象);  //另一个实体
 ```
+
+#### lambda类的映射
+
+```java
+//定义表达式， 如果一个函数式接口实现了Serializable接口，那么它的实例就会自动生成了一个返回SerializedLambda实例的writeReplace方法，可以从SerializedLambda实例中获取到这个函数式接口的运行时信息。
+@FunctionalInterface
+public interface SFuntion<T> extends Serializable{ //只有extends才会有 "writeReplace"方法》？
+    Object get(T source)
+}
+//lambda表达式例子
+test(User::getName)
+test(SFuntion<T> fn)
+//根据入参方法Serializable fn
+Method method = fn.getClass().getDeclareMethod("writeReplace");
+method.setAccessible(Boolean.TRUE); //true为关闭安全检查，提升反射速度
+SerializedLambda lambda = (SerializedLambda)method.invoke(fn);
+String methodName = lambda.getImplMethodName(); //此处即可获取lambda表达式的方法名称
+```
+
+
+
+
 
 #### 只拷贝非null值
 
@@ -2985,7 +3011,9 @@ ignoreError 是否忽略字段注入错误
 
 Serializable 接口，该接口是一个 mini 接口，其中没有需要实现的方法， 
 
-implementsSerializable **只是为了标注该对象是可被序列化的**。
+implements Serializable **只是为了标注该对象是可被序列化的**。
+
+transient 关键字表示某个属性不需要被序列化传输
 
 ### 9 过滤json
 

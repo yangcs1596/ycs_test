@@ -961,7 +961,7 @@ logfile ""
 redis-cli keys "s*" | xargs redis-cli del
 ./redis-cli -p 39087 -a Ctx1ytxA@3zdj  keys 'cloudnet:patch:doing*' | xargs  ./redis-cli -p 39087 -a Ctx1ytxA@3zdj del
 
-
+KEYS runoob* 查找所有符合给定模式 pattern 的 key
 hset key field value   单个设置  
  hget key field   获取map中指定key的值 
 HMSET key field value [field value ...]   多个设置 
@@ -5304,9 +5304,12 @@ Hadoop是专为离线和大规模数据分析而设计的，并不适合那种�
 ### hdfs命令
 
 ```shell
+########hadoop fs与hdfs dfs等价################
+########hadoop fs与hdfs dfs等价################
+hadoop fs -rm -f /tmp/luan/    删除文件文件,不能删除目录 
+hadoop fs -ls  查看hdfs文件系统中已经存在的文件
 #命令
-/bin> ./hdfs dfs -ls /
-
+hdfs dfs -ls /
 hadoop fs -ls /
 #查看所有文件结构
 hdfs dfs -ls -R /
@@ -5317,6 +5320,10 @@ hdfs dfs  -get   /install.log  /export/servers
 
 hdfs dfs  -get /sfdcloud/hbase/data/default/SmallFile/36c28567c58221b30c0c0f8a4238f48d /home/file
 
+#在hdfs文件系统中创建文件
+hdfs dfs -touch /czz.txt
+#从本地路径上传文件到hdfs
+hdfs dfs -put /本地路径 /hdfs路径
 ```
 
 

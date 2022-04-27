@@ -1,8 +1,14 @@
+```shell
+
+
 #!/bin/bash
+
 # by 1057 (lvxj@safedog.cn)
+
 set -o nounset
 
 # Check if user is mybk
+
 [ $(whoami) != "mybk" ] && { echo "ERROR: This script must be run as mybk"; exit 1; }
 
 yunlei_version=
@@ -57,6 +63,7 @@ mysql_config() {
 }
 
 # 定义 mysql 连接方式
+
 mysql_cmd() {
     # 如果设置 MySQL root 密码则使用该密码连接（读取 mybk.cfg）
     if [[ -n ${MYSQL_ROOT_PASSWORD:-} ]]; then
@@ -236,7 +243,7 @@ for i in "$@"; do
             # /bin/find /tmp/properties  -path "/tmp/properties/jdbc.properties" -prune -o -type f -exec /bin/mv {} $passport_myapps/passport/WEB-INF/classes/properties \;
             rm -fr /tmp/properties
         fi
-	if [[ -f $passport_myapps/passport/WEB-INF/classes/properties/spring-kafka.properties ]]; then
+    if [[ -f $passport_myapps/passport/WEB-INF/classes/properties/spring-kafka.properties ]]; then
             kafka_max_block=$(grep kafka.producer.max.block.ms $passport_myapps/passport/WEB-INF/classes/properties/spring-kafka.properties)
             if [[ ! $kafka_max_block ]]; then
                   /bin/sed -i "/kafka.producer.enable.idempotence/a\kafka.producer.max.block.ms=10000" $passport_myapps/passport/WEB-INF/classes/properties/spring-kafka.properties
@@ -458,4 +465,7 @@ for i in "$@"; do
         continue
         ;;
     esac
+
 done
+```
+
