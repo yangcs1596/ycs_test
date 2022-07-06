@@ -169,6 +169,8 @@ SELECT * FROM INFORMATION_SCHEMA.INNODB_LOCK_WAITS;
 
 联合索引 (a,b,c) 实际建立了 (a)、(a,b)、(a,b,c) 三个索引
 
+最左原则：既满足a索引后才会进行b、c索引，若不满足a， 则 联合索引失效
+
 ### 函数
 
 #### 1、IFNULL函数
@@ -389,6 +391,9 @@ show index from tableName
 **BTREE索引最左前缀匹配原则使用注意事项：**
 
 - 最左前缀匹配原则，非常重要的原则，mysql会一直向右匹配直到遇到范围查询(>、<、between、like)就停止匹配，比如a = 1 and b = 2 and c > 3 and d = 4 如果建立(a,b,c,d)顺序的索引，d是用不到索引的，如果建立(a,b,d,c)的索引则都可以用到，a,b,d的顺序可以任意调整。【范围查询的字段，在建立复合索引一定要置后】
+
+  例子 abcd符合索引：如果 a匹配不到，则bcd也用不到索引
+
 - =和in可以乱序，比如a = 1 and b = 2 and c = 3 建立(a,b,c)索引可以任意顺序，mysql的查询优化器会帮你优化成索引可以识别的形式
 
 ###### 1- 1-1 建表时 USING B-TREE索引使用场景
