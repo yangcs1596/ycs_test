@@ -3557,6 +3557,9 @@ docker logs container-name/container-id
 docker-enter 80bbd5d7c8b2
 13、根据容器id进入到对应文件夹  docker attach 容器ID 或者
 docker exec -it 镜像id /bin/bash  #常用
+或者
+docker exec  -it 容器 sh
+
 注意: attach Docker attach可以attach到一个已经运行的容器的stdin，然后进行命令执行的动作。
 但是需要注意的是，如果从这个stdin中 exit，会导致容器的停止
 
@@ -3778,6 +3781,17 @@ docker volume inspect nginx
 docker rm volume
 #创建容器  并挂载卷nginx:/etc/nginx  -v是挂载卷，也可以使用本机目录：容器目录
 docker run -d -v nginx:/etc/nginx -p 80:80 --name nginx nginx:1.14
+```
+
+
+
+6)、dockerfile例子
+
+```dockerfile
+FROM openjdk:8-jdk-alpine
+VOLUME /tmp
+ADD weixin-java-mp-demo-springboot-1.0.0-SNAPSHOT.jar app.jar
+ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
 ```
 
 

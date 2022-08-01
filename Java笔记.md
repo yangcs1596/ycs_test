@@ -99,6 +99,27 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 * 构造原型工具 axure  生成的html文件放在tomcat的webapps下即可访问
 * icon的地址 https://fontawesome.com
 
+#### git项目可封装的地址
+
+| 项目名称                               | 项目地址                                                     |
+| :------------------------------------- | ------------------------------------------------------------ |
+| canal                                  | https://github.com/alibaba/canal.git                         |
+| dynamic-datasource-spring-boot-starter | https://github.com/baomidou/dynamic-datasource-spring-boot-starter.git |
+| guava-retrying                         | https://github.com/rholder/guava-retrying.git                |
+| hutool                                 | https://gitee.com/dromara/hutool.git                         |
+| lock4j                                 | https://github.com/baomidou/lock4j.git                       |
+| redis-cache-operator-java              | https://github.com/xsg1995/redis-cache-operator-java.git     |
+| rocketmq                               | https://github.com/apache/rocketmq-spring.git                |
+| rocketmq-dashboard                     | https://github.com/apache/rocketmq-dashboard.git             |
+| ruoyi                                  | https://gitee.com/y_project/RuoYi.git                        |
+| swagger-starter                        | https://github.com/SpringForAll/spring-boot-starter-swagger.git |
+| xxl-job                                | https://github.com/zero9102/xxl-job-spring-boot-starter.git  |
+|                                        |                                                              |
+|                                        |                                                              |
+|                                        |                                                              |
+
+
+
 #### Jar工具包解决功能记录
 
 * net.coobird.thumbnailator    缩略图片  https://www.cnblogs.com/miskis/p/5500822.html
@@ -310,7 +331,7 @@ public xxx tt(Object obj){ //此处的obj，可以自动注入进来
       public void method2(){}  
   } 
   //实现类继承
-  public class SourceSub1 extends Wrapper2 {  
+  public class SourceSub1 extends Wrapper2 implements Sourceable{  
       public void method1(){  
           System.out.println("the sourceable interface's first Sub1!");  
       }  
@@ -1936,6 +1957,21 @@ class Single{
         return s;
     }
 }
+```
+
+#### 2-6 注入和策略问题
+
+```
+定义一个interface Animalservice
+多个实现、或者 继承抽象类去实现 
+
+注入
+List<Animalservice>
+Map<String, Animalservice>
+
+render和event合理使用注入类
+
+枚举enum的Switch
 ```
 
 

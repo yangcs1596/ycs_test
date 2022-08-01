@@ -377,7 +377,7 @@ MYISAM和INNODB引擎默认的索引是BTREE
 * FULLTEXT （全文索引：用于搜索很长一篇文章的时候，效果最好。用在比较短的文本，如果就一两行字的，普通的 INDEX 也可以）
 
 ```mysql
-ALTER TABLE t_user ADD INDEX name_city_phone(USERNAME,CITY,PHONE) USING BTREE //普通复合索引
+ALTER TABLE t_user ADD INDEX name_city_phone(USERNAME,CITY,PHONE) USING BTREE COMMENT '索引' //普通复合索引
 ALTER TABLE t_user ADD UNIQUE name_city_phone(USERNAME,CITY,PHONE) USING BTREE //唯一复合索引
 
 创建索引时使用的索引方式,有btree和hash两种
@@ -795,6 +795,12 @@ INNER JOIN T2 ON T1.C1 = T2.C1
 SET T1.C2 = T2.C2,
       T2.C3 = expr
 WHERE condition
+
+#mysql用法
+UPDATE a
+INNER JOIN b ON a.userName = b.userName
+SET a.password = b.password
+where condition
 ```
 
 #### delete

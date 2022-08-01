@@ -109,6 +109,10 @@ kill -9  进程号
 source /etc/profile
 
 source .bash_profile
+
+
+将shell脚本变成可执行文件
+chmod +x 文件名
 ```
 
 #### Linux的host配置

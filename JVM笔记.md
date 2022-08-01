@@ -192,6 +192,15 @@ jmap -dump:format=b,file=$java_pid.hprof     #java_pid为java进程ID
 
 ### gc日志分析
 
+```
+java  -Xloggc:gc.log -XX:+PrintGCTimeStamps -XX:+PrintGCDetails -jar mybatis-generator-1.0-SNAPSHOT.jar
+
+nohup java -Xms512m -Xmx1024m -Xloggc:/opt/gc.log -XX:+PrintGCTimeStamps -XX:+PrintGCDetails -jar lzmh-app.jar > out.log 2>&1 &
+
+```
+
+
+
 #### JMC工具
 
 火焰图 （async-profiler）
