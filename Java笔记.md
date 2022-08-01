@@ -2,7 +2,7 @@
 
 服务框架：Dubbo, Rest 服务
 
-内存缓存：Redis, ehcache
+内存缓存：Redis, ehcache， MongoDb
 
 消息中间件：ActiveMQ ,kafka，rabbitmq, RocketMq
 
@@ -24,7 +24,7 @@
 
 高并发分流技术: Nginx
 
-模版引擎: FreeMarker ,  
+模版引擎: FreeMarker，  Thymeleaf ， jsp ,  Apache Velocity   velocity是较早出现的用于代替jsp的模板语言 
 
 服务注册中心、配置中心: nacos,   springcloud config, zookeeper
 
@@ -38,9 +38,9 @@
 
 代码规范： sonarqube、 审查 upsource
 
- **Feign**旨在使编写Java Http客户端变得更容易。 
+ Feign：旨在使编写Java Http客户端变得更容易。 
 
-**其它中间件工具**：  Logstash ， ElasticSearch ，
+其它中间件工具：  Logstash ， ElasticSearch ， canal，
 
 容器技术： dockers、podman;     k8s、openshift;
 
@@ -381,6 +381,31 @@ public class FactoryForStrategy {
         return strategy;
     }
 
+}
+```
+
+#### @Autowired注入类的list
+
+```java
+@Component
+public class Test implements InitializingBean {
+ // ####实现InitializingBean的作用
+    @Autowired
+    private List<ServiceTest> serviceTests;
+
+    public String serviceTest() {
+        StringBuffer sb = new StringBuffer();
+        for (ServiceTest serviceTest : serviceTests) {
+            sb.append(serviceTest.getName());
+            sb.append(" ");
+        }
+        return sb.toString();
+    }
+  // #### 实例创建完成后会接着调用afterPropertiesSet方法
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        System.out.println(serviceTest());
+    }
 }
 ```
 

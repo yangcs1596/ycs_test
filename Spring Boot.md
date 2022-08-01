@@ -3541,10 +3541,12 @@ docker start 容器id
 8、删除一个容器
  docker rm 容器id
 9、启动一个做了端口映射的tomcat
-[root@localhost ~]# docker run -d -p 8888:8080 tomcat
+[root@localhost ~]# docker run -d --restart always -p 8888:8080 tomcat
 #docker run --name nginx-test -p 8080:80 -d nginx
 -d：后台运行
 -p: 将主机的端口映射到容器的一个端口    主机端口:容器内部的端口
+
+ 在启动时如果没有添加这个参数怎么办呢，比如1a7a3b5112fd这个容器在启动的时候是没有添加–restart=always参数的，针对这种情况我们可以使用命令进行修改。docker container update --restart=always 容器名字
 
 10、为了演示简单关闭了linux的防火墙
 service firewalld status ；查看防火墙状态
@@ -3660,6 +3662,24 @@ docker run -it -p 8080:8080 --link db001:dbhost -d tomcat
 ```
 
 4-1将容器打包镜像
+
+
+
+## 5-1 docker部署分布式服务
+
+### 容器通信创建 共同网段
+
+  **docker network来创建一个桥接网络，在docker run的时候将容器指定到新创建的桥接网络中，这样同一桥接网络中的容器就可以通过互相访问。** 
+
+```cmd
+docker network create test-network
+
+
+启动容器a、b时，加入创建的网络
+Docker run -it --network test-network --network-alias a a
+
+Docker run -it --network test-network --network-alias b b
+```
 
 
 

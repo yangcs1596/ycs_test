@@ -940,6 +940,8 @@ info:
 
 # 分表分库
 
+## Sharding-JDBC
+
 ## mycat使用
 
 安装

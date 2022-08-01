@@ -861,7 +861,7 @@ echo "/usr/local/bin/redis-server /etc/redis/redis.conf &" >> /etc/rc.local
 使用命令 :/ requirepass 快速查找到 # requirepass foobared 然后去掉注释，这个foobared改为自己的密码。然后wq保存。
 ```
 
-### 淘汰策略了解
+### 淘汰过期策略了解
 
 Redis 提供 6 种数据淘汰策略：
 
@@ -2594,7 +2594,6 @@ this.$router.push({path:"/menLink",params:{alert:"页面跳转成功"}})
 ```
 
 <div style="color:red">两种方式的区别是query传参的参数会带在url后边展示在地址栏，params传参的参数不会展示到地址栏。<p>需要注意的是接收参数的时候是route而不是router。两种方式一一对应，名字不能混用</p></div>
-
 ##### vue中provide和inject 
 
 ```vue
@@ -4548,6 +4547,56 @@ durability: 是否需要持久化，true 为持久化
 auto delete: 当最后一个绑定到 exchange 上的队列被删除后，exchange 没有绑定的队列了，自动删除该 exchange
 internal: 当前 exchange 是否用于 rabbitMQ 内部使用，默认为 false
 arguments: 扩展参数，用于扩展 AMQP 协议自制定化使用
+```
+
+#### 避免mq丢失
+
+在`rabbitMq`中 我们可以通持久化数据解决`rabbitMQ`服务器异常 数据丢失的问题。
+ 问题: 生成者将消息发送出去，有没有到达`rabbitMq`默认是不知道的
+ 两种方式:   `事务机制`（性能消耗大）和`confirm模式`（消耗小） 
+
+-  `AMQP` 实现了事务机制
+-  `Confirm` 模式
+
+### 事务机制
+
+RabbitMQ提供了`txSelect()`、`txCommit()`和`txRollback()`三个方法对消息发送进行事务管理。
+
+-  `txSelect`: 用于将通道`channel`开启事务模式
+-  `txCommit`: 用于提交事务
+-  `txRollback`: 用户进行事务回滚操作。
+
+```java
+public class TxProducer {
+    /** 队列名称 */
+    private static final String QUEUE_NAME = "test_queue_tx";
+
+    public static void main(String[] args) throws IOException, TimeoutException {
+        /** 1.获取连接 */
+        Connection newConnection = ConnectionUtil.getConnection();
+        /** 2.创建通道 */
+        Channel channel = newConnection.createChannel();
+        /** 3.创建队列声明 */
+        channel.queueDeclare(QUEUE_NAME, true, false, false, null);
+        try{
+            /** 4.开启事务 */
+            channel.txSelect();
+            /**4.发送消息 */
+            String msg = "Hello TX Message";
+            channel.basicPublish("", QUEUE_NAME, null, msg.getBytes());
+            int error = 1 / 0; // 生产者异常 未发送到rabbitMQ服务器
+            System.out.println("Send Message :"+ msg);
+            /** 5.提交事务 */
+            channel.txCommit();
+        }catch (Exception e){
+            /** 6.若发生异常 回滚事务 */
+            channel.txRollback();
+            System.out.println("Send Message RollBack");
+        }
+        channel.close();
+        newConnection.close();
+    }
+}
 ```
 
 
@@ -8673,7 +8722,7 @@ ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom"\
 
 ```
 #构建镜像
-docker build -t rousem``/portal``:0.0.1 -f Dockerfile ./
+docker build -t rousem/portal:0.0.1 -f Dockerfile ./
 #查看构建的镜像
 docker images
 ```
