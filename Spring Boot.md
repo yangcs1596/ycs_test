@@ -3483,6 +3483,9 @@ docker commit -m  ""   -a  "" aa myelasticsearch:1.0
 docker save -o mytest.tar mytest:v1  # 保存到本地，就是当前文件路径。
 =====================其他人电脑上运行加载镜像===
 docker load --input mytest.tar
+
+##根据dockerfile打包镜像
+docker build -t='镜像名称:标签' .    # 注意后边的空格和点
 ```
 
 * registry仓库安装
@@ -3661,27 +3664,106 @@ docker run -it -p 8080:8080 --link db001:dbhost -d tomcat
 
 ```
 
-4-1将容器打包镜像
+#### 4-1将容器打包镜像
+
+```
+version: '3.1'
+
+services:
+ mysql:
+  restart: always
+  image: hy:v1
+  container_name: mysql
+  ports:
+  - 3306:3306
+  environment:
+   MYSQL_ROOT_PASSWORD: 123456
+ tomcat:						//这里是给你的服务起的别名
+  restart: always				//开机启动
+  image: tomcat:jdk8-openjdk	//镜像名称加tag，[docker image]查询
+  container_name: tomcat		//设置启动后容器的名称，这里的名称不要与存在的容器重名
+  ports:						//端口映射
+  - 8080:8080
+  links:
+   - mysql:mysql				//冒号前面是需要连接的服务名，后面是tomcat访问的名称
+   								//如在tomcat中ping mysql 就使用
+   								// docker exec -it tomcat ping mysql
+   								//如果是 mysql:m1 就使用 docker exec -it tomcat ping m1
+   								//所以项目中连接mysql就可以使用这个地址
+   								// url: jdbc:mysql://mysql:3306
+  此处注意，如果ping报错则安装工具
+  这是因为容器只有基础命令，没有网络命令导致，就先进入容器并且安装网络工具：
+docker exec -it tomcat /bin/bash
+apt install -y iproute2 && apt install -y net-tools && apt install -y iputils-ping
+   								
+ nginx:
+  restart: always
+  image: nginx:latest
+  container_name: nginx
+  ports:
+  - 9090:80
 
 
 
-## 5-1 docker部署分布式服务
-
-### 容器通信创建 共同网段
-
-  **docker network来创建一个桥接网络，在docker run的时候将容器指定到新创建的桥接网络中，这样同一桥接网络中的容器就可以通过互相访问。** 
-
-```cmd
-docker network create test-network
-
-
-启动容器a、b时，加入创建的网络
-Docker run -it --network test-network --network-alias a a
-
-Docker run -it --network test-network --network-alias b b
 ```
 
 
+
+#### 4-2 docker-compose的命令介绍
+
+```yaml
+## 启动 up
+docker-compose -f xxx.yaml up [ -d ]
+说明：
+默认文件名为docker-compose.yml时 ,-f可以省略。
+-d 是后台运行。
+## 停止并删除容器、网络、卷、镜像。 down
+docker-compose down [options]
+## 删除指定服务的容器 rm
+docker-compose rm [options] [SERVICE...]
+选项】
+–f, –force，强制直接删除，包括非停止状态的容器
+-v，删除容器所挂载的数据卷
+## run 启动一个服务，并在一个服务上执行一个命令
+docker-compose run [options] [-v VOLUME...] [-p PORT...] [-e KEY=VAL...] SERVICE [COMMAND] [ARGS...]
+
+## start/stop/restart/pause 启动/停止指定服务已存在的容器
+语法： docker-compose stop [SERVICE...]
+
+## 日志logs
+docker-compose logs [options] [SERVICE...]
+
+## pull 下载docker-compose.yml中所需的镜像
+docker-compose pull
+
+## scal 设置指定服务运行容器的个数，以 service=num 形式指定
+ docker-compose scale mysql=2
+ 说明：
+不能给容器起名，否则冲突。
+不能映射端口，否则冲突……
+
+#简单汇总
+docker-compose up -d --build ## 重新构造镜像和后台运行容器
+docker-compose up  # 会自动搜索当前路径下的 docker-compose.yml文件
+docker-compose -f 指定文件 up
+docker-compose up -d  # 后台执行，一般我们看日志输出，不用这个
+docker-compose stop  # 停止，不会删除容器和镜像
+docker-compose down # 停止，并删除关联的容器
+docker-compose start  # 启动yml文件管理的容器
+docker-compose ps    # 正在运行的容器
+docker-compose restart # 重启
+docker-compose images # docker-compose管理的容器 
+
+## 镜像导入导出 save-load或者导出 export - 导入 import
+docker save 镜像id > 文件名.tar  ## 导出镜像
+将镜像上传到本地虚拟机中、
+docker load -i tar文件路径 ## 导入镜像
+docker tag 镜像id 镜像名:标签  ## 给镜像重命名：
+```
+
+#### 4-3 docker-compose配置详解
+
+* https://www.jianshu.com/p/2217cfed29d7
 
 ## 5、Dockerfile文件命令介绍
 
@@ -3813,6 +3895,625 @@ VOLUME /tmp
 ADD weixin-java-mp-demo-springboot-1.0.0-SNAPSHOT.jar app.jar
 ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
 ```
+
+### 5-1 docker镜像容器增加字体
+
+```yaml
+Dockerfile文件
+# 添加字体
+RUN apk add --update font-adobe-100dpi ttf-dejavu fontconfig
+
+
+#### 方式二
+RUN apk update  && apk --no-cache add font-adobe-100dpi 
+RUN mkdir /usr/share/fonts/win  
+ADD yahei.ttf  /usr/share/fonts/win/yahei.ttf
+RUN chmod 777 /usr/share/fonts/win/yahei.ttf  \
+    && fc-cache -fv  && fc-list
+```
+
+
+
+### 5-2 docker的network
+
+```
+查询网络：docker network ls
+新建网络：docker network create <NETWORK NAME>
+删除网络： docker network rm <NETWORK ID>|<NAME>
+
+桥接：容器IP变动的时候可以通过网络名称访问，而不受影响
+```
+
+
+
+## 6、docker-compose
+
+### 初始环境准备
+
+1、安装最新docker
+
+```shell
+ curl -sSL https://get.docker.com/ | sh
+```
+
+
+
+2、安装docker-compose
+
+* 下载安装
+
+  ```shell
+  方式一
+  sudo curl -L https://get.daocloud.io/docker/compose/releases/download/v2.4.1/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+  此处的v2.4.1根据自己docker版本替换
+  方式二
+  sudo curl -L "https://github.com/docker/compose/releases/download/v2.4.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  ```
+
+```
+uname 系统参数说明
+-a或--all：显示全部的信息；
+-m或--machine：显示电脑类型；
+-n或-nodename：显示在网络上的主机名称；
+-r或--release：显示操作系统的发行编号；
+-s或--sysname：显示操作系统名称；
+-v：显示操作系统的版本；
+-p或--processor：输出处理器类型或"unknown"；
+-i或--hardware-platform：输出硬件平台或"unknown"；
+-o或--operating-system：输出操作系统名称；
+```
+
+* 将可执行权限应用于二进制文件 sudo chmod +x /usr/local/bin/docker-compose
+* 创建软链： sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+### 6-1  安装mysql和tomcat nginx
+
+```yaml
+version: '3.8'
+services:
+  mysql:    #docker的容器名称,其他应用可以通过mysql_c通信这个容器
+    image: mysql:8.0       #需要下载镜像 mysql
+    container_name: mysql
+    ports:
+      - "3306:3306" # 宿主机端口映射容器
+    volumes: # 挂载，重新创建镜像时，数据库数据不会消失
+      - /home/docker/mysql:/var/lib/mysql # 宿主机目录挂载容器目录
+    environment:
+      TZ: Asia/Shanghai   #时区 设置
+      MYSQL_DATABASE: wxmp           #mysql启动后会默认创建一个docker的database
+      MYSQL_ROOT_PASSWORD: 123456         #root的密码
+      MYSQL_ROOT_HOST: '%'         #代表任何机器都可以连接当前数据库
+    restart: always    #Docker容器重启时，当前容器也会自动重启。
+  tomcat:
+    image: tomcat:9.0.48-jdk8-openjdk-slim-buster
+    container_name: tomcat
+    ports:
+      - 8080:8080
+    volumes:
+      - /home/docker/tomcat/webapps:/usr/local/tomcat/webapps
+      - /home/docker/tomcat/logs:/usr/local/tomcat/logs
+    environment:
+      TZ: Asia/Shanghai
+    restart: always
+  nginx:
+    container_name: nginx
+    image: nginx
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - /home/docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - /home/docker/nginx/log:/etc/nginx/log
+    privileged: true  #容器拥有root权限，不利于宿主机安全，机器容易重启
+    networks:   # 不写默认为 default; 查看 docker network ls
+      - mynginx  
+
+networks:
+  mynginx: #网络名称
+    driver: bridge #桥接模式
+    attachable: true      #允许独立的网络连接到该网络上
+ # persist:  #网络名称
+ #   external: # 使用创建好的网络，使用关键字external
+ #     name: bridge2
+```
+
+### 6-2 安装nocas
+
+* nacos连接数据库需要执行初始化脚本：https://github.com/alibaba/nacos/blob/master/config/src/main/resources/META-INF/nacos-db.sql  注意对应版本的脚本执行，或者直接在容器里找脚本
+
+```yaml
+version: '3.3'
+
+services:
+  nacos:
+    image: nacos/nacos-server:v2.0.4
+    container_name: nacos
+    restart: always
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9555:9555"
+    environment:
+      - "MODE=standalone"
+      - "JVM_XMS=512m"
+      - "JVM_XMX=512m"
+    volumes:
+      - ./application.properties:/home/nacos/conf/application.properties
+```
+
+### 6-3 安装canal
+
+```yaml
+version: '3'
+
+networks:
+  canal:
+services:
+  canal-server:
+    image: canal/canal-server:v1.1.5
+    container_name: canal-server
+    restart: unless-stopped
+    # network_mode: host
+    ports:
+      - 11111:11111
+    networks:
+      - "canal"
+    volumes:
+      - ./canal.properties:/home/admin/canal-server/conf/canal.properties
+      - ./instance.properties:/home/admin/canal-server/conf/test/instance.properties
+      - ./log/:/home/admin/canal-server/logs/
+```
+
+my.ini文件
+
+```ini
+### mysql的my.ini的配置，关联canal
+
+d-file        = /var/run/mysqld/mysqld.pid
+socket          = /var/run/mysqld/mysqld.sock
+datadir         = /var/lib/mysql
+secure-file-priv= NULL
+
+# Custom config should go here
+!includedir /etc/mysql/conf.d/
+
+[client]
+default-character-set = utf8mb4
+[mysql]
+default-character-set = utf8mb4
+[mysqld]
+character-set-client-handshake = FALSE
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+init_connect='SET NAMES utf8mb4'
+sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+
+[mysqld]
+# server_id不重复即可，不要和canal的slaveId重复
+server_id=1
+# 开启binlog
+log_bin = mysql-bin
+# 选择row模式
+binlog_format = ROW
+# 可根据个人情况选择，可以指定数据库开启binlog 若不写默认所有数据库均开启
+# binlog-do-db=
+# 例如只开启test1、test2、test3数据库binlog
+# binlog-do-db=test1
+# binlog-do-db=test2
+# binlog-do-db=test3
+
+```
+
+在mysql中给canal配置权限
+
+```sql
+# 查看docker的mysql配置
+show variables like 'log_bin';  #显示 ON则是开启
+
+# 新增用户
+CREATE USER canal IDENTIFIED BY 'canal';
+
+# 授权REPLICATION权限
+GRANT SELECT, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'canal'@'%';  
+FLUSH PRIVILEGES; 
+# check
+show grants for 'canal';
+# 查看当前db binlog文件
+show binary logs ;
+# 查看正在写入的binlog文件
+show master status;
+```
+
+### 修改instance.properties
+
+![在这里插入图片描述](./image/canal-config.png)
+
+### 6-4 安装elasticsearch
+
+```yaml
+version: '3.3'
+volumes:
+  data:
+  config:
+networks:
+  es:
+services:
+  elasticsearch:
+    image: elasticsearch:7.14.2
+    container_name: elasticsearch
+    ports:
+      - 9200:9200
+      - 9300:9300
+    networks:
+      - "es"
+    environment:
+      - "discovery.type=single-node"
+      - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
+    volumes:
+      # - /usr/share/elasticsearch/data:/usr/share/elasticsearch/data
+      # - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - data:/usr/share/elasticsearch/data
+      - config:/usr/share/elasticsearch/config
+      - ./plugins:/usr/share/elasticsearch/plugins
+    restart: always
+  kibana:
+    image: kibana:7.14.2
+    container_name: kibana
+    ports:
+      - 5601:5601
+    networks:
+      - "es"
+    volumes:
+    - ./kibana.yml:/usr/share/kibana/config/kibana.yml
+
+```
+
+### 6-5 安装jenkins
+
+```yaml
+version: '3'
+services:
+  jenkins_ocean:
+    restart: always
+    image: jenkinsci/blueocean
+    container_name: jenkins_ocean
+    privileged: true
+    ports:
+      - 10000:8080
+      - 50000:50000
+    environment:
+      - JAVA_OPT_EXT=-Xms512m -Xmx1024m -XX:MaxDirectMemorySize=512m
+    volumes:
+      - /opt/docker/jenkins/jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/docker/maven/apache-maven-3.8.5:/opt/docker/maven/apache-maven-3.8.5
+      - /opt/jdk/jdk1.8.0_321:/opt/jdk/jdk1.8.0_321
+      - /opt/docker/repo:/opt/docker/repo
+```
+
+### 6-6 安装mongodb
+
+```yaml
+version: '3.1'
+
+services:
+
+  mongo:
+    image: mongo
+    restart: always
+    ports:
+      - 27017:27017
+    command: mongod --wiredTigerCacheSizeGB 1.0
+    environment:
+      TZ: Asia/Shanghai
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - ./data/db:/data/db
+      - ./data/configdb:/data/configdb
+      - ./data/log:/var/log/mongodb
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8181:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example
+      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
+```
+
+### 6-7 安装mysql 
+
+```yaml
+version: '3'
+
+services:
+  mysql8.0:
+    image: mysql:8.0.26
+    container_name: mysql
+    restart: always
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: 123456
+    ports:
+      - 3306:3306
+    volumes:
+      - /opt/docker/mysql/data/:/var/lib/mysql/
+      - /opt/docker/mysql/conf/:/etc/mysql/conf.d/
+      - /opt/docker/mysql/init/:/docker-entrypoint-initdb.d/
+    command:
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+      --explicit_defaults_for_timestamp=true
+```
+
+### 6-8 安装nginx
+
+```yaml
+version: '3.1'
+services:
+  nginx:
+    restart: always
+    image: nginx
+    container_name: nginx
+    ports:
+      - 80:80
+      - 666:666
+      - 776:776
+      - 777:777
+      - 443:443  
+      - 9011:81
+      - 9021:82
+      - 9031:83
+      - 9041:84
+      - 9051:85
+      - 9540:85
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./wwwroot:/usr/share/nginx/wwwroot
+
+```
+
+### 6-9 安装redis
+
+```yaml
+version: '3'
+services:
+  redis:
+    restart: always
+    image: redis
+    container_name: redis
+    privileged: true
+    command: redis-server --requirepass QiYUsw9sU9Zmu9oig7yB
+    ports:
+      - 6379:6379
+    environment:
+      - JAVA_OPT_EXT=-Xms512m -Xmx1024m -XX:MaxDirectMemorySize=512m
+    volumes:
+      - ./data:/data
+
+```
+
+### 6-10 安装rocketmq
+
+```yaml
+version: '3'
+services:
+  #Service for nameserver
+  namesrv:
+    restart: always
+    image: apacherocketmq/rocketmq:4.9.2
+    container_name: rocketmq-namesrv
+    ports:
+      - 9876:9876
+    environment:
+      - JAVA_OPT_EXT=-server -Xms1024m -Xmx1024m -Xmn1024m
+    volumes:
+      - /opt/docker/rocketmq/data/namesrv/logs:/root/logs
+    command: sh mqnamesrv
+
+  #Service for broker
+  broker:
+    restart: always
+    image: apacherocketmq/rocketmq:4.9.2
+    container_name: rocketmq-broker
+    links:
+      - namesrv
+    depends_on:
+      - namesrv
+    ports:
+      - 10909:10909
+      - 10911:10911
+      - 10912:10912
+    environment:
+      - NAMESRV_ADDR=namesrv:9876
+      - JAVA_OPT_EXT=-server -Xms1024m -Xmx1024m -Xmn1024m
+    volumes:
+      - /opt/docker/rocketmq/data/broker/logs:/home/rocketmq/logs
+      - /opt/docker/rocketmq/data/broker/store:/home/rocketmq/store
+      - /opt/docker/rocketmq/conf/broker.conf:/home/rocketmq/conf/broker.conf
+    command: sh mqbroker -c /home/rocketmq/conf/broker.conf
+
+  #Service for rocketmq-dashboard
+  dashboard:
+    restart: always
+    image: apacherocketmq/rocketmq-dashboard
+    container_name: rocketmq-dashboard
+    ports:
+      - 11500:8080
+    links:
+      - namesrv
+    depends_on:
+      - namesrv
+    environment:
+      - NAMESRV_ADDR=namesrv:9876
+```
+
+####  例子二
+
+```yaml
+version: '3.8'
+services:
+  #Service for nameserver
+  rocketmq-namesrv:
+    image: foxiswho/rocketmq:4.8.0
+    container_name: rocketmq-namesrv
+    restart: always
+    ports:
+      - 9876:9876
+    environment:
+      JAVA_OPT_EXT: "-Duser.home=/home/rocketmq -Xms512M -Xmx512M -Xmn128m"
+    volumes:
+      - ./data/namesrv/logs:/home/rocketmq/logs
+      - ./data/namesrv/store:/home/rocketmq/store
+    command: ["sh","mqnamesrv"]
+    networks:
+      rocketmq_net:
+        aliases:
+          - rocketmq-namesrv
+
+  #Service for broker
+  rocketmq-broker:
+    image: foxiswho/rocketmq:4.8.0
+    container_name: rocketmq-broker
+    restart: always
+    links:
+      - rocketmq-namesrv
+    depends_on:
+      - rocketmq-namesrv
+    ports:
+      - 10909:10909
+      - 10911:10911
+      - 10912:10912
+    environment:
+      JAVA_OPT_EXT: "-Duser.home=/home/rocketmq -Xms512M -Xmx512M -Xmn128m"
+    volumes:
+      - ./data/broker/logs:/home/rocketmq/logs
+      - ./data/broker/store:/home/rocketmq/store
+      - ./conf/broker.conf:/etc/rocketmq/broker.conf
+    command: ["sh","mqbroker","-c","/etc/rocketmq/broker.conf","-n","rocketmq-namesrv:9876","autoCreateTopicEnable=false"]
+    networks:
+      rocketmq_net:
+        aliases:
+          - rocketmq-broker
+
+  #Service for rocketmq-console
+  rocketmq-console:
+    image: styletang/rocketmq-console-ng
+    container_name: rocketmq-console
+    restart: always
+    ports:
+      - 19876:8080
+    links:
+      - rocketmq-namesrv
+    depends_on:
+      - rocketmq-namesrv
+    environment:
+      JAVA_OPTS: "-Drocketmq.namesrv.addr=rocketmq-namesrv:9876 -Dcom.rocketmq.sendMessageWithVIPChannel=false"
+    networks:
+      rocketmq_net:
+        aliases:
+          - rocketmq-console
+
+networks:
+  rocketmq_net:
+    name: rocketmq_net
+    driver: bridge
+```
+
+### 6-11 安装nexus3
+
+```yaml
+version: '3'
+services:
+  nexus:
+    restart: always
+    image: sonatype/nexus3
+    container_name: nexus3
+    privileged: true
+    volumes:
+      - ./nexus-data:/nexus-data
+    ports:
+      - 8081:8081
+      - 5000:5000
+    environment:
+      - "INSTALL4J_ADD_VM_PARAMS=-Xms128m -Xmx512m -XX:MaxDirectMemorySize=512m -Djava.util.prefs.userRoot=/nexus-data/javaprefs"
+```
+
+
+
+
+
+### 6-12 容器通信创建 共同网段
+
+  **docker network来创建一个桥接网络，在docker run的时候将容器指定到新创建的桥接网络中，这样同一桥接网络中的容器就可以通过互相访问。** 
+
+```cmd
+docker network create test-network
+docker network ls
+docker volumn ls 查看卷
+docker volumn edit xxx
+
+启动容器a、b时，加入创建的网络
+Docker run -it --network test-network --network-alias a a
+
+Docker run -it --network test-network --network-alias b b
+```
+
+### 6-13 打包一个springboot服务 容器化
+
+```dockerfile
+FROM openjdk:8-jdk-alpine
+ADD lzmh-search.jar /usr/local/docker/service/search/
+WORKDIR /usr/local/docker/service/search
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+CMD java -Xms128m -Xmx256m -jar lzmh-search.jar
+```
+
+```yaml
+## docker-compose.yml
+version: '3.8'
+services:
+  lzmh-search:
+    container_name: lzmh-search
+    image: lzmh-search
+    network_mode: host
+    build:
+      context: ./
+      dockerfile: dockerfile
+    restart: always
+    volumes:
+      - ./logs:/usr/local/docker/service/search/logs/lzmh-search
+    ports:
+      - "9570:9570"
+    extra_hosts:
+      - "lzmh-gateway:192.168.1.15"
+      - "lzmh-register:192.168.1.54"
+      - "lzmh-redis:192.168.1.55"
+      - "lzmh-mysql:192.168.1.55"
+      - "lzmh-rocketmq:192.168.1.54"
+      - "lzmh-es:192.168.1.55"
+      - "lzmh-mongo:192.168.1.55"
+      - "lzmh-xxl-job:192.168.1.12"
+
+```
+
+
+
+## 7、集运centos构建镜像
+
+```yaml
+FROM centos:7.4.1708
+ADD jdk-8u201-linux-x64.tar.gz /usr/local
+ENV JAVA_HOME /usr/local/jdk1.8.0_201
+ENV PATH ${PATH}:${JAVA_HOME}/bin
+ENV CLASS_PATH=:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:$JAVA_HOME/jre/lib
+
+```
+
+### 
 
 
 

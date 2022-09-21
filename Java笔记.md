@@ -46,6 +46,10 @@
 
 API调试工具： Apifox、 Postman      fiddler抓包工具：app或者电脑端的请求抓取
 
+代码版本管理：svn, git, gitlab, gitlib
+
+dev敏捷模式：jenkins
+
 
 
 Linx连接工具：全能终端神器 MobaXterm， X-shell,  FinalShell
@@ -99,7 +103,7 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 * 构造原型工具 axure  生成的html文件放在tomcat的webapps下即可访问
 * icon的地址 https://fontawesome.com
 
-#### git项目可封装的地址
+## git项目可封装的地址
 
 | 项目名称                               | 项目地址                                                     |
 | :------------------------------------- | ------------------------------------------------------------ |
@@ -108,15 +112,33 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 | guava-retrying                         | https://github.com/rholder/guava-retrying.git                |
 | hutool                                 | https://gitee.com/dromara/hutool.git                         |
 | lock4j                                 | https://github.com/baomidou/lock4j.git                       |
+| redisson封装不同模式                   | https://gitee.com/yangxixi_323/spring-boot-distributed-redisson.git<br />https://gitee.com/xxy6910/redisson-dcs-lock.git |
 | redis-cache-operator-java              | https://github.com/xsg1995/redis-cache-operator-java.git     |
 | rocketmq                               | https://github.com/apache/rocketmq-spring.git                |
 | rocketmq-dashboard                     | https://github.com/apache/rocketmq-dashboard.git             |
-| ruoyi                                  | https://gitee.com/y_project/RuoYi.git                        |
+| ruoyi系统                              | https://gitee.com/y_project/RuoYi.git                        |
+|                                        | https://gitee.com/y_project                                  |
 | swagger-starter                        | https://github.com/SpringForAll/spring-boot-starter-swagger.git |
 | xxl-job                                | https://github.com/zero9102/xxl-job-spring-boot-starter.git  |
+| 闪验                                   | https://gitee.com/hiwepy/shanyan-spring-boot-starter.git     |
 |                                        |                                                              |
+| 微信开发weixin-java-mp                 | https://gitee.com/binary/weixin-java-tools.git               |
+| 项目推荐浏览页                         | https://gitee.com/explore/backend                            |
+| justAuth多登录开源库                   | https://github.com/justauth/JustAuth.git<br />https://github.com/justauth/justauth-spring-boot-security-starter.git |
+| security安全校验                       | https://github.com/spring-projects/spring-security/wiki/OAuth-2.0-Migration-Guide |
+| 单商城开源系统ThinkPHP                 | https://gitee.com/likeshop_gitee                             |
+| DingTalk消息通知                       | https://github.com/AnswerAIL/dingtalk-spring-boot-starter    |
+| guerlab-sms 不同的短信通道支持         | https://gitee.com/guerlab_net/guerlab-sms?_from=gitee_search |
 |                                        |                                                              |
-|                                        |                                                              |
+
+
+
+## 其它一些项目学习
+
+|                             |                                          |
+| --------------------------- | ---------------------------------------- |
+| wepush 简小的推送工具       | https://gitee.com/zhoubochina/WePush.git |
+| Jeewx-Boot 免费微信管家平台 | https://gitee.com/jeecg/jeewx-boot.git   |
 
 
 
@@ -1410,6 +1432,18 @@ FutureTask<List> futureTask = new FutureTask<List>(new Callable<List>() {
         });
         threadPool.submit(futureTask);
         futureTask.get();
+
+
+// Java 8之前：
+new Thread(new Runnable() {
+ @Override
+ public void run() {
+ System.out.println("Before Java8, too much code for too little to do");
+ }
+}).start();
+
+//Java 8方式：
+new Thread( () -> System.out.println("In Java8, Lambda expression rocks !!") ).start();
 ```
 
 **实际例子**
@@ -3436,7 +3470,7 @@ private List<Organization> doOrgIterator(Organization oneOrganization, List<Orga
 }
 ```
 
-### 
+
 
 
 
@@ -4018,6 +4052,12 @@ ac2.getBean("beanId");
 方法四：继承自抽象类WebApplicationObjectSupport
 方法五：实现接口ApplicationContextAware 
 
+#### 说明
+
+SpringContextHolder 可以方便地引用各种 bean 而不需要注入，通常用它来获取延时加载的 bean 信息。
+BeanFactoryPostProcessor 接口主要是为了使 SpringContextHolder 提前初始化，尽量在所有 bean 初始化之前。
+ApplicationContextAware 接口主要是为了注入 ApplicationContext。
+
 ```java
 @Component
 public class SpringUtil implements ApplicationContextAware {
@@ -4025,6 +4065,14 @@ public class SpringUtil implements ApplicationContextAware {
     private static ApplicationContext applicationContext;
 }
 ```
+
+#### Web
+
+* RequestContextHolder 
+
+  RequestContextHolder：持有上下文的Request容器
+
+  通过RequestContextHolder的静态方法可以随时随地取到当前请求的request对象
 
 ## Spring的扩展接口了解（启动只执行一次）
 

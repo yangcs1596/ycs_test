@@ -78,6 +78,13 @@ lrzsz是一款程序，在linux中可以代替ftp的上传和下载
 yum install -y lrzsz
 ```
 
+### yum 安装指定目录
+
+```cmd
+指定目录安装：会把依赖、应用程序安装到指定目录
+yum install  java-1.8.0-openjdk --installroot=/home/xxx/percona-xtrabackup/
+```
+
 
 
 

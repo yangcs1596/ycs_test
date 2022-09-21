@@ -80,40 +80,54 @@ delete from mysql.`user` where host='192.168.2.2';
 
 
 
+## my.ini配置
+
 ### mysql日志记录慢查询
 
-My.ini配置
+my.ini配置
 
 ```ini
-[mysql]
-# 设置mysql客户端默认字符集
-default-character-set=utf8
 [mysqld]
-#设置3306端口
-port = 3306
+# 设置3306端口
+port=3306
 # 设置mysql的安装目录
-basedir=D:\mysql\mysql-5.7.26-winx64
+basedir=D:\install\mysql-5.6.24-win32
 # 设置mysql数据库的数据的存放目录
-datadir=D:\mysql\data
+datadir=D:\install\mysql-5.6.24-win32\Data
 # 允许最大连接数
 max_connections=200
-# 服务端使用的字符集默认为8比特编码的latin1字符集
-character-set-server=utf8
+# 允许连接失败的次数。这是为了防止有人从该主机试图攻击数据库系统
+max_connect_errors=10
+# 服务端使用的字符集默认为UTF8
+character-set-server=utf8mb4
 # 创建新表时将使用的默认存储引擎
 default-storage-engine=INNODB
+# 默认使用“mysql_native_password”插件认证
+default_authentication_plugin=mysql_native_password
 # 忽略密码
 #skip-grant-tables
-#去除导入导出限制
- secure_file_priv =""
+# 防止group by带来的一系列问题
+sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
+[mysql]
+# 设置mysql客户端默认字符集
+default-character-set=utf8mb4
+[client]
+# 设置mysql客户端连接服务端时默认使用的端口
+port=3306
+default-character-set=utf8mb4
 ```
 
+**数据初始化启动**（cmd右键管理员运行）
 
+1. 数据初始化：mysqld –initialize
+2. 注册到注册表添加MySQL服务：mysqld –install
+3. MySQL启动：net start mysqld
 
 使用该命令只能查看慢查询次数，但是我们没有办法知道是哪些查询产生了慢查询，如果想要知道是哪些查询导致的慢查询，那么我们必须修改mysql的配置文件。打开mysql的配置文件（windows系统是my.ini,linux系统是my.cnf），在[mysqld]下面加上以下代码：
 
 ```mysql
 #一、配置的方式是永久开启
-log-slow-queries=mysql_slow.log
+log-slow-queries=/data/mysql/mysql-slow.log
 long_query_time=1
 
 #所有执行时间超过1秒的sql都将被记录到慢查询文件中（我这里就是 /data/mysql/mysql-slow.log
@@ -474,6 +488,28 @@ show variables where Variable_name like 'collation%';
 alter table table_name default character set utf8mb4 collate=utf8mb4_general_ci;
 #对字段
  ALTER TABLE table_name convert to CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+```
+
+##### 3-2  show variables命令
+
+```mysql
+### show variables
+show global variables; # 全局变量
+show variables like 'character_set_database'; # 查看数据库编码
+show variables like '%char%'; #  查看系统字符集
+
+### 修改
+set session variable = value;
+set variable = value;
+set @@session.variable = value;
+set @@variable = value;
+
+//显示到mysql数据库的连接数
+show status like  'connections ';
+//显示慢查询次数
+show status like 'slow_queries'; 
+
+show collation;来查看支持的各种排序呢规则
 ```
 
 
@@ -914,6 +950,35 @@ select colum, count(1) as count from xx group by colum
 ```mysql
 #查询第1条到第10条的数据的sql是： 
 select * from table limit 0,10; 对应-》 select * from table limit (1-1)*10,10;
+```
+
+#### 5 order by + group 问题
+
+```mysql
+### 错误用法； mysql5.8之后 order by 要和limit一起使用才会生效
+SELECT
+	* 
+FROM
+	( SELECT * FROM goods_sku ORDER BY selling_price ASC ) AS ns 
+	where ns.goods_id=132
+GROUP BY
+	ns.goods_id 
+
+# 涉及 排序问题 min和max 求最大或者最小的条件
+
+SELECT
+b.* 
+FROM
+	goods_sku b 
+WHERE b.goods_id IN ( 132, 110, 109, 100, 99 ) 
+AND b.selling_price = (
+  SELECT min( a.selling_price ) AS selling_price 
+  FROM goods_sku a 
+  WHERE a.deleted = 0 
+    AND a.STATUS = 0 
+    AND a.goods_id = b.goods_id 
+    GROUP BY a.goods_id  
+ )
 ```
 
 

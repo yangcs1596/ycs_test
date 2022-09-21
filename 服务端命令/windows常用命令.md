@@ -129,3 +129,36 @@ cmd /k 表示cmd后面的命令执行完后不关闭窗口
 cmd /c 表示执行完cmd命令后关闭命令窗口
 ```
 
+
+
+#### 脚本安装和环境变量配置
+
+```cmd
+## mq的卸载例子
+@echo off
+echo 停止并删除数据库
+net stop MySQL
+sc delete MySQL
+echo 删除环境变量
+wmic ENVIRONMENT where "name='CLASSPATH'" delete
+wmic ENVIRONMENT where "name='JAVA_HOME'" delete
+echo 删除完成 
+
+##
+echo "%cd%"
+set jdkpath=%cd%\jdk1.8.0_171
+echo %jdkpath%
+setx JAVA_HOME  "%jdkpath%"  -m
+setx CLASSPATH  ".;%%JAVA_HOME%%\lib\tools.jar;%%JAVA_HOME%%\lib\dt.jar" -m
+```
+
+
+
+#### 打包成exe的工具
+
+```
+ Nativefier  web打包成exe?  
+ Inno Setup  环境打包成exe?
+ exe4j       将jar包打包成exe
+```
+

@@ -326,7 +326,27 @@ git rebase的使用
   git push
   ```
 
-  
+
+#### git分支操作命令
+
+```cmd
+########新建test分支###########
+列出所有分支：
+# git branch -a
+创建test分支：
+# git branch test
+切换到test分支：
+# git checkout test
+添加commit注释：
+git commit -m "第一次提交代码"
+提交到服务器：
+# git push origin test
+
+##########删除test分支############
+# git branch -d test
+```
+
+
 
 
 #### github下载部分文件方法
@@ -834,6 +854,28 @@ spring:
 ```
 ~~~
 
+### 使用redis集群注意点
+
+* 1、不支持的方法：
+  KEYS、MIGRATE、SCAN等
+
+* 2、支持但需特殊处理的方法：
+  MSET、SINTERSTORE、SUNIONSTORE、ZINTERSTORE、ZUNIONSTORE等
+
+#### Redis中Key中为什么要使用{}
+
+```
+分片，就是一个hash的过程：对key做md5，sha1等hash算法，根据hash值分配到不同的机器上。为了实现将key分到相同机器，就需要相同的hash值，即相同的key（改变hash算法也行，但不简单）。但key相同是不现实的，因为key都有不同的用途。例如`user:user1:ids`保存用户的tweets ID，`user:user1:tweets`保存tweet的具体内容，两个key不可能同名。
+
+
+
+就是Hash Tag，允许用key的部分字符串来计算hash。当一个key包含`{}` 的时候，就不对整个key做hash，而仅对`{}` 包括的字符串做hash。假设hash算法为sha1。对`user:{user1}:ids`和`user:{user1}:tweets`，其hash值都等同于sha1(user1)。
+
+HashTag可能会使过多的key分配到同一个slot中，造成数据倾斜影响系统的吞吐量，务必谨慎使用。
+```
+
+
+
 ### **启动**
 
 ```json
@@ -1136,6 +1178,8 @@ public class ExecutableLock implements Lock {
 
 ```
 
+
+
 ### Redis限流
 
 目的： 控制用户行为，避免垃圾请求（避免短时间多次操作）。比如一段时间内用户只能操作一个接口1次，或者一段时间内用户只能操作某个行为N次？
@@ -1198,6 +1242,50 @@ public class ThrottleTest {
     <version>3.14.1</version>
 </dependency>
 ```
+
+### redis实现发布订阅功能
+
+```java
+// 增加监听器配置
+/**
+ * 功能描述：Redis 配置
+ */
+@Configuration
+public class RedisConfiguration {
+
+    @Bean
+    public RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory redisConnectionFactory) {
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(redisConnectionFactory);
+        container.addMessageListener((message, bytes) -> {
+            log.warn("接收到Redis 事件 重新加载支付参数事件");
+            initPayConfig();
+        }, new ChannelTopic(channel_id));
+        return container;
+    }
+}
+
+//发布消息
+redisTemplate.convertAndSend(channel_id, body);
+```
+
+
+
+## LUA脚本使用
+
+Redis 中使用EVAL命令来直接执行指定的 Lua 脚本。
+
+```
+EVAL luascript numkeys key [key ...] arg [arg ...]
+说明：
+EVAL 命令的关键字。
+luascript Lua 脚本。
+numkeys 指定的 Lua 脚本需要处理键的数量，其实就是 key数组的长度。
+key 传递给 Lua 脚本零到多个键，空格隔开，在 Lua 脚本中通过 KEYS[INDEX]来获取对应的值，其中1 <= INDEX <= numkeys。
+arg是传递给脚本的零到多个附加参数，空格隔开，在 Lua 脚本中通过ARGV[INDEX]来获取对应的值，其中1 <= INDEX <= numkeys。
+```
+
+
 
 ### Springboot session使用
 
@@ -1310,8 +1398,6 @@ template.setValueSerializer(jackson2JsonRedisSerializer);
         return template;
     }
 ```
-
-### 
 
 
 
@@ -5399,6 +5485,8 @@ HBase适合做大数据的持久存储，而Redis比较适合做缓存。如果�
 HBase可以用来做数据的固化，也就是数据存储，做这个他非常合适。Redis适合做cache。可以用HBase+Redis实现数据仓库加缓存数据库，速度和扩展性都兼顾。
 ```
 
+#### 安装
+
 **用法：** springboot集成phoenix操作HBASE
 
 * 1、需要将原有 HBase 中的表做映射才能后使用 Phoenix 操作。
@@ -6875,6 +6963,21 @@ jar ---------> 内部调用或者是作服务使用（一般只有class编译后
 war ---------> 需要部署的项目（war是一个web模块，其中需要包括WEB-INF）
 ```
 
+#### Maven打包指定模块
+
+```cmd
+mvn clean package -pl lzmh-modules/lzmh-app -am -DskipTests
+## 参数说明
+-pl  选项后可跟随{groupId}:{artifactId}或者所选模块的相对路径(多个模块以逗号分隔)
+-am  表示同时处理选定模块所依赖的模块
+-amd  表示同时处理依赖选定模块的模块
+-N   表示不递归子模块
+-rf  表示从指定模块开始继续处理
+
+##mvn 命令自定义 setting 配置文件
+mvn -s "D:\program\maven-3.6.3\maven3\conf\settings.xml" clean install
+```
+
 
 
 #### Maven的scm配置git
@@ -6905,6 +7008,7 @@ import 只能用在dependencyManagement块中，它将spring-boot-dependencies �
 
 ```xml
 3.传递性依赖
+直接依赖和间接依赖
 A依赖B，B依赖C。当前项目为A，只当B在A项目中的scope，那么c在A中的scope是如何得知呢？
 
 当C是test或者provided时，C直接被丢弃，A不依赖C；（排除传递依赖）
@@ -6918,7 +7022,24 @@ A依赖B，B依赖C。当前项目为A，只当B在A项目中的scope，那么c�
     <optional>true</optional>
 </dependency>
 
-当C有<optional>true</optional>  A不依赖C 
+当C有<optional>true</optional>  A不依赖C ,需要A再单独引入
+
+
+依赖原则
+依赖原则目的：防止jar包的冲突
+为了避免造成依赖重复，需要选择一个依赖路径
+
+2.2.1、路径最短优先原则
+即优先选择传递路径最短的依赖包
+
+2.2.2、路径长度相同
+路径长度相同的情况下，又可以分为是否有在同一个pom.xml两种情况
+
+覆盖
+如果在同一pom.xml文件中有2个相同的依赖；后面声明的会覆盖前面的依赖
+但这里要说严禁使用本情况，严禁在同一个pom中声明两个不同的依赖
+优先
+如果是在不同pom.xml中有2个相同的依赖；则先声明的依赖，会覆盖后面声明的依赖
 ```
 
 
@@ -8314,7 +8435,7 @@ k8s的目标是让部署容器化应用简单高效
 
 https://www.jianshu.com/p/9afd73af7e45
 
-
+k8s的deployment >ReplicationController >pod 关系
 
 #### RC的操作
 
@@ -9899,3 +10020,8 @@ Typora的破解下载地址： https://dyyidc.jb51.net/202112/tools/typorapj_jb5
 * hutool开源地址：https://github.com/dromara/hutool   https://gitee.com/dromara/hutool
 
  
+
+**内网穿透**
+
+* uTools: https://res.u-tools.cn/version2/uTools-2.6.3.exe
+* 花生壳 需要实名验证
