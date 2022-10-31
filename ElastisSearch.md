@@ -1355,6 +1355,43 @@ POST {{di}}/audit_demo/_update_by_query
 }
 ```
 
+## 删除es索引脚本
+
+```shell
+#/bin/bash
+
+# 清理几天前的索引
+dayn=2
+# ES IP & port
+esip=127.0.0.1
+esport=9200
+# 匹配日期正则表达式,日期格式为：YYYY.mm.dd
+regular="[0-9]{4}(.[0-9]{2}){2}"
+
+#指定日期
+date1=`date -d "$dayn day ago" +%Y-%m-%d`
+#当前日期
+time=`date "+%Y-%m-%d %H:%M:%S"`
+echo "${time}:开始清理  $date1(${dayn}天)之前ES索引"
+
+
+res=`curl -XGET "http://${esip}:${esport}/_cat/indices/?v"|grep -E $regular|awk '{print $3}'`
+
+t1=`date -d "$date1" +%s`
+for var in $res; 
+do
+    # 如果索引中的日期格式已经是YYYY-mm-dd格式，就不用使用sed替换了，本例索引中日期格式为：YYYY.mm.dd
+    date2=`echo $var| tr -cd $regular|sed 's/\./-/g'`
+    t2=`date -d "$date2" +%s`
+    if [ $t1 -gt $t2 ]; then
+        #echo "$date1 > $date2"
+        echo "${time}: 清理 $var 索引"
+        #curl --user account:pwd -XDELETE "http://${esip}:${esport}/$var"
+        curl -XDELETE "http://${esip}:${esport}/$var"
+    fi
+done
+```
+
 
 
 # 附件说明
@@ -1839,6 +1876,63 @@ analyzer：指定插入时的分词模式，一般为ik_max_words。
 type：字段类型。
 store：是否存储该字段，默认值为false。
 searchAnalyzer：指定查询时的分词模式，一般为ik_smart。
+```
+
+```java
+@Document(indexName = "lzmh_goods")
+@Setting(settingPath = "settings/goods-dispense-settings.json")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class GoodsDispenseDoc {
+    @Field(type = FieldType.Text, analyzer = "ik_max_word_py", searchAnalyzer = "ik_smart")
+    private String all;
+
+    @Field(type = FieldType.Keyword)
+    private String appId;
+
+    @Field(type = FieldType.Object)
+    private GoodsDispenseSub dispense;
+    
+}
+```
+
+文件名为项目 resources下的settings/goods-dispense-settings.json
+```json
+{
+  "index": {
+    "number_of_shards": "1",
+    "number_of_replicas": "0",
+    "analysis": {
+      "analyzer": {
+        "ik_max_word_py": {
+          "tokenizer": "ik_max_word",
+          "filter": "py"
+        },
+        "ik_smart_py": {
+          "tokenizer": "ik_smart",
+          "filter": "py"
+        },
+        "keyword_py": {
+          "tokenizer": "keyword",
+          "filter": "py"
+        }
+      },
+      "filter": {
+        "py": {
+          "type": "pinyin",
+          "keep_full_pinyin": true,
+          "keep_joined_full_pinyin": true,
+          "keep_original": true,
+          "limit_first_letter_length": 16,
+          "remove_duplicated_term": true,
+          "none_chinese_pinyin_tokenize": false
+        }
+      }
+    }
+  }
+}
+
 ```
 
 

@@ -3765,11 +3765,25 @@ docker tag 镜像id 镜像名:标签  ## 给镜像重命名：
 
 * https://www.jianshu.com/p/2217cfed29d7
 
+### 5 ）查看镜像版本
+
+#### 5-1.查看容器使用的镜像具体版本
+
+```bash
+docker inspect mongo|grep -i version
+```
+
+#### 5-2.查看镜像具体版本
+
+```bash
+docker image inspect mongo:latest|grep -i version
+```
+
 ## 5、Dockerfile文件命令介绍
 
 ```shell
 FROM openjdk:8-jdk  //指定基础镜//在镜像内部执行一些命令，比如安装软件，配置环境等，换行可以使用RUN groupadd -r mysql && useradd -r -g mysql mysql
-
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  //指定时区问题
 
 //设置变量的值，ENV MYSQL_MA JOR 5.7，可以通过docker run --e key=value修改，后面可以直接使用${MYSQL_MA JOR}
 ENV MYSQL_MAJOR 5.7
@@ -3893,6 +3907,7 @@ docker run -d -v nginx:/etc/nginx -p 80:80 --name nginx nginx:1.14
 FROM openjdk:8-jdk-alpine
 VOLUME /tmp
 ADD weixin-java-mp-demo-springboot-1.0.0-SNAPSHOT.jar app.jar
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
 ```
 
@@ -3965,6 +3980,41 @@ uname 系统参数说明
 
 * 将可执行权限应用于二进制文件 sudo chmod +x /usr/local/bin/docker-compose
 * 创建软链： sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+
+
+#### docker-compose指定.env文件
+
+```yaml
+version: '3.8'
+services:
+  test_db:
+    image: mariadb:latest
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DATABASE_PASSWORD}
+      - MYSQL_DATABASE=${DATABASE_NAME}
+      - MYSQL_PASSWORD=${DATABASE_PASSWORD}
+    healthcheck:
+      test:"/usr/bin/mysql --user=${DATABASE_USER} --password=${DATABASE_PASSWORD} --execute "SHOW DATABASES;""
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    env_file:
+      - ${ENVIROMENT}.env
+
+#启动
+docker-compose run -e ENVIROMENT=local spring-app
+#local.env文件
+SPRING_PROFILES_ACTIVE=prod
+DATABASE_HOST=docker-mariadb
+DATABASE_USER=root
+DATABASE_PASSWORD=xxx
+DATABASE_NAME=xxx
+DATABASE_PORT=3306
+```
+
+
 
 ### 6-1  安装mysql和tomcat nginx
 
@@ -4068,7 +4118,7 @@ my.ini文件
 
 ```ini
 ### mysql的my.ini的配置，关联canal
-
+[mysqld]
 d-file        = /var/run/mysqld/mysqld.pid
 socket          = /var/run/mysqld/mysqld.sock
 datadir         = /var/lib/mysql
@@ -4124,7 +4174,7 @@ show binary logs ;
 show master status;
 ```
 
-### 修改instance.properties
+#### 修改instance.properties
 
 ![在这里插入图片描述](./image/canal-config.png)
 
@@ -4248,6 +4298,18 @@ services:
       --collation-server=utf8mb4_general_ci
       --explicit_defaults_for_timestamp=true
 ```
+
+**配置允许远程连接**
+
+* mysql -u root -p；
+
+* use mysql;
+
+  select host from user where user='root';
+
+* update user set host = '%' where user ='root'; // 开启远程连接。但是一般建议建个新用户再设置
+
+  flush privileges;
 
 ### 6-8 安装nginx
 
@@ -4498,6 +4560,33 @@ services:
       - "lzmh-mongo:192.168.1.55"
       - "lzmh-xxl-job:192.168.1.12"
 
+```
+
+### 6-14 openjdk-alpine镜像字体问题
+
+```dockerfile
+FROM openjdk:8-jdk-alpine
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+RUN apk add --update ttf-dejavu fontconfig && rm -rf /var/cache/apk/*
+```
+构造镜像
+```shell
+docker build -t swr.cn-north-1.myhuaweicloud.com/d00105737/openjdk:8-jdk-font .
+```
+
+### 6-15 安装portainer
+
+```yaml
+version: "3.8"
+services:
+  portainer:
+    image: portainer/portainer:latest
+    container_name: portainer
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
 ```
 
 

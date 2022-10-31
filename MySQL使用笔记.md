@@ -31,7 +31,7 @@
 对索引字段中文本的搜索进行优化
 ```
 
-### mysql的账号权限配置
+## mysql的账号权限配置
 
 mysql添加用户对指定库有权限, 权限控制信息存储在表mysql.user中
 
@@ -52,10 +52,18 @@ flush privileges;　
 
 ```mysql
 grant create , select ,  insert ,  update ,  delete on access_control.*  to acc@'%';
+
+# '%'才是允许远程连接，用户地址可以是localhost，也可以是ip地址、机器名字、域名。也可以用’%'表示从任何地址连接。
 #safedogcloud数据库的所有权限
-GRANT ALL PRIVILEGES ON `update_back`.* TO 'safedog_cloud'@'%'
+GRANT ALL PRIVILEGES ON `access_control`.* TO 'safedog_cloud'@'%'
+#给来自10.163.225.87的用户joe分配可对数据库vtdc所有表进行所有操作的权限，并设定口令为123。
+grant all privileges on vtdc.* to joe@10.163.225.87 identified by ‘123′; 
 #所有数据库权限
-GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost'
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' 
+
+#收回权限
+#收回mysql库下的所有表的插删改查权限
+REVOKE SELECT,INSERT,UPDATE,DELETE ON mysql.* FROM acc@'%';
 ```
 
 4, 刷新授权
@@ -120,7 +128,16 @@ default-character-set=utf8mb4
 **数据初始化启动**（cmd右键管理员运行）
 
 1. 数据初始化：mysqld –initialize
+
+   ```cmd
+   ## 指定配置文件
+   mysqld --defaults-file=D:\1ShanghaiOceanUniversity\mysql13307\my.ini --initialize --console 
+   ```
+
+   
+
 2. 注册到注册表添加MySQL服务：mysqld –install
+
 3. MySQL启动：net start mysqld
 
 使用该命令只能查看慢查询次数，但是我们没有办法知道是哪些查询产生了慢查询，如果想要知道是哪些查询导致的慢查询，那么我们必须修改mysql的配置文件。打开mysql的配置文件（windows系统是my.ini,linux系统是my.cnf），在[mysqld]下面加上以下代码：
@@ -863,6 +880,7 @@ where ...
 ```
 insert ignore into ...
 表示数据库如果存在主键，则跳过该条
+insert into table_a(column...) select ... from table_b
 ```
 
 

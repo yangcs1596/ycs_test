@@ -103,42 +103,67 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 * 构造原型工具 axure  生成的html文件放在tomcat的webapps下即可访问
 * icon的地址 https://fontawesome.com
 
+### 阿里资深架构师必备10个开发者神器
+
+一、Java 线上诊断工具 Arthas
+
+二、IDE 插件 Cloud Toolkit
+
+三、混沌实验注入工具 ChaosBlade
+
+四、Java 代码规约扫描插件
+
+五、应用实时监控工具 ARMS
+
+六、静态开源站点搭建工具 Docsite
+
+七、Android 平台上的秒级编译方案 Freeline
+
+八、性能测试工具 PTS
+
+九、云效开发者工具KT
+
+十、架构可视化工具 AHAS
+
 ## git项目可封装的地址
 
-| 项目名称                               | 项目地址                                                     |
-| :------------------------------------- | ------------------------------------------------------------ |
-| canal                                  | https://github.com/alibaba/canal.git                         |
-| dynamic-datasource-spring-boot-starter | https://github.com/baomidou/dynamic-datasource-spring-boot-starter.git |
-| guava-retrying                         | https://github.com/rholder/guava-retrying.git                |
-| hutool                                 | https://gitee.com/dromara/hutool.git                         |
-| lock4j                                 | https://github.com/baomidou/lock4j.git                       |
-| redisson封装不同模式                   | https://gitee.com/yangxixi_323/spring-boot-distributed-redisson.git<br />https://gitee.com/xxy6910/redisson-dcs-lock.git |
-| redis-cache-operator-java              | https://github.com/xsg1995/redis-cache-operator-java.git     |
-| rocketmq                               | https://github.com/apache/rocketmq-spring.git                |
-| rocketmq-dashboard                     | https://github.com/apache/rocketmq-dashboard.git             |
-| ruoyi系统                              | https://gitee.com/y_project/RuoYi.git                        |
-|                                        | https://gitee.com/y_project                                  |
-| swagger-starter                        | https://github.com/SpringForAll/spring-boot-starter-swagger.git |
-| xxl-job                                | https://github.com/zero9102/xxl-job-spring-boot-starter.git  |
-| 闪验                                   | https://gitee.com/hiwepy/shanyan-spring-boot-starter.git     |
-|                                        |                                                              |
-| 微信开发weixin-java-mp                 | https://gitee.com/binary/weixin-java-tools.git               |
-| 项目推荐浏览页                         | https://gitee.com/explore/backend                            |
-| justAuth多登录开源库                   | https://github.com/justauth/JustAuth.git<br />https://github.com/justauth/justauth-spring-boot-security-starter.git |
-| security安全校验                       | https://github.com/spring-projects/spring-security/wiki/OAuth-2.0-Migration-Guide |
-| 单商城开源系统ThinkPHP                 | https://gitee.com/likeshop_gitee                             |
-| DingTalk消息通知                       | https://github.com/AnswerAIL/dingtalk-spring-boot-starter    |
-| guerlab-sms 不同的短信通道支持         | https://gitee.com/guerlab_net/guerlab-sms?_from=gitee_search |
-|                                        |                                                              |
+| 项目名称                                          | 项目地址                                                     |
+| :------------------------------------------------ | ------------------------------------------------------------ |
+| canal 缓存同步工具                                | https://github.com/alibaba/canal.git                         |
+| dynamic-datasource-spring-boot-starter 动态数据源 | https://github.com/baomidou/dynamic-datasource-spring-boot-starter.git |
+| guava-retrying 重试工具                           | https://github.com/rholder/guava-retrying.git                |
+| hutool  糊涂工具                                  | https://gitee.com/dromara/hutool.git                         |
+| lock4j 日志包                                     | https://github.com/baomidou/lock4j.git                       |
+| redisson封装不同模式                              | https://gitee.com/yangxixi_323/spring-boot-distributed-redisson.git<br />https://gitee.com/xxy6910/redisson-dcs-lock.git |
+| redis-cache-operator-java 缓存工具                | https://github.com/xsg1995/redis-cache-operator-java.git     |
+| rocketmq                                          | https://github.com/apache/rocketmq-spring.git                |
+| rocketmq-dashboard<br />rocketmq的可视化界面      | https://github.com/apache/rocketmq-dashboard.git             |
+| ruoyi系统                                         | https://gitee.com/y_project/RuoYi.git                        |
+|                                                   | https://gitee.com/y_project                                  |
+| swagger-starter                                   | https://github.com/SpringForAll/spring-boot-starter-swagger.git |
+| xxl-job                                           | https://github.com/zero9102/xxl-job-spring-boot-starter.git  |
+| 闪验                                              | https://gitee.com/hiwepy/shanyan-spring-boot-starter.git     |
+|                                                   |                                                              |
+| 微信开发weixin-java-mp<br />微信端第三方对接开发  | https://gitee.com/binary/weixin-java-tools.git               |
+| 项目推荐浏览页                                    | https://gitee.com/explore/backend                            |
+| justAuth多登录开源库                              | https://github.com/justauth/JustAuth.git<br />https://github.com/justauth/justauth-spring-boot-security-starter.git |
+| security安全校验                                  | https://github.com/spring-projects/spring-security/wiki/OAuth-2.0-Migration-Guide |
+| 单商城开源系统ThinkPHP                            | https://gitee.com/likeshop_gitee                             |
+| DingTalk消息通知                                  | https://github.com/AnswerAIL/dingtalk-spring-boot-starter    |
+| guerlab-sms 不同的短信通道支持                    | https://gitee.com/guerlab_net/guerlab-sms?_from=gitee_search |
+|                                                   |                                                              |
 
 
 
 ## 其它一些项目学习
 
-|                             |                                          |
-| --------------------------- | ---------------------------------------- |
-| wepush 简小的推送工具       | https://gitee.com/zhoubochina/WePush.git |
-| Jeewx-Boot 免费微信管家平台 | https://gitee.com/jeecg/jeewx-boot.git   |
+|                              |                                                              |
+| ---------------------------- | ------------------------------------------------------------ |
+| wepush 简小的推送工具        | https://gitee.com/zhoubochina/WePush.git                     |
+| Jeewx-Boot 免费微信管家平台  | https://gitee.com/jeecg/jeewx-boot.git                       |
+| spring-boot-admin 微服务监控 | https://gitee.com/mirrors/spring-boot-admin.git <br />原始仓库： https://github.com/codecentric/spring-boot-admin |
+| douyin-sdk 抖音对接          | https://toscode.gitee.com/amazecodecom/douyin-sdk.git<br />https://github.com/wulinyun/java-sdk-douyin.git |
+|                              |                                                              |
 
 
 
@@ -438,6 +463,8 @@ public class Test implements InitializingBean {
 
 
 #### Spring事件分发
+有自定义监听器ApplicationListener
+和注解监听器@EventListener
 
 ```java
 /**事件源**/
@@ -2740,7 +2767,7 @@ String.split("分割1|分割2");
 
   
 
-#### 5-1枚举
+### 5-1枚举
 
 ```java
  public static LinkedHashMap<String, String> values = null;
@@ -2945,7 +2972,7 @@ public V put(K key, V value) {
 
 
 
-### 5-1 Deque双向队列 和栈stack
+### 5-2 Deque双向队列 和栈stack
 
 Deque有三种用途：
 
@@ -2958,8 +2985,10 @@ Deque有三种用途：
   Deque deque = new LinkedList()
 
 ```java
-
-    
+Queue是先进先出（FIFO)的单向队列
+Deque是Queue的一个子接口，双端队列是指该队列的两端既能入队也能出队，
+    如果将Deque限制为只从一端入队和出队，则可实现栈`先进后出`的数据结构。
+堆栈(stack)，后进先出
  
    
 ```
@@ -2977,11 +3006,11 @@ Deque有三种用途：
 
 * 双端队列也可用作 LIFO（后进先出）堆栈。应优先使用此接口而不是遗留 Stack 类。在将双端队列用作堆栈时，元素被推入双端队列的开头并从双端队列开头弹出。堆栈方法完全等效于 Deque 方法，如下表所示：
 
-| **堆栈方法** | **等效Deque方法** |
-| ------------ | ----------------- |
-| push(e)      | addFirst(e)       |
-| pop()        | removeFirst()     |
-| peek()       | peekFirst()       |
+| **堆栈方法**   | **等效Deque方法** |
+| -------------- | ----------------- |
+| push(e)        | addFirst(e)       |
+| pop() 取出队头 | removeFirst()     |
+| peek()         | peekFirst()       |
 
 方法详细： https://blog.csdn.net/weixin_44008257/article/details/108013581
 

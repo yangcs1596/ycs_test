@@ -763,7 +763,7 @@ public interface UserClient {
 </dependency>
 ```
 
-
+hystix有可视化界面
 
 ### [RestTemplate](https://so.csdn.net/so/search?q=RestTemplate&spm=1001.2101.3001.7020)开启ribbon的负载均衡，@LoadBalanced
 
@@ -1174,6 +1174,8 @@ one:
 
 
 # 服务监控
+
+## Spring-Boot Admin
 
 ```xml
 <spring-boot-admin.version>2.1.6</spring-boot-admin.version>

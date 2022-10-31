@@ -874,7 +874,11 @@ spring:
 HashTag可能会使过多的key分配到同一个slot中，造成数据倾斜影响系统的吞吐量，务必谨慎使用。
 ```
 
+#### Redis新数据结构
 
+* **HyperLogLog**   是用来做**基数统计**的算法 如 网站页统计UV 
+* **BloomFilter ** 主要作用是：判断一个元素是否在某个集合中；应用场景： 数据库防止穿库
+* **GEO**  用于存储地理信息以及对地理信息作操作的场景；应用：查看附近的人 ；微信位置共享；地图上直线距离的展示
 
 ### **启动**
 
@@ -1252,6 +1256,13 @@ public class ThrottleTest {
  */
 @Configuration
 public class RedisConfiguration {
+    
+    @Async
+    @Order
+    @EventListener({WebServerInitializedEvent.class})
+    public void initPayConfig() {
+    
+    }
 
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory redisConnectionFactory) {
@@ -1279,7 +1290,7 @@ Redis 中使用EVAL命令来直接执行指定的 Lua 脚本。
 EVAL luascript numkeys key [key ...] arg [arg ...]
 说明：
 EVAL 命令的关键字。
-luascript Lua 脚本。
+luascript Lua 脚本文件。
 numkeys 指定的 Lua 脚本需要处理键的数量，其实就是 key数组的长度。
 key 传递给 Lua 脚本零到多个键，空格隔开，在 Lua 脚本中通过 KEYS[INDEX]来获取对应的值，其中1 <= INDEX <= numkeys。
 arg是传递给脚本的零到多个附加参数，空格隔开，在 Lua 脚本中通过ARGV[INDEX]来获取对应的值，其中1 <= INDEX <= numkeys。
@@ -1329,6 +1340,30 @@ session 常用命令
 2.给session设置值：session.setAttribute("变量名",值对象);
 3.获取session中的值:session.getAttribute("变量名");
 4.删除session中的值：session.removeAttribute("变量名");session.invalidate();//删除所有session中保存的键
+```
+
+
+
+```java
+/**
+  * 库存扣减脚本
+  */
+@Bean
+public DefaultRedisScript<Boolean> quantityScript() {
+    DefaultRedisScript<Boolean> redisScript = new DefaultRedisScript<>();
+    redisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("script/quantity.lua")));
+    redisScript.setResultType(Boolean.class);
+    return redisScript;
+}
+
+// 使用
+//库存扣除结果
+private final StringRedisTemplate stringRedisTemplate;
+
+@Autowired
+private DefaultRedisScript<Boolean> quantityScript;
+ 	
+Boolean skuResult = stringRedisTemplate.execute(quantityScript, keys, values.toArray());
 ```
 
 
@@ -2027,7 +2062,9 @@ public class TokenCheckInterceptor {
 
 
 
-@Transactional 事务回滚
+### @Transactional 事务回滚问题
+
+
 
 ```java
 @Transactional(rollbackFor=Exception.class)
@@ -2035,6 +2072,84 @@ public class TokenCheckInterceptor {
 
 在@Transactional注解中如果不配置rollbackFor属性,那么事物只会在遇到RuntimeException的时候才会回滚,加上rollbackFor=Exception.class,可以让事物在遇到非运行时异常时也回滚
 ```
+Propagation是一个枚举，定义了七大行为类型
+@Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+* REQUIRED 支持当前事务;如果不存在，就创建一个新的;如果此事内部出现异常回滚会使外事务方法也回滚
+* SUPPORTS 支持当前事务;如果不存在，则执行非事务.
+* NOT_SUPPORTED 执行非事务处理，如果存在的话，暂停当前事务。
+* NEVER 不支持当前的事务;如果当前事务存在，则抛出异常。
+* MANDATORY 支持当前事务;如果不存在当前事务，则抛出异常。
+* NESTED 如果当前事务存在，在嵌套事务中执行，就像需要的传播一样;内部事务方法异常回滚并不会影响外部方法。
+* REQUIRES_NEW 无论如何都创建一个新的事务来执行被标识的方法。一般局部数据操作一致性都用此方法
+
+#### 事务提交后执行
+
+```java
+@Transactional
+public void finishOrder(Order order){
+	// 修改订单成功
+	updateOrderSuccess(order);
+ 
+	// 发送消息到 MQ
+    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter(){
+       @Override
+       public void afterCommit() {
+           mqService.send(order);
+       }
+    });
+}
+
+// 实现方式二  @TransactionalEventListener
+
+
+// 方法进行封装
+@Component
+public class CallBackService {
+    public void execute(final CallBackAction action) {
+        // 判断是否在事务方法里
+        boolean synchronizationActive = TransactionSynchronizationManager.isSynchronizationActive();
+        // boolean synchronizationActive = TransactionSynchronizationManager.isActualTransactionActive()
+        if (synchronizationActive) {
+            TransactionSynchronizationManager
+                    .registerSynchronization(new TransactionSynchronizationAdapter() {
+                        @Override
+                        public void afterCommit() {
+                            // 事务提交后执行回调
+                            action.callback();
+                        }
+                    });
+        } else {
+            // 事务提交后执行回调
+            action.callback();
+        }
+    }
+}
+
+// 函数式接口只能由一个抽象方法
+public interface CallBackAction {
+    /**
+     * 普通事务回调
+     */
+    void callback();
+}
+
+//调用
+// 在事务提交后执行
+callBackService.execute(() -> {
+    // ...
+});
+```
+
+#### 事务失效场景
+
+```java
+// 使用代理执行
+原来在springAOP的用法中，只有代理的类才会被切入，我们在controller层调用service的方法的时候，是可以被切入的，但是如果我们在service层 A方法中，调用B方法，切点切的是B方法，那么这时候是不会切入的，解决办法就是如上所示，在A方法中使用((Service)AopContext.currentProxy()).B() 来调用B方法，这样一来，就能切入了！ 
+
+service A = AopContext.currentProxy();
+```
+
+
 
 #### JackSon中@JsonInclude注解详解
 
@@ -2359,13 +2474,38 @@ public Annotation[] getAnnotations()
 }
 ```
 
-##### @FunctionalInterface的使用 函数式编程
+#### @FunctionalInterface的使用 函数式编程
 
 * 必须注解在接口上
 
   被注解的接口有且只有一个抽象方法
 
   被注解的接口可以有默认方法/静态方法，或者重写Object的方法
+
+```java
+@FunctionalInterface
+public interface FuncInterface {
+  //只有一个抽象方法
+  public void  method1();
+  //default方法不计
+  default  void method2(){
+  }
+  //static方法不计
+  static void method3(){
+  }
+  //从Object继承的方法不计
+  public boolean equals(Object obj);
+}
+内置的函数式接口
+​ JDK 也提供了大量的内置函数式接口，使得 Lambda 表达式的运用更加方便、高效。这些内置的函数式接口已经可以解决我们开发过程中绝大部分的问题，只有一小部分比较特殊得情况需要我们自己去定义函数式接口。在这里特别介绍四个函数式接口。
+
+Consumer：消费型接口（void accept(T t)）。有参数，无返回值 （上文forEach的参数类型就是Consumer）
+Supplier：供给型接口（T get（））。只有返回值，没有入参
+Function<T, R>：函数型接口（R apply（T t））。一个输入参数，一个输出参数，两种类型不可不同、可以一致
+Predicate：断言型接口（boolean test（T t））。输入一个参数，输出一个boolean类型得返回值
+```
+
+
 
 ### Spring
 
@@ -2617,6 +2757,18 @@ $ cnpm install
 $ cnpm run dev
  DONE  Compiled successfully in 4388ms
 ```
+
+### vue解决缓存问题
+
+当程序版本升级时，用户因为缓存访问的还是老的页面
+
+```
+location = /index.html {
+ add_header Cache-Control "no-cache, no-store";
+}
+```
+
+
 
 ------
 
@@ -7690,6 +7842,7 @@ FROM openjdk:8-jdk-alpine
 VOLUME /tmp
 ARG JAR_FILE
 COPY ${JAR_FILE} app.jar
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
 
 如服务的配置
@@ -9984,6 +10137,31 @@ https://baijiahao.baidu.com/s?id=1680087990414788282&wfr=spider&for=pc
 * 桌面开发
 
 https://www.zhihu.com/question/453979660/answer/2397193140
+
+## Portainer.io远程
+
+```shell
+# 远程机 
+1. 编辑docker.service
+vim /usr/lib/systemd/system/docker.service
+找到 ExecStart字段修改如下
+ExecStart=/usr/bin/dockerd-current -H tcp://0.0.0.0:2375 -H unix://var/run/docker.sock 
+
+2.重启docker重新读取配置文件，重新启动docker服务
+systemctl daemon-reload
+systemctl restart docker
+3. 开放防火墙端口
+firewall-cmd --zone=public --add-port=6379/tcp --permanent
+ 
+4.刷新防火墙
+firewall-cmd --reload
+ 
+5.再次配置远程docker就可以了
+```
+
+
+
+
 
 
 

@@ -92,6 +92,15 @@ yum install  java-1.8.0-openjdk --installroot=/home/xxx/percona-xtrabackup/
 ## Linux在任意目录下执行指定的脚本
 
 ```shell
+## /etc/profile 配置java和maven环境
+export PATH USER LOGNAME MAIL HOSTNAME HISTSIZE HISTCONTROL
+export JAVA_HOME=/opt/jdk/jdk1.8.0_321
+export JRE_HOME=${JAVA_HOME}/jre
+export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib
+export MAVEN_HOME=/opt/docker/maven/apache-maven-3.8.5
+export PATH=${MAVEN_HOME}/bin:${JAVA_HOME}/bin:${JRE_HOME}/bin:$PATH
+
+
 #一种全局默认的路径为/etc/profile在profile中，它默认会再加载/etc/bash.bashrc。
 #另一种用户自己的就是$HOME目录下的.profile它默认会载加载.bashrc文件。
 #方式一
@@ -777,6 +786,9 @@ curl -H  "Content-Type: application/json"  -d  '{
     ]
   }
 }' -X POST  https://10.164.148.23/thirdApi/getPatchManagerPage -k
+
+## get例子
+curl --header "Authorization: 62b94903e4b0e57be39dbfc4" --insecure  -X GET 'http://121.40.86.195:9200'
 ```
 
 
