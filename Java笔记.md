@@ -130,6 +130,7 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 | 项目名称                                          | 项目地址                                                     |
 | :------------------------------------------------ | ------------------------------------------------------------ |
 | canal 缓存同步工具                                | https://github.com/alibaba/canal.git                         |
+| canal胶水层 可封装                                | https://gitee.com/throwableDoge/canal-glue.git               |
 | dynamic-datasource-spring-boot-starter 动态数据源 | https://github.com/baomidou/dynamic-datasource-spring-boot-starter.git |
 | guava-retrying 重试工具                           | https://github.com/rholder/guava-retrying.git                |
 | hutool  糊涂工具                                  | https://gitee.com/dromara/hutool.git                         |
@@ -141,7 +142,7 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 | ruoyi系统                                         | https://gitee.com/y_project/RuoYi.git                        |
 |                                                   | https://gitee.com/y_project                                  |
 | swagger-starter                                   | https://github.com/SpringForAll/spring-boot-starter-swagger.git |
-| xxl-job                                           | https://github.com/zero9102/xxl-job-spring-boot-starter.git  |
+| xxl-job                                           | https://gitee.com/xuxueli0323/xxl-job.git<br />https://github.com/zero9102/xxl-job-spring-boot-starter.git |
 | 闪验                                              | https://gitee.com/hiwepy/shanyan-spring-boot-starter.git     |
 |                                                   |                                                              |
 | 微信开发weixin-java-mp<br />微信端第三方对接开发  | https://gitee.com/binary/weixin-java-tools.git               |
@@ -150,8 +151,10 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 | security安全校验                                  | https://github.com/spring-projects/spring-security/wiki/OAuth-2.0-Migration-Guide |
 | 单商城开源系统ThinkPHP                            | https://gitee.com/likeshop_gitee                             |
 | DingTalk消息通知                                  | https://github.com/AnswerAIL/dingtalk-spring-boot-starter    |
+| 异常通知的框架                                    | https://gitee.com/ITEater/prometheus-spring-boot-starter     |
 | guerlab-sms 不同的短信通道支持                    | https://gitee.com/guerlab_net/guerlab-sms?_from=gitee_search |
-|                                                   |                                                              |
+| IJPay聚合支付                                     | https://gitee.com/javen205/IJPay?_from=gitee_search          |
+| 文件上传聚合存储平台                              | https://spring-file-storage.xuyanwu.cn/#/存储平台            |
 
 
 
@@ -399,6 +402,26 @@ public xxx tt(Object obj){ //此处的obj，可以自动注入进来
   1 方法实现类和代理类都实现同一个接口
   2 代理类拥有实现类的实例
   3 代理器里面的方法可以有对事项方法做控制
+
+
+// 动态代理
+(T) Proxy.newProxyInstance(
+                Thread.currentThread().getContextClassLoader(),
+                new Class[]{clientType},
+                new ProxyFallback(error, clientType)
+                
+Proxy.newProxyInstance(car.getClass().getClassLoader(), Car.class.getInterfaces(), new xxHandler());
+
+public class xxHandler implements InvocationHandler {
+
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        System.out.println("---------before-------");
+        Object invoke = method.invoke(vehical, args);
+        System.out.println("---------after-------");
+     
+        return invoke;
+    }
+}
   ```
 
 * 外观模式
@@ -646,10 +669,6 @@ https://www.cnblogs.com/againn/p/9512013.html
 41 }
 ```
 
-
-
- 
-
  创建时间对象Even：
 
 ```
@@ -734,6 +753,42 @@ https://www.cnblogs.com/againn/p/9512013.html
 11 }
 ```
 
+##### 发送事件，实现监听 ApplicationEventPublisher
+
+```java
+// 发送事件
+@Service
+public class AService {
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
+    public void sendMessage() {
+        String s = "Hello";
+        String b = "soul";
+        eventPublisher.publishEvent(new DEvent(s + b, s, b));
+    }
+}
+
+// 实现监听
+@Component
+@Slf4j
+public class BListener implements ApplicationListener<DEvent> {
+    @Override
+    public void onApplicationEvent(DEvent applicationEvent) {
+        log.info(">==== listen: {}", applicationEvent.getName(), applicationEvent.getText());
+    }
+}
+
+//定义事件
+@Data
+public class DEvent extends ApplicationEvent {
+    private final String name;
+    private final String text;
+}
+```
+
+
+
 ### 减少if-else的方法
 
 大概就是接口，多态等形式
@@ -759,37 +814,7 @@ https://www.cnblogs.com/againn/p/9512013.html
   UserPayService strategy = UserPayServiceStrategyFactory.getByUserType(vipType);
   ```
 
-* Spring Bean 的注册
 
-  还记得我们前面定义的 UserPayServiceStrategyFactory 中提供了的 Register 方法吗？他就是用来注册策略服务的。
-
-  接下来，我们就想办法调用 Register 方法，把 Spring 通过 IOC 创建出来的 Bean 注册进去就行了。
-
-  这种需求，可以借用 Spring 中提供的 InitializingBean 接口，这个接口为 Bean 提供了属性初始化后的处理方法。
-
-  它只包括 afterPropertiesSet 方法，凡是继承该接口的类，在 Bean 的属性初始化后都会执行该方法。
-
-  ```java
-  //例子
-  @Service
-  public class ParticularlyVipPayService implements UserPayService,InitializingBean {
-  
-      @Override
-      public BigDecimal quote(BigDecimal orderPrice) {
-           if (消费金额大于30元) {
-              return 7折价格;
-          }
-      }
-  
-      //这里进行了注册Register  至此工厂模式完成
-      @Override
-      public void afterPropertiesSet() throws Exception {
-          UserPayServiceStrategyFactory.register("ParticularlyVip",this);
-      }
-  }
-  ```
-
-  
 
 ### 1 开发常用的修饰符功能说明
 
@@ -1365,7 +1390,7 @@ class Single{
     private Single(){}
     public static Single getInstance(){
         if(s==null){
-            sysnchronized)(Single.clasee){
+            synchronized (Object.class){
                 if(s==null){
                     s=new Single();
                 }
@@ -1437,6 +1462,8 @@ Future<List> future = getDataFromRemoteByFuture();
 
 ```java
 // ExecutorService executor = Executors.newCachedThreadPool();
+//  ### 不能使用Executors的方法创建线程池，这个是大量的生产事故得出来的结论
+//new ThreadPoolExecutor(corePoolSize, maximumPoolSize, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<Runnable>(100),newThreadFactoryBuilder().setNameFormat("PROS-%d").build());
 private Future<List> getDataFromRemoteByFuture() {
 
         return threadPool.submit(new Callable<List>() {
@@ -1506,8 +1533,7 @@ try {
 
 
 ```java
-/**线程方式 这个方式不好，需要手动创建线程池**/
-Executor threadPool = Executors.newFixedThreadPool(5);
+
 for(int i = 0 ;i < 10 ; i++) {
     threadPool.execute(new Runnable() {
         public void run() {
@@ -1516,10 +1542,33 @@ for(int i = 0 ;i < 10 ; i++) {
     });
 }
 
+ ThreadPoolExecutor executor = new ThreadPoolExecutor(2, 4, 10, TimeUnit.SECONDS,
+                new ArrayBlockingQueue<>(4), new NameTreadFactory(), new MyIgnorePolicy());
+
+## ArrayBlockingQueue 有界 PriorityBlockingQueue无界 DelayQueue  无界队列
+    
 ExecutorService pool = new ThreadPoolExecutor(1, 2, 1000, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<Runnable>(),Executors.defaultThreadFactory(),new ThreadPoolExecutor.AbortPolicy());
 for(int i=0;i<20;i++) {
     pool.execute(new ThreadTask(i));
 }  
+```
+
+
+
+##### 2-1-1 定时线程池
+
+```java
+/**
+ * 线程池，每个 JVM 使用一个线程去维护 keyAliveTime，定时执行 runnable
+ */
+private static final ScheduledExecutorService SCHEDULER = 
+new ScheduledThreadPoolExecutor(1, 
+new BasicThreadFactory.Builder().namingPattern("redisLock-schedule-pool").daemon(true).build());
+static {
+    SCHEDULER.scheduleAtFixedRate(() -> {
+        // do something to extend time
+    }, 0,  2, TimeUnit.SECONDS); //2s执行一次
+}
 ```
 
 
@@ -1632,6 +1681,8 @@ public static void main(String[] args) {
     new Thread(() -> System.out.println("多线程任务执行中！")).start(); // 启动线程
 }
 ```
+
+
 
 #### 2-3 Java反应式框架Reactor中的Mono和Flux
 
@@ -2044,6 +2095,133 @@ class Single{
     }
 }
 ```
+
+##### ReentrantLock 重入锁
+
+ReentrantReadWriteLock是读写锁
+
+```java
+private final Lock lock = new ReentrantLock();
+public void add() {
+    lock.lock();
+    try {
+        // 代码
+    } finally {
+        lock.unlock();
+    }
+}
+```
+
+注意点：这两种锁在在和@Transational同一个方法一起使用的情况下会出现，锁已经去除，但是事务还没提交的情况，造成脏读和数据不一致性等情况。 把事务提交封装到另一个service中
+
+```java
+public void test() {
+    lock.lock();
+    try {
+      service.update
+    } finally {
+      lock.unlock();
+    }
+  }
+// 另一个service里，同一个service里调用，事务失效
+@Transactional
+public void update(int id) {
+    /*
+          业务代码
+         */
+}
+```
+
+##### 数据库锁
+
+```java
+悲观锁 JPA有提供一个更简洁的方式，就是@Lock注解
+
+/**
+* 查询时加上悲观锁
+* 在我们没有将其提交事务之前，其他线程是不能获取修改的，需要等待
+* @param id clientId
+* @return
+*/
+@Lock(value = LockModeType.PESSIMISTIC_WRITE)
+@Query("select a from Client a where a.id = :id")
+Optional<Client> findClientByIdWithPessimisticLock(Long id);
+```
+
+乐观锁
+
+原理就是在实体中加一个字段当作版本号，比如我们加个字段version。
+
+与悲观锁相同，jpa也提供了乐观锁的实现方式。
+
+```java
+@Data
+@Entity
+public class Article {
+    ...
+    
+    @Version
+    private Long version;
+}
+```
+
+乐观锁适合写少读多的场景，写多的情况会经常回滚，消耗性能。
+
+悲观锁适合写多读少的场景，使用的时候该线程会独占这个资源。
+
+##### RedisLockRegistry redis的分布式锁
+
+```xml
+        <!-- redis -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.integration</groupId>
+            <artifactId>spring-integration-redis</artifactId>
+        </dependency>
+        
+```
+
+```java
+@Configuration
+public class RedisLockConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean(RedisLockRegistry.class)
+    public RedisLockRegistry redisLockRegistry(RedisConnectionFactory redisConnectionFactory, RedisExpireProperties expireProperties) {
+        String registryKey = "lockRegistry";
+        if (StringUtils.isNotBlank(expireProperties.getCachePrefix())) {
+            registryKey = expireProperties.getCachePrefix() + "." + registryKey;
+        }
+        return new RedisLockRegistry(redisConnectionFactory, registryKey);
+    }
+}
+
+
+//使用
+@Autowired
+private RedisLockRegistry redisLockRegistry;
+
+Lock lock = redisLockRegistry.obtain("genebridge");
+try {
+    if (lock.tryLock(1, TimeUnit.SECONDS)) {
+        log.info("【开始开始处理】\n");
+        //开始处理
+    }
+}catch (Exception e) {
+    log.error("异常:{}", e.getMessage());
+    //异常处理
+} finally {
+    lock.unlock();
+} 
+```
+
+
+
+
 
 #### 2-6 注入和策略问题
 
@@ -2970,7 +3148,18 @@ public V put(K key, V value) {
 由于并行流使用多线程，则一切线程安全问题都应该是需要考虑的问题，如：资源竞争、死锁、事务、可见性等等。
 ```
 
+#### 5、 ImmutableMap不可变的Map guava提供
 
+链式map  MapBuilder hutool提供
+
+```java
+Map<String, String> stringStringMap = ImmutableMap.<String,String>builder()
+    .put("page","page/page/index")
+    .put("templateId","")
+    .put("templateId","")
+    .put("formId","")
+    .build();
+```
 
 ### 5-2 Deque双向队列 和栈stack
 
@@ -3137,7 +3326,66 @@ Serializable 接口，该接口是一个 mini 接口，其中没有需要实现�
 
 implements Serializable **只是为了标注该对象是可被序列化的**。
 
-transient 关键字表示某个属性不需要被序列化传输
+`transient` 关键字表示某个属性不需要被序列化传输
+
+https://blog.csdn.net/qq_30436011/article/details/115391150
+
+#### 8-1 自定义序列化
+
+```java
+@Target({ElementType.FIELD})
+@Retention(RetentionPolicy.RUNTIME)
+@JacksonAnnotationsInside
+@JsonSerialize(using = ImagePrefixSerializer.class)
+@JsonDeserialize(using = ImagePrefixDeserialize.class)
+public @interface ImagePrefix {
+
+}
+
+/**
+ * add image prefix
+*/
+@Component
+public class ImagePrefixSerializer extends JsonSerializer<String> {
+
+    @Autowired(required = false)
+    private CoreProperties coreProperties;
+
+    @Override
+    public void serialize(String o, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+        jsonGenerator.writeString(addPrefixIfExist(o));
+    }
+
+    public String addPrefixIfExist(String text) {
+        if (!StringUtils.hasText(text) || hasNotPrefix()) {
+            return text;
+        }
+        text = StringUtils.trimWhitespace(text);
+
+        String prefix = coreProperties.getImgPrefix();
+        String[] array = StringUtils.commaDelimitedListToStringArray(text);
+
+        for (int i = 0; i < array.length; i++) {
+            String item = array[i];
+            if (!StringUtils.startsWithIgnoreCase(item, "http")) {
+                array[i] = prefix + item;
+            }
+        }
+        return StringUtils.arrayToCommaDelimitedString(array);
+    }
+
+    private boolean hasNotPrefix() {
+        return coreProperties == null || !StringUtils.hasText(coreProperties.getImgPrefix());
+    }
+
+}
+```
+
+#### 8-2 脱敏序列化实现
+
+https://blog.csdn.net/qq_28369007/article/details/119006766
+
+
 
 ### 9 过滤json
 
@@ -3208,6 +3456,9 @@ WriteNullBooleanAsFalse–Boolean字段如果为null,输出为false,而非null
    public <T, S extends T> T testGenericMethodDefine(T t, S s){}
   //<T> T 表示返回的是一个泛型  传参是T 方法前一定要加<T> 你直接换成<E>会更容易理解的
   //T t 表示传递的参数是一个泛型
+  
+  // 定义返回 public class ApiResponse<T>
+  public <T> ApiResponse<T> test (); 指定类型 调用 ApiResponse<String> test = this.<String>test();
   ```
 
 #### 通配符 ？
@@ -3903,6 +4154,12 @@ Note : '#' 一般表示 '.' ，例如 Intent.getIntExtra(String name), 用注释
 
 ------
 
+### CheckStyle插件
+
+代码规范检测工具， 使用checkStyle可以选择单个文件，也可以扫描整个包或整个项目
+
+
+
 ## Request
 
 * request.setAttribute()的用法
@@ -4103,6 +4360,8 @@ public class SpringUtil implements ApplicationContextAware {
 
   通过RequestContextHolder的静态方法可以随时随地取到当前请求的request对象
 
+
+
 ## Spring的扩展接口了解（启动只执行一次）
 
 ```java
@@ -4111,6 +4370,71 @@ BeanFactoryPostProcessor   --在spring容器初始化之后触发，而且只会
 BeanDefinitionRegistryPostProcessor    
 
 ```
+
+## Spring 的Bean  自定义初始化几种方式
+
+* **@PostConstruct** 
+
+*  @Bean(initMethod=”init”)
+
+* **实现 initializingBean 接口的afterPropertiesSet()方法**
+
+* 构造器注入
+
+* 实现ApplicationListener 的 onApplicationEvent()方法|| @EventListener注解，可以实现同样的效果
+
+* SpringBoot 提供了一个CommanLineRunner接口，用来实现在应用启动后的逻辑控制， 还有类似的  ApplicationRunner
+
+* 实现SmartInitializingSingleton的afterSingletonsInstantiated()方法
+
+* `SmartInitializingSingleton`和`Lifecycle`、`SmartLifecycle`都是在所有的单实例bean创建(getBean方法)之后执行。
+
+* InitializingBean的作用是Bean注入到Spring容器且初始化后，执行特定业务化的操作。Spring允许容器中的Bean，在Bean初始化完成后或者Bean销毁前，执行特定业务化的操作afterPropertiesSet
+
+  
+
+```java
+这几种初始化的顺序为：
+
+1、构造器方法
+2、@PostConstruct 注解方法
+3、InitializingBean的afterPropertiesSet()
+4、Bean定义的initMethod属性方法
+```
+
+
+
+还记得我们前面定义的 UserPayServiceStrategyFactory 中提供了的 Register 方法吗？他就是用来注册策略服务的。
+
+接下来，我们就想办法调用 Register 方法，把 Spring 通过 IOC 创建出来的 Bean 注册进去就行了。
+
+这种需求，可以借用 Spring 中提供的 InitializingBean 接口，这个接口为 Bean 提供了属性初始化后的处理方法。
+
+它只包括 afterPropertiesSet 方法，凡是继承该接口的类，在 Bean 的属性初始化后都会执行该方法。
+
+```java
+//例子
+@Service
+public class ParticularlyVipPayService implements UserPayService,InitializingBean {
+
+    @Override
+    public BigDecimal quote(BigDecimal orderPrice) {
+         if (消费金额大于30元) {
+            return 7折价格;
+        }
+    }
+
+    //这里进行了注册Register  至此工厂模式完成
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        UserPayServiceStrategyFactory.register("ParticularlyVip",this);
+    }
+}
+```
+
+
+
+
 
 ## Springboot的使用gizp 压缩配置
 

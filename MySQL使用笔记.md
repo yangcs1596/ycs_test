@@ -166,7 +166,7 @@ set global slow_query_log = off;
   `set` `profiling = 1;`
   ```
 
-#### 查看是否锁表
+### 查看是否锁表
 
 ```mysql
 1、查询是否锁表
@@ -183,7 +183,18 @@ SELECT * FROM INFORMATION_SCHEMA.INNODB_LOCKS;
 SELECT * FROM INFORMATION_SCHEMA.INNODB_LOCK_WAITS; 
 ```
 
+show processlist 检查 MySQL状态
+查看 mysql porcesslist，查看当前是否有 `wait lock`（表锁，行锁，meata lock 等）。
 
+查看 mysql processlist，是否有大量 `send data、init、commit、clean up` 状态。
+
+查看 mysql processlist，计算并发，排查是否有并发压力。
+
+查看 innodb buffer pool 命中率，排查 buffer 是否够用。 `show variables like 'innodb_buffer_pool%';`
+
+查看 mysql tmp，是否够用，open tables 是否等于 table_open_cache。
+
+`SHOW GLOBAL STATUS LIKE ‘Open%tables`  `SHOW variables LIKE '%table_open%'`
 
 #### select *的缺点
 

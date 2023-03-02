@@ -1,5 +1,7 @@
 ## LINUX
 
+Linux 最常用命令：能解决 95% 以上的问题  https://mp.weixin.qq.com/s/viqLYxd8HL99KntfTi9Ezg
+
 ### 文件操作
 
 ```shell
@@ -91,6 +93,8 @@ yum install  java-1.8.0-openjdk --installroot=/home/xxx/percona-xtrabackup/
 
 ## Linux在任意目录下执行指定的脚本
 
+### 安装jdk
+
 ```shell
 ## /etc/profile 配置java和maven环境
 export PATH USER LOGNAME MAIL HOSTNAME HISTSIZE HISTCONTROL
@@ -107,6 +111,7 @@ export PATH=${MAVEN_HOME}/bin:${JAVA_HOME}/bin:${JRE_HOME}/bin:$PATH
 view /etc/profile
 export PATH="变量路径"
 
+## 重新加载 一定要执行
 source profile
 
 #方式二修改.bashrc
@@ -293,7 +298,7 @@ mv A B
 ?+关键字，回车即可。此为从文档挡圈位置向上查找关键字，按n键向上查找关键字；
 ```
 
-#### linux定时任务
+#### linux-crontab定时任务
 
 ```shell
 #添加任务
@@ -788,7 +793,7 @@ curl -H  "Content-Type: application/json"  -d  '{
 }' -X POST  https://10.164.148.23/thirdApi/getPatchManagerPage -k
 
 ## get例子
-curl --header "Authorization: 62b94903e4b0e57be39dbfc4" --insecure  -X GET 'http://121.40.86.195:9200'
+curl --header "Authorization: 62b94903e4b0e57be39dbfc4" --header "id:5" --insecure  -X GET 'http://121.40.86.195:9200'
 ```
 
 
@@ -1272,6 +1277,60 @@ pushd -0 #如果要更改到堆栈底部的目录，可以使用以下命令：
 
 popd 1 #将目录栈移除
 
+```
+
+
+
+# 利用openssl 生成私钥和密钥
+
+```shell
+# 私钥
+openssl genrsa -out rsa_private_key.pem 2048 
+# 根据私钥rsa 生成公钥
+openssl rsa -in rsa_private_key.pem -out rsa_public_key.pem -pubout
+
+#注意：此时的私钥还不能直接被使用，需要进行PKCS#8编码
+openssl pkcs8 -topk8 -in rsa_private_key.pem -out pkcs8_rsa_private_key.pem -nocrypt
+
+# 这条命令可以对比学习，指定输入输出的文件格式
+openssl pkcs8 -topk8 -inform PEM -outform DER -in private_key.pem -out private_key.der -nocrypt
+```
+
+```java
+// java实现加解密  签名
+https://blog.csdn.net/huangjinjin520/article/details/126457939
+```
+
+```shell
+# 计算签名值
+echo -n -e \
+"POST\n/api/business/diamond/query\n1623934869\nDC10180A100073E70A48F195DA2AF2E6\n{\"appid\":\"ttxxx\",\"order_id\":\"xxx\"}\n" \
+ | openssl dgst -sha256 -sign private_key.pem | openssl base64 -A
+ 
+##加密文件 创建一个hello的文本文件
+openssl rsautl -encrypt -in hello -inkey test_pub.key -pubin -out hello.en
+-in指定要加密的文件，-inkey指定密钥，-pubin表明是用纯公钥文件加密，-out为加密后的文件。
+##解密文件：
+openssl rsautl -decrypt -in hello.en -inkey test.key -out hello.de
+-in指定被加密的文件，-inkey指定私钥文件，-out为解密后的文件。
+```
+
+
+
+
+
+### openssl生成ssl证书
+
+```shell
+#生成CA密钥对
+openssl genrsa -out ./ssl1.key 2048
+#生成根证书签发申请
+openssl req -new -key ./ssl1.key -out ./ssl1.csr
+注意： 开始填写城市资料
+server's hostname 
+这里必须填写你的域名
+#生成一个3650 天才过期是ssl证书
+openssl x509 -req -days 3650 -in ./ssl1.csr -signkey /root/KCweb/ssl1.key -out ./ssl1.crt
 ```
 
 

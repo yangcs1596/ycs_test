@@ -136,6 +136,8 @@ public class HelloController {
 
 ### 5、运行主程序测试
 
+
+
 ### 6、简化部署
 
 ```xml
@@ -540,7 +542,7 @@ public class Person {
 
 ```
 
-
+#### yml输入提示
 
 我们可以导入配置文件处理器，以后编写配置就有提示了
 
@@ -552,6 +554,8 @@ public class Person {
 			<optional>true</optional>
 		</dependency>
 ```
+
+在target\classes\META-INF目录下，生成了一个spring-configuration-metadata.json文件，将这个文件复制到resources\META-INF目录下。此时可以移除上面的spring-boot-configuration-processor这个依赖了。 
 
 #### 1、properties配置文件在idea中默认utf-8可能会乱码
 
@@ -900,6 +904,15 @@ org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration
 ```
 
 每一个这样的  xxxAutoConfiguration类都是容器中的一个组件，都加入到容器中；用他们来做自动配置；
+
+**spi机制方式二：或者用 类路径下 META-INF/org.springframework.boot.autoconfigure.AutoConfiguration.imports加入到了容器中**
+
+```
+de.codecentric.boot.admin.client.config.SpringBootAdminClientAutoConfiguration
+de.codecentric.boot.admin.client.config.SpringBootAdminClientCloudFoundryAutoConfiguration
+```
+
+
 
 3）、每一个自动配置类进行自动配置功能；
 
@@ -2204,6 +2217,10 @@ spring.thymeleaf.cache=false
 * 使用@WebFilter注解添加拦截路径， 实现**Filter**接口重写doFilter方法
 * Aop配置，并使用**自定义注解annotation**， 根据切面去拦截
 
+
+* HandlerInterceptor—>spring-webmvc项目，org.springframework.web.servlet.HandlerInterceptor
+* ClientHttpRequestInterceptor—>spring-web项目，org.springframework.http.client.ClientHttpRequestInterceptor
+* RequestInterceptor—>feign-core项目，feign.RequestInterceptor
 拦截器
 
 ```java
@@ -3361,6 +3378,71 @@ public ConfigurableApplicationContext run(String... args) {
 
 
 
+## 10、多线程事务例子
+
+```java
+@Resource
+SqlContext sqlContext;
+ /**
+ * 测试多线程事务.
+ * @param employeeDOList
+ */
+@Override
+public void saveThread(List<EmployeeDO> employeeDOList) throws SQLException {
+    // 获取数据库连接,获取会话(内部自有事务)
+    SqlSession sqlSession = sqlContext.getSqlSession();
+    Connection connection = sqlSession.getConnection();
+    try {
+        // 设置手动提交
+        connection.setAutoCommit(false);
+        //获取mapper
+        EmployeeMapper employeeMapper = sqlSession.getMapper(EmployeeMapper.class);
+        //先做删除操作
+        employeeMapper.delete(null);
+        //获取执行器
+        ExecutorService service = ExecutorConfig.getThreadPool();
+        List<Callable<Integer>> callableList  = new ArrayList<>();
+        //拆分list
+        List<List<EmployeeDO>> lists=averageAssign(employeeDOList, 5);
+        AtomicBoolean atomicBoolean = new AtomicBoolean(true);
+        for (int i =0;i<lists.size();i++){
+            if (i==lists.size()-1){
+                atomicBoolean.set(false);
+            }
+            List<EmployeeDO> list  = lists.get(i);
+            //使用返回结果的callable去执行,
+            Callable<Integer> callable = () -> {
+                //让最后一个线程抛出异常
+                if (!atomicBoolean.get()){
+                    throw new ServiceException("001","出现异常");
+                }
+              return employeeMapper.saveBatch(list);
+            };
+            callableList.add(callable);
+        }
+        //执行子线程
+       List<Future<Integer>> futures = service.invokeAll(callableList);
+        for (Future<Integer> future:futures) {
+        //如果有一个执行不成功,则全部回滚
+            if (future.get()<=0){
+                connection.rollback();
+                 return;
+            }
+        }
+        connection.commit();
+        System.out.println("添加完毕");
+    }catch (Exception e){
+        connection.rollback();
+        log.info("error",e);
+        throw new ServiceException("002","出现异常");
+    }finally {
+         connection.close();
+     }
+}
+```
+
+
+
 # 五、Docker
 
 ## 1、简介
@@ -3552,7 +3634,7 @@ docker start 容器id
  在启动时如果没有添加这个参数怎么办呢，比如1a7a3b5112fd这个容器在启动的时候是没有添加–restart=always参数的，针对这种情况我们可以使用命令进行修改。docker container update --restart=always 容器名字
 
 10、为了演示简单关闭了linux的防火墙
-service firewalld status ；查看防火墙状态
+service firewalld status ；查看防火墙状态   Active: inactive (dead)标识已经关闭
 service firewalld stop：关闭防火墙
 
 11、查看容器的日志 #docker logs -f --tail=1000 38b8317cbee8 查看1000行的日志
@@ -4014,6 +4096,26 @@ DATABASE_NAME=xxx
 DATABASE_PORT=3306
 ```
 
+#### docker-compose 配置时区
+
+```yaml
+方式一：
+environment:
+  - SET_CONTAINER_TIMEZONE=true
+  - CONTAINER_TIMEZONE=Asia/Shanghai
+	  
+方式二：
+environment:
+  - TZ=Asia/Shanghai
+```
+
+已经运行的容器配置时区
+
+```shell
+1、进入容器docker exec -it 容器名 sh
+2、docker cp /usr/share/zoneinfo/Asia/Shanghai 容器名:/etc/localtime
+```
+
 
 
 ### 6-1  安装mysql和tomcat nginx
@@ -4103,6 +4205,9 @@ services:
     image: canal/canal-server:v1.1.5
     container_name: canal-server
     restart: unless-stopped
+    #unless-stopped：在容器退出时总是重启容器;
+    #always：重启 docker 服务时，该容器会随之启动。;
+    #on-failture [:max-retries]：非正常退出状态会重启服务。可以指定异常退出重启的次数。--restart on-failture：2
     # network_mode: host
     ports:
       - 11111:11111
@@ -4199,11 +4304,15 @@ services:
     environment:
       - "discovery.type=single-node"
       - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
+     # 配置认证权限
+     # - "ELASTIC_PASSWORD=Ns8shp4i6wZViAzFA6u7"
+     # - "xpack.security.enabled=true"
+
     volumes:
       # - /usr/share/elasticsearch/data:/usr/share/elasticsearch/data
       # - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
-      - data:/usr/share/elasticsearch/data
-      - config:/usr/share/elasticsearch/config
+      - ./data:/usr/share/elasticsearch/data
+      - ./config:/usr/share/elasticsearch/config
       - ./plugins:/usr/share/elasticsearch/plugins
     restart: always
   kibana:
@@ -4216,6 +4325,290 @@ services:
     volumes:
     - ./kibana.yml:/usr/share/kibana/config/kibana.yml
 
+```
+
+#### elasticsearch.yml
+
+```yml
+cluster.name: "docker-cluster"
+network.host: 0.0.0.0
+http.port: 9200
+# 开启es跨域
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+http.cors.allow-headers: Authorization
+# 开启安全控制
+xpack.security.enabled: true
+xpack.security.transport.ssl.enabled: true
+```
+
+#### kibana.yml
+
+```yml
+server.name: kibana
+server.host: "0.0.0.0"
+elasticsearch.hosts: [ "http://elasticsearch:9200" ] # http://www.zhengqingya.com:9200 TODO 修改为自己的ip
+xpack.monitoring.ui.container.elasticsearch.enabled: true
+elasticsearch.username: "elastic"  # es账号
+elasticsearch.password: "123456"   # es密码
+i18n.locale: zh-CN # 中文
+```
+
+#### 6-4-1 elk例子  
+
+* https://zhuanlan.zhihu.com/p/343522954
+
+```yaml
+version: "3"
+services:
+  es-master:
+    container_name: es-master
+    hostname: es-master
+    image: elasticsearch:7.1.1
+    restart: always
+    user: root
+    ports:
+      - 9200:9200
+      - 9300:9300
+    volumes:
+    ### 配置项
+      - /www/elasticsearch/master/conf/es-master.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - /www/elasticsearch/master/data:/usr/share/elasticsearch/data
+      - /www/elasticsearch/master/logs:/usr/share/elasticsearch/logs
+    environment:
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "TZ=Asia/Shanghai"
+
+  es-slave1:
+    container_name: es-slave1
+    image: elasticsearch:7.1.1
+    restart: always
+    ports:
+      - 9201:9200
+      - 9301:9300
+    volumes:
+    ### 配置项
+      - /www/elasticsearch/slave1/conf/es-slave1.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - /www/elasticsearch/slave1/data:/usr/share/elasticsearch/data
+      - /www/elasticsearch/slave1/logs:/usr/share/elasticsearch/logs
+    environment:
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "TZ=Asia/Shanghai"
+
+  kibana:
+    container_name: kibana
+    hostname: kibana
+    image: kibana:7.1.1
+    restart: always
+    ports:
+      - 5601:5601
+    volumes:
+    ### 配置项
+      - /www/kibana/conf/kibana.yml:/usr/share/kibana/config/kibana.yml
+    environment:
+      - elasticsearch.hosts=http://es-master:9200
+      - "TZ=Asia/Shanghai"
+    depends_on:
+      - es-master
+      - es-slave1
+
+  logstash:
+    container_name: logstash
+    hostname: logstash
+    image: logstash:7.1.1
+    command: logstash -f ./conf/logstash-filebeat.conf
+    restart: always
+    volumes:
+      # 映射到容器中  配置项
+      - /www/logstash/conf/logstash-filebeat.conf:/usr/share/logstash/conf/logstash-filebeat.conf
+    environment:
+      - elasticsearch.hosts=http://es-master:9200
+      # 解决logstash监控连接报错
+      - xpack.monitoring.elasticsearch.hosts=http://es-master:9200
+      - "TZ=Asia/Shanghai"
+    ports:
+      - 5044:5044
+    depends_on:
+      - es-master
+      - es-slave1
+```
+
+es-master.yml
+
+```yaml
+# 集群名称
+cluster.name: es-cluster
+# 节点名称
+node.name: es-master
+# 是否可以成为master节点
+node.master: true
+# 是否允许该节点存储数据,默认开启
+node.data: true
+# 网络绑定
+network.host: 0.0.0.0
+# 设置对外服务的http端口
+http.port: 9200
+# 设置节点间交互的tcp端口
+transport.port: 9300
+# 集群发现
+discovery.seed_hosts:
+  - es-master
+  - es-slave1
+  - es-slave2
+# 手动指定可以成为 mater 的所有节点的 name 或者 ip，这些配置将会在第一次选举中进行计算
+cluster.initial_master_nodes:
+  - es-master
+# 支持跨域访问
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+# 安全认证
+xpack.security.enabled: false
+#http.cors.allow-headers: "Authorization"
+```
+
+es-slave1.yml
+
+```yaml
+# 集群名称
+cluster.name: es-cluster
+# 节点名称
+node.name: es-slave1
+# 是否可以成为master节点
+node.master: true
+# 是否允许该节点存储数据,默认开启
+node.data: true
+# 网络绑定
+network.host: 0.0.0.0
+# 设置对外服务的http端口
+http.port: 9201
+# 设置节点间交互的tcp端口
+#transport.port: 9301
+# 集群发现
+discovery.seed_hosts:
+  - es-master
+  - es-slave1
+  - es-slave2
+# 手动指定可以成为 mater 的所有节点的 name 或者 ip，这些配置将会在第一次选举中进行计算
+cluster.initial_master_nodes:
+  - es-master
+# 支持跨域访问
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+# 安全认证
+xpack.security.enabled: false
+#http.cors.allow-headers: "Authorization"
+```
+
+kibana.yml
+
+```yaml
+# 服务端口
+server.port: 5601
+# 服务IP
+server.host: "0.0.0.0"
+# ES
+elasticsearch.hosts: ["http://es-master:9200"]
+# 汉化
+i18n.locale: "zh-CN"
+```
+
+logstash-filebeat.conf
+
+```text
+input {
+  beats {
+    port => 5044
+  }
+}
+# 分析、过滤插件，可以多个
+filter {
+  grok {
+    match => ["message", "%{TIMESTAMP_ISO8601:logdate}"]
+  }
+  date {
+    match => ["logdate", "yyyy-MM-dd HH:mm:ss.SSS"]
+    target => "@timestamp"
+  }
+}
+output {
+  elasticsearch {
+    hosts => "http://es-master:9200"
+    index => "%{[fields][log_topics]}-%{+YYYY.MM.dd}"
+    document_type => "%{[@metadata][type]}"
+  }
+}
+```
+
+##### docker-filebeat.yml
+
+filebeat单独部署在需要采集日志的服务器中
+
+```yaml
+version: "3"
+services:
+  filebeat:
+    # 容器名称
+    container_name: filebeat
+    # 主机名称
+    hostname: filebeat
+    # 镜像
+    image: docker.elastic.co/beats/filebeat:7.0.1
+    # 重启机制
+    restart: always
+    # 启动用户
+    user: root
+    # 持久化挂载
+    volumes:
+      # 映射到容器中[作为数据源]
+      - /www/mua/runtime/log:/www/mua/runtime/log
+      - /www/wx/runtime/log:/www/wx/runtime/log
+      - /www/supplyChain/runtime/log:/www/supplyChain/runtime/log
+      # 方便查看数据及日志(可不映射)
+      - /opt/filebeat/logs:/usr/share/filebeat/logs
+      - /opt/filebeat/data:/usr/share/filebeat/data
+      # 映射配置文件到容器中 配置项
+      - /opt/filebeat/conf/filebeat.yml:/usr/share/filebeat/filebeat.yml
+    # 使用主机网络模式
+    network_mode: host
+```
+
+filebeat.yml
+
+```yaml
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /www/mua/runtime/log/*[0-9][0-9].log
+    - /www/mua/runtime/log/*_cli.log
+  multiline:
+    pattern: '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}'
+    negate:  true
+    match:   after
+  fields:
+    log_topics: muats
+- type: log
+  enabled: true
+  paths:
+    - /www/mua/runtime/log/*_info.log
+  multiline:
+    pattern: '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}'
+    negate:  true
+    match:   after
+  fields:
+    log_topics: muats-info
+- type: log
+  enabled: true
+  paths:
+    - /www/mua/runtime/log/*_error.log
+  multiline:
+    pattern: '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}'
+    negate:  true
+    match:   after
+  fields:
+    log_topics: muats-error
+output.logstash:
+  hosts: ["115.236.191.59:5144"]
 ```
 
 ### 6-5 安装jenkins
@@ -4504,6 +4897,20 @@ services:
       - "INSTALL4J_ADD_VM_PARAMS=-Xms128m -Xmx512m -XX:MaxDirectMemorySize=512m -Djava.util.prefs.userRoot=/nexus-data/javaprefs"
 ```
 
+批量上传文件到私库yum的脚本 ，注意看变量和请求地址
+
+```shell
+workingDir=$(pwd)
+
+for rpm in `ls $1*.rpm`
+do
+    # 将 --user 后面的参数修改为当前仓库的帐号密码
+    # 将后面的地址修改为 nexus 仓库的访问地址
+    result=`curl -v --user 'admin:123456' --upload-file $workingDir/$rpm https://cluster.k8s/repository/centos.7.x86_64.docker/$rpm`
+    echo "$result: $rpm"
+done
+```
+
 
 
 
@@ -4573,6 +4980,24 @@ RUN apk add --update ttf-dejavu fontconfig && rm -rf /var/cache/apk/*
 ```shell
 docker build -t swr.cn-north-1.myhuaweicloud.com/d00105737/openjdk:8-jdk-font .
 ```
+
+
+
+#### 6-14-1 手动导入导出镜像
+
+```shell
+## 镜像导入导出 save-load或者导出 
+docker save 镜像id > 文件名.tar  ## 导出镜像  推荐使用镜像的名字进行打包，否则导入时候会是none
+将镜像上传到本地虚拟机中、
+docker load -i tar文件路径 ## 导入镜像,这种方式无法重命名
+docker tag 镜像id 镜像名:标签  ## 给镜像重命名：
+
+## 方式二jar包更小export-import  注意和save不能混用
+docker export f299f501774c > hangger_server.tar
+docker import - new_hangger_server < hangger_server.tar
+```
+
+
 
 ### 6-15 安装portainer
 

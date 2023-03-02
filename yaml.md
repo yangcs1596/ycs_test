@@ -428,6 +428,90 @@ vim .git/config
 merge
 另一种情况,只需要提交几个改动,不需要全部合并(有些情况下整个分支合并冲突太多处理起来过于麻烦)
 
+#### git打tag命令
+
+// 查看本地的所有Tag
+
+```
+git tag 可带上可选的 -l 选项 --list
+```
+
+创建tag命令
+
+```
+#轻量标签
+git tag v1.4-lw
+#带标注
+git tag -a v1.0 -m "对Tag的描述信息"
+```
+
+ 提交tag命令
+
+```
+git push origin v3.6.0
+#这个是推送所有标签
+git push origin --tags
+```
+
+删除tag命令
+
+```
+删除本地tag
+git tag -d v3.7.0
+要删除远程服务器上的tag，可以使用如下的命令：
+git push origin --delete tag v3.7.0
+```
+
+##### git 根据tag创建分支
+
+在项目中我们需要根据tag创建分支.现将创建步骤总结一下.在你的dev分支上有一个tag为v1.0
+
+1.执行:git origin fetch 获得最新.
+
+2.通过:git branch <new-branch-name> <tag-name> 会根据tag创建新的分支。
+
+例如:git branch newbranch v1.0 . 会以tag v1.0创建新的分支newbranch。
+
+3.可以通过git checkout newbranch 切换到新的分支。
+
+4.通过 git push origin newbranch 把本地创建的分支提交到远程仓库。
+
+现在远程仓库也会有新创建的分支了。
+
+```shell
+#删除本地分支
+git branch -d  branch-name
+#强制删除
+git branch -D branch-name
+#删除远程分支(慎用)：
+git push origin --delete dev20181018
+```
+
+##### 强制git push命令慎用
+
+```shell
+#慎用
+git push -f origin development 
+#注释： origin远程仓库名，master分支名，-f为force，意为：强行、强制
+```
+
+#### Git commit回退
+
+```shell
+git reset --soft HEAD^
+这样就成功的撤销了你的commit。注意，仅仅是撤回commit操作，您写的代码仍然保留。
+
+HEAD^的意思是上一个版本，也可以写成HEAD~1，如果你进行了2次commit，想都撤回，可以使用HEAD~2
+--mixed 不删除工作空间改动代码，撤销commit，并且撤销git add . 操作，这个为默认参数,git reset --mixed HEAD^ 和 git reset HEAD^ 效果是一样的。
+--soft  不删除工作空间改动代码，撤销commit，不撤销git add .
+--hard 删除工作空间改动代码，撤销commit，撤销git add .
+————————————————
+版权声明：本文为CSDN博主「panjiayue」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/panjiayue/article/details/121983178
+```
+
+
+
 #### GitLab安装教程
 
 
@@ -670,8 +754,6 @@ slave-read-only yes
 
 该模式一旦Master服务器发生宕机，会导致无法向redis中读取或者写入数据，高可用性极差。
 
-#### 哨兵模式
-
 主要配置如下:
 
 ```bash
@@ -693,7 +775,7 @@ port 6381
 daemonize yes
 logfile "6381.log"
 dbfilename "dump-6381.rdb"
-slaveof 127.0.0.1 6379
+slaveof 127.0.0.1 6379  #指定为master的ip从属关系
 ```
 
 然后启动三个redis实例:
@@ -705,6 +787,8 @@ redis-server redis-slave2.conf
 ```
 
 
+
+#### 哨兵模式
 
 按照上面同样的方法，我们给哨兵节点也创建三个配置文件。*(哨兵节点本质上是特殊的 Redis 节点，所以配置几乎没什么差别，只是在端口上做区分就好)*
 
@@ -823,6 +907,8 @@ spring:
 ```yaml
 spring:
   redis:
+ 	host: 192.168.40.201
+    port: 6379
     password: passw0rd
     timeout: 5000
     sentinel:
@@ -835,10 +921,12 @@ spring:
         max-idle: 8
         min-idle: 0
 ```
-
+# 主从
 ```yaml
 spring:
   redis:
+ 	host: 192.168.40.201
+    port: 6379
     password: passw0rd
     timeout: 5000
     database: 0
@@ -874,11 +962,33 @@ spring:
 HashTag可能会使过多的key分配到同一个slot中，造成数据倾斜影响系统的吞吐量，务必谨慎使用。
 ```
 
-#### Redis新数据结构
+#### Redis新数据结构 统计数据
+
+* Bitmap  统计用户是否访问过网站
+
+  常用语法 setbit  getbit   bitcount
 
 * **HyperLogLog**   是用来做**基数统计**的算法 如 网站页统计UV 
+
+  语法主要有**pfadd**和**pfcount**
+
+  场景
+
+  统计注册 IP 数
+
+  统计每日访问 IP 数
+
+  统计页面实时 UV 数
+
+  统计在线用户数
+
+  统计用户每天搜索不同词条的个数
+
 * **BloomFilter ** 主要作用是：判断一个元素是否在某个集合中；应用场景： 数据库防止穿库
+
 * **GEO**  用于存储地理信息以及对地理信息作操作的场景；应用：查看附近的人 ；微信位置共享；地图上直线距离的展示
+
+  常用语法：geoadd   geopos    geodist
 
 ### **启动**
 
@@ -2143,9 +2253,10 @@ callBackService.execute(() -> {
 #### 事务失效场景
 
 ```java
-// 使用代理执行
-原来在springAOP的用法中，只有代理的类才会被切入，我们在controller层调用service的方法的时候，是可以被切入的，但是如果我们在service层 A方法中，调用B方法，切点切的是B方法，那么这时候是不会切入的，解决办法就是如上所示，在A方法中使用((Service)AopContext.currentProxy()).B() 来调用B方法，这样一来，就能切入了！ 
-
+// 使用代理执行解决 自身调用失效
+原来在springAOP的用法中，只有代理的类才会被切入，我们在controller层调用service的方法的时候，是可以被切入的，但是如果我们在service层 A方法中，调用B方法，切点切的是B方法，那么这时候是不会切入的，解决办法就是如上所示，在A方法中使用
+ 
+//使用事务代理 
 service A = AopContext.currentProxy();
 ```
 
@@ -2155,12 +2266,18 @@ service A = AopContext.currentProxy();
 
 ​		比如说我有个场景，返回前端的实体类中如果某个字段为空的话那么就不返回这个字段了，如果我们平时遇到这个问题，那么真的该脑壳疼了。幸亏有我们今天的主角，这个注解就是用来在实体类序列化成json的时候在某些策略下，加了该注解的字段不去序列化该字段
 
+```yaml
+## 全局配置
+spring:
+  jackson:
+    default-property-inclusion: non_nul
+```
 ```java
 //Include.Include.ALWAYS 默认全部属性起作用 
 //Include.NON_DEFAULT 属性为默认值不序列化 
 //Include.NON_EMPTY 属性为 空（“”） 或者为 NULL 都不序列化 
 //Include.NON_NULL 属性为NULL 不序列化
-
+## 局部设置
 public class User {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String username;
@@ -2192,13 +2309,15 @@ mapper.setSerializationInclusion(Include.NON_NULL);
 
 缓存注解
 
-1. ```java
+1. `@Cacheable` 一般与`@CacheEvict` 共用进行更新
+   
+   ```java
    @Cacheable(key="#containerId", value="CONTAINER_INFO", unless="#result == null")
    private V test(String containerId){}
    ```
 
    ：对方法结果进行缓存（主要用于GET方法）
-
+   
    1. `cacheNames/value`:指定缓存主键（`Cache`）的名字
    2. `key`:缓存数据使用`key`，支持`spEl`语法
    3. `keyGenerator`:`key`的生成器。与`key`属性冲突，自定义 `keyGenerator` 必须实现`org.springframework.cache.interceptor.KeyGenerator`,`default`使用默认的参数值生成器
@@ -2207,18 +2326,20 @@ mapper.setSerializationInclusion(Include.NON_NULL);
    6. `condition`：指定条件满足才缓存，与`unless`相反。可以使用`spEL`语法
    7. `unless`：否定缓存，当满足条件时，结果不被缓存。可以获取到结果（`#result`）进行判断。支持`spEL`语法
    8. `sync`：是否异步模式。在该模式下`unless`不被支持。`default=false`
-
+   
 2. `@CachePut`:先调用方法，在对结果进行缓存。（主要用于PUT方法），需要注意`key`的设置
 
-3. ```
-   @CacheEvict
+3. `@CacheEvict` 
+   
+   ```java
+   @CacheEvict(value = CacheConstants.SYS_APP_DETAILS, allEntries = true)
    ```
 
    :默认先调用方法，在删除缓存（主要用于DELETE方法）
-
+   
    1. `allEntries`: 删除缓存组件中（`cacheNames/value`指定）所有的值
    2. `beforeInvocation`：在方法执行之前删除值，`default=false`
-
+   
 4. `@Caching`：组合注解。针对复杂情况
 
 5. `@CacheConfig`：加载类上，用于设置缓存的共有属性
@@ -2871,6 +2992,7 @@ export default {
 ```js
 var detail = new Vue({
     el: '#app',
+    mixins: [mixin],  // 混入 一些共用的属性方法等
     directives: {},//钩子函数的用法，自定义指令
     data: {
         #数据属性
@@ -5155,6 +5277,34 @@ cd /usr/sbin/
 ./nginx -s reload
 ```
 
+##### 几种分配方式
+
+1、轮询（默认）
+ 每个请求按时间顺序逐一分配到不同的后端服务器，如果后端服务器down掉，能自动剔除。
+ 2、weight
+ 指定轮询几率，weight和访问比率成正比，用于后端服务器性能不均的情况。
+ 2、ip_hash
+ 每个请求按访问ip的hash结果分配，这样每个访客固定访问一个后端服务器，可以解决session的问题。
+ 3、fair（第三方）
+ 按后端服务器的响应时间来分配请求，响应时间短的优先分配。
+ 4、url_hash（第三方）
+ 按访问url的hash结果来分配请求，使每个url定向到同一个后端服务器，后端服务器为缓存时比较有效。
+
+```nginx
+#例子
+http {
+    upstream  www.test1.com {
+          ip_hash;
+          server   172.16.125.76:8066 weight=10;
+          server   172.16.125.76:8077 down;
+          server   172.16.0.18:8066 max_fails=3 fail_timeout=30s;
+          server   172.16.0.18:8077 backup;
+     }
+}
+```
+
+##### 配置说明
+
 ```nginx
 #配置说明
 ########### 每个指令必须有分号结束。#################
@@ -5233,10 +5383,68 @@ http {
 
 ```
 
+##### Nginx配置https模块
+
+*https默认端口号是443*
+
+```
+1、 nginx要安装依赖   --with-http_ssl_module 步骤百度下
+查看nginx是否安装http_ssl_module模块
+./nginx -V
+```
+
+##### 将 http 重定向 https
+
+```bash
+server {
+    listen 80;
+    server_name somnus.test.com;
+    #将http请求转成https
+    rewrite ^(.*)$ https://$host$1 permanent;
+    #rewrite ^(.*)$ https://${server_name}$1 permanent;
+    
+    absolute_redirect off; # 默认为开启 on
+}
+```
+
+```nginx
+### nginx配置https请求
+server {
+        listen       443  ssl;
+        server_name  xxxxx.com;
+        ssl_certificate     /opt/nginx/certificate/XXX.crt;
+        ssl_certificate_key /opt/nginx/certificate/XXX.key;
+        
+        ssl_session_cache    shared:SSL:1m;
+        ssl_session_timeout  5m;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+        ssl_prefer_server_ciphers on;
+
+        #charset koi8-r;
+
+        #access_log  logs/host.access.log  main;
+        
+        location / {
+            proxy_pass https://内网IP:项目端口;
+            root   html;
+            index  index.html index.htm;
+        }
+}
+server{
+          listen 80;
+          server_name ~^(?:www\.)?(.+)$;
+          return 301 https://$1$request_uri;
+    }
+
+```
+
+
+
 #### Nginx的一些导出超时问题
 
 ```nginx
  #请求时间
+ keepalive_timeout         60s;
  proxy_connect_timeout     60s;
  proxy_read_timeout        1m;
  proxy_send_timeout        1m;
@@ -5249,7 +5457,20 @@ http {
 **1、nginx作为静态资源服务器配置**
 
 ```
-`location ^~/ceng/ {``   ``alias F:/html/html2/;``   ``#add_header Cache-Control no-store;``   ``#add_header expire -1;``}``location ^~/hehe/ {``   ``alias F:/html/;``  ``#add_header Cache-Control no-store;``  ``#add_header expire -1;``}`
+location ^~/ceng/ {  
+    alias F:/html/html2/; 
+    try_files $uri $uri/ /h5/index.html;
+    index  index.html index.htm;
+    #add_header Cache-Control no-store;   
+    #add_header expire -1;
+}
+location ^~/hehe/ {
+    alias F:/html/;
+    try_files $uri $uri/ /h5/index.html;
+    index  index.html index.htm;
+    #add_header Cache-Control no-store;
+    #add_header expire -1;
+}
 ```
 
  **强调** location 后的 "^~" 顺序不能反了
@@ -5445,7 +5666,62 @@ http {
 
 #### 
 
+#### websocket的负载均衡配置
 
+已知：
+
+1. 预计部署两个ws服务器，一个在192.168.0.10:8054，192.168.0.11:8054
+2. 对外使用[wss://www.test.com](https://links.jianshu.com/go?to=wss%3A%2F%2Fwww.test.com)访问ws
+3. 使用Nginx做负载均衡，用轮询模式
+
+nginx的配置方式：
+
+
+
+```php
+http { 
+    
+## websocket的重要配置map指令的作用：
+## 该作用主要是根据客户端请求中$http_upgrade 的值，来构造改变$connection_upgrade的值，即根据变量$http_upgrade的值创建新的变量$connection_upgrade，
+##  创建的规则就是{}里面的东西。其中的规则没有做匹配，因此使用默认的，即 $connection_upgrade 的值会一直是 upgrade。然后如果 $http_upgrade为空字符串的话， 那值会是 close
+    map $http_upgrade $connection_upgrade {
+        default upgrade;
+        '' close;
+    }
+    # upstream
+     upstream test_com {
+         server   192.168.0.10:8054;
+         server   192.168.0.11:8054; 
+         keepalive 1000;
+     }
+    # server
+     server { # 443端口为https请求
+        listen       443;
+        server_name  www.test.com;   # host增加了127.0.0.1的映射    
+         
+        location /websocket{
+            # 解决方向代理跨域问题
+            add_header 'Access-Control-Allow-Origin' '*';
+            proxy_set_header 'Access-Control-Allow-Origin' '*'; 
+            
+            proxy_set_header   Host    $host;
+            proxy_set_header   X-Real-IP   $remote_addr;
+            proxy_set_header   REMOTE-HOST $remote_addr;
+            proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+            keepalive_timeout 120s;        #客户端链接超时时间。为0的时候禁用长连接。
+            #在一个长连接上可以服务的最大请求数目。
+            keepalive_requests 10000;    #当达到最大请求数目且所有已有请求结束后，连接被关闭。默认值为100
+            
+            proxy_pass http://test_com/websocket;
+            proxy_set_header Upgrade $http_upgrade;  #websocket的重要配置
+            proxy_set_header Connection "upgrade";   #websocket的重要配置
+
+                                            
+     }
+}
+```
+
+##### 
 
 
 
@@ -6905,11 +7181,12 @@ exec
 
 Nexus的type说明
 
-| type   | 具体说明                                   |
-| :----- | :----------------------------------------- |
-| hosted | 本地存储。像官方仓库一样提供本地私库功能   |
-| proxy  | 提供代理其它仓库的类型                     |
-| group  | 组类型，能够组合多个仓库为一个地址提供服务 |
+| type    | 具体说明                                                     |
+| :------ | :----------------------------------------------------------- |
+| hosted  | 宿主仓库：主要用于部署无法从公共仓库获取的构件（如 oracle 的 JDBC 驱动）以及自己或第三方的项目构件 |
+| proxy   | 代理仓库：代理公共的远程仓库                                 |
+| virtual | 虚拟仓库：用于适配 Maven 1                                   |
+| group   | 组类型，能够组合多个仓库为一个地址提供服务                   |
 
 注意只有类型为hosted才可以上传jar包，其它都不行
 
@@ -7016,71 +7293,19 @@ mvn release:update-versions -DdevelopmentVersion=3.7.2-SNAPSHOT
 //mvn release:perform 执行发布
 ```
 
-##### git打tag命令
+#### Maven打包指定模块
 
-// 查看本地的所有Tag
+```cmd
+mvn clean package -pl lzmh-modules/lzmh-app -am -DskipTests
+## 参数说明
+-pl  选项后可跟随{groupId}:{artifactId}或者所选模块的相对路径(多个模块以逗号分隔)
+-am  表示同时处理选定模块所依赖的模块
+-amd  表示同时处理依赖选定模块的模块
+-N   表示不递归子模块
+-rf  表示从指定模块开始继续处理
 
-```
-git tag 可带上可选的 -l 选项 --list
-```
-
-创建tag命令
-
-```
-#轻量标签
-git tag v1.4-lw
-#带标注
-git tag -a v1.0 -m "对Tag的描述信息"
-```
-
- 提交tag命令
-
-```
-git push origin v3.6.0
-#这个是推送所有标签
-git push origin --tags
-```
-
-删除tag命令
-
-```
-删除本地tag
-git tag -d v3.7.0
-要删除远程服务器上的tag，可以使用如下的命令：
-git push origin --delete tag v3.7.0
-```
-
-##### git 根据tag创建分支
-
-在项目中我们需要根据tag创建分支.现将创建步骤总结一下.在你的dev分支上有一个tag为v1.0
-
-1.执行:git origin fetch 获得最新.
-
-2.通过:git branch <new-branch-name> <tag-name> 会根据tag创建新的分支。
-
-例如:git branch newbranch v1.0 . 会以tag v1.0创建新的分支newbranch。
-
-3.可以通过git checkout newbranch 切换到新的分支。
-
-4.通过 git push origin newbranch 把本地创建的分支提交到远程仓库。
-
-现在远程仓库也会有新创建的分支了。
-
-```shell
-#删除本地分支
-git branch -d  branch-name
-#强制删除
-git branch -D branch-name
-#删除远程分支(慎用)：
-git push origin --delete dev20181018
-```
-
-##### 强制git push命令慎用
-
-```shell
-#慎用
-git push -f origin development 
-#注释： origin远程仓库名，master分支名，-f为force，意为：强行、强制
+##mvn 命令自定义 setting 配置文件
+mvn -s "D:\program\maven-3.6.3\maven3\conf\settings.xml" clean install
 ```
 
 
@@ -7115,19 +7340,56 @@ jar ---------> 内部调用或者是作服务使用（一般只有class编译后
 war ---------> 需要部署的项目（war是一个web模块，其中需要包括WEB-INF）
 ```
 
-#### Maven打包指定模块
+#### Maven引入lib下的外部jar包
 
-```cmd
-mvn clean package -pl lzmh-modules/lzmh-app -am -DskipTests
-## 参数说明
--pl  选项后可跟随{groupId}:{artifactId}或者所选模块的相对路径(多个模块以逗号分隔)
--am  表示同时处理选定模块所依赖的模块
--amd  表示同时处理依赖选定模块的模块
--N   表示不递归子模块
--rf  表示从指定模块开始继续处理
+```xml
+<!--引入 lib下面的外部jar包 -->
+<dependency>
+    <groupId>djnativeswing</groupId>
+    <artifactId>djnativeswing</artifactId>
+    <version>1.0.2</version> <!--版本号随便写 -->
+    <scope>system</scope>
+    <systemPath>${pom.basedir}/src/lib/djnativeswing.jar</systemPath>
+</dependency>
+```
 
-##mvn 命令自定义 setting 配置文件
-mvn -s "D:\program\maven-3.6.3\maven3\conf\settings.xml" clean install
+##### Maven打包找不到lib目录 
+
+```xml
+<plugin>
+	 <groupId>org.apache.maven.plugins</groupId>
+	  <artifactId>maven-compiler-plugin</artifactId>
+	  <version>${maven.compiler.version}</version>
+	  <configuration>
+	      <!--设置编译时使用的 JDK 版本-->
+	      <source>${java.version}</source>
+	      <!--设置运行时使用的 JDK 版本-->
+	      <target>${java.version}</target>
+          <encoding>UTF-8</encoding>
+	      <!--设置为 true 则跳过测试-->
+	      <skip>true</skip>
+	      <!--增加内容,需要打包的jar路径-->
+	      <compilerArguments>
+	          <extdirs>${pom.basedir}/src/lib</extdirs>
+	      </compilerArguments>
+	  </configuration>
+</plugin> 
+
+##第二种
+<build>
+ 	<!-- 增加内容 -->
+	 <resources>
+	       <resource>
+	            <!--需要打包的jar路径-->
+	            <directory>src/lib</directory>
+	              <!--复制到的路径-->
+	            <targetPath>BOOT-INF/lib/</targetPath>
+	            <includes>
+	                <include>**/*.jar</include>
+	            </includes>
+	        </resource>
+	  </resources>
+  </build> 
 ```
 
 
@@ -7231,6 +7493,22 @@ p r o j e c t . b u i l d . f i a n l N a m e ： 项 目 打 包 输 出 文 �
 </properties>
  ```
 
+ * 设置打包可读的源码
+ ```xml
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-source-plugin</artifactId>
+  <executions>
+    <execution>
+      <id>attach-sources</id>
+      <goals>
+        <goal>jar</goal>
+      </goals>
+    </execution>
+  </executions>
+</plugin>
+ ```
+
 * mvn
 
 ```xml
@@ -7265,11 +7543,13 @@ maven 默认的打包类型为 jar，
                 <showDeprecation>true</showDeprecation>
                 <showWarnings>true</showWarnings>
                 <compilerArgument>-Xlint:all,-serial,-path,-rawtypes,-unchecked</compilerArgument>
-                <!-- 跳过main-->
+                <!-- 跳过test测试目录-->
                 <skip>true</skip>
             </configuration>
         </plugin>
     </plugins>
+   #打包名
+    <finalName>${project.name}</finalName>
    #静态文件的打包
     <resources>
         <resource>
@@ -7693,8 +7973,9 @@ unzip pay.war -d /home/zookeeper1/test/pay
 ##### 后台运行启动jar
 
 ```shell
-#nohup 指后台运行
-nohup $JRE_HOME/bin/java -Xms512m -Xmx1024m -jar $JAR_NAME --spring.profiles.active=common-pro,pro --dubbo.protocol.port=20666 --server.port=7671 --dubbo.service.shutdown.wait=180000 --dubbo.registry.file=/home/zxsl/online_dubbox/operation-online-service/20666/dubbo-registry.properties >/dev/null 2>&1 &
+#nohup 指后台运行  > /dev/null 2>&1 & 表示不打印日志
+# 指定输出文件可以用 > out.log > 2>&1 &  
+nohup $JRE_HOME/bin/java -Xms512m -Xmx1024m -jar $JAR_NAME --spring.profiles.active=common-pro,pro --dubbo.protocol.port=20666 --server.port=7671 --dubbo.service.shutdown.wait=180000 --dubbo.registry.file=/home/zxsl/online_dubbox/operation-online-service/20666/dubbo-registry.properties >/dev/null 2>&1 &  
 
 nohup java -jar cloud-upgrade.jar --spring.profiles.active=prod -Dcatalina.base=/usr/local/tomcat8/tomcatcloudplatform &>> /dev/null &
 
@@ -9687,10 +9968,11 @@ ENTRYPOINT java -jar -javaagent:/agent/skywalking-agent.jar -Dskywalking.agent.s
 
 * 实现钉钉机器人通知 https://blog.csdn.net/yuancao24/article/details/83576194
 
-## 钉钉机器人可接入
+## 消息报警-钉钉机器人可接入
 
 * jenkins 构建信息推送
 * jira 信息通知推送
+* https://www.ilxqx.com/archives/springboot实现日志飞书报警功能
 
 ## Swagger
 
@@ -10137,6 +10419,73 @@ https://baijiahao.baidu.com/s?id=1680087990414788282&wfr=spider&for=pc
 * 桌面开发
 
 https://www.zhihu.com/question/453979660/answer/2397193140
+
+## NW.js
+
+桌面APP打包利器 —— Node-webkit  像微信开发者工具、抖音开发者工具
+
+https://tool.4xseo.com/article/219685.html
+
+https://www.jianshu.com/p/55e7c1143f2a
+
+https://enigmaprotector.com/en/downloads.html
+
+
+
+package.json 配置信息如下
+
+```json
+{
+    "main": "index.html", // 配置项目起始页
+    “name”: "nw-demo", // 应用取个唯一的名称（任意）
+    ”description“: "项目描述信息"， // 项目描述信息
+    “version”: "0.0.1", // 定义版本号
+    "keywords": ["demo", "node-webkit"], // 项目关键字
+    "window": {
+        "title": "如果 index.html 没有设置 title,则会显示这里的值",
+        "icon": "./logo.png", // 图标路径
+        "position": "center", // 客户端唤醒窗口所在位置
+        ”width“: "680", // 客户端唤醒窗口宽度
+        ”height“: "420", // 客户端唤醒窗口高度
+        ”toolbar“: true, // 是否显示工具栏（调试阶段）
+        ”frame“: true, // 是否显示最外层框架（窗口最小化、最大化、关闭）
+        ”resizable“: true, // 是否设置可伸缩
+        ”min_width“: "640", // 最小宽度
+        ”min_height“: "200", // 最小高度
+        "max_width": "1200", // 最大宽度
+        ”max_height“: "600", // 最大高度
+        "always_on_top": true, // 是否始终显示在最上层
+        ”fullscreen“: true, // 是否全屏
+    }
+} 
+### 完整json
+{
+    "main": "appDemo.html", 
+    "name": "nw-demo", 
+    "description": "项目描述信息", 
+    "version": "0.0.1", 
+    "keywords": ["demo", "node-webkit"],
+    "window": {
+        "title": "如果 index.html 没有设置 title,则会显示这里的值",
+        "icon": "./logo.png", 
+        "position": "center", 
+        "width": "680", 
+        "height": "420", 
+        "toolbar": true, 
+        "frame": true, 
+        "resizable": true, 
+        "min_width": "640", 
+        "min_height": "200", 
+        "max_width": "1200", 
+        "max_height": "600", 
+        "always_on_top": true, 
+        "fullscreen": true
+    }
+}
+
+```
+
+
 
 ## Portainer.io远程
 

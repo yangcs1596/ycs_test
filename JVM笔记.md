@@ -142,14 +142,44 @@ ThreadLocal正确的使用方法
 
 ````
 
+**2. 查看JVM信息**
+
+2.1 查看整个JVM内存状态
+
+```
+jmap -heap [pid]
+```
+
+2.2 查看JVM堆中对象详细占用情况
+
+```
+jmap -histo [pid]
+```
+
 #### dump文件生成的命令
 
 ```shell
 1、获取应用的pid
 使用ps -ef | grep java查询服务器上的java应用进程信息，找到应用进程及id
-2、使用jmap获取dump信息
+
+可使用dmesg命令查看操作系统kill进程日记。
+dmesg | egrep -i 'killed process' 
+dmesg -T | grep 'Out of memory' 
+dmesg －T | grep -E -i -B100 'killed process'
+
+2、人工使用jmap获取dump信息
 jmap -dump:format=b,file=/home/app/dump.out 17740
 注：/home/app/dump.out表示生成的dump文件的存放地址及文件名，17740表示1中查询到的应用pid
+
+出现OOM时自动生成堆dump
+JVM启动命令增加两个参数:
+-XX:+HeapDumpOnOutOfMemoryError
+-XX:HeapDumpPath=/home/dumps.out
+所以启动命令
+nohup java -jar -Xms32M -Xmx32M -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/usr/local user-0.0.1-SNAPSHOT.jar  > log.file  2>&1 &
+
+Jprofiler，有可视化界面，功能也比较完善，能够打开JVM工具(通过-XX:+HeapDumpOnOutOfMemoryError JVM参数触发)创建的hporf文件。
+
 3、分析dump文件
 可使用jstack命令分析，也可以使用eclipse memory analyzer工具分析
 
@@ -178,7 +208,29 @@ jmap -dump:format=b,file=$java_pid.hprof     #java_pid为java进程ID
 
 * 使用MAT打开刚刚导出的hprof文件，选择报告里的泄露嫌疑分析 Leak Suspects Report
 
-  
+
+
+
+#### 性能分析工具jprofile
+
+```
+
+###工具###
+1、MemoryAnalyzer 
+可集成鱼elipse 也可以单独使用
+2、JProfiler
+可集成于idea，也可单独使用。这边使用JProfiler对快照文件进行简单分析。
+3、JConsole
+jdk自带的可视化监控工具之一，可查看：
+* 内存使用量，包括Old Gen、Eden Space、Survivor Space、Metaspace等使用量；
+* 线程，包括峰值、活动的线程数，可监测死锁等；
+* 类，包括已加载类数、加载总数等；
+* 虚拟机概要等；
+4、JVisualVM
+jdk自带的可视化监控工具之一，可查看：
+```
+
+
 
 ### jstat命令
 
@@ -236,3 +288,33 @@ lsof -iTCP |grep ip
 杀掉进程
 
 kill -9 pid
+
+
+
+# java常用命令
+
+```shell
+1、jmap
+生成dump文件: jmap -dump:live,format=b,file=dump.hprof 69616
+jmap -heap pid 统计堆内存情况:  jmap -histo:live 69616
+
+2、jps 
+输出应用程序main.class的完整package名或者应用程序jar文件完整路径名。
+-l	输出主类全名或jar路径
+-q	只输出LVMID
+-m	输出JVM启动时传递给main()的参数
+-v	输出JVM启动时显示指定的JVM参数。
+
+top | grep java
+
+3、jstack 
+jstack  pid 用于生成java虚拟机当前时刻的线程快照
+
+4、jinfo
+jinfo -flags pid : 打印当前指定java进程中已经设定的所有JVM参数信息
+jinfo -flag [+|-] pid : 打开或关闭参数: jinfo -flag +PrintGC 7663
+jinfo -sysprops pid : 打印当前java进程中设定的系统环境参数: jinfo -sysprops 7663
+```
+
+
+

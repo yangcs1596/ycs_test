@@ -1171,6 +1171,67 @@ one:
     NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RetryRule
 ```
 
+# 分布式事务seata 
+
+## 整合服务 
+
+*  https://www.jianshu.com/p/f699b3b558bd
+
+注意先下载搭建seata  下载地址https://github.com/seata/seata
+
+其它的分布式事务技术：TX-LCN（有可视化界面）@LcnTransaction
+
+lcn和seata简单对比，seata更胜一筹把
+
+相同点
+
+```
+a、都能解决分布式事务问题
+b、都使用AOP代理事务
+c、事务的提交和回滚都是由发起方决定。
+```
+
+不同点
+
+```
+核心：事务的回滚机制不一致，LCN是全局假关闭事务，Seata是采用undo_log生成逆向sql回滚操作。
+a、LCN的事务代理是全局的，采用了假关闭模式。
+Seata事务代理只是代理局部各自的事务，在原生sql的前后记录了操作的信息，存在了undo_log的日志中。
+b、LCN的事务一直都锁着记录，只是不提交而已，容易造成数据的死锁。
+Seata的局部事务已经写到了库中，避免了死锁现象，但容易出现脏读的情况。
+c、LCN有控制台界面，Seata没有控制台界面
+```
+
+ 
+
+```xml
+<dependency>
+    <groupId>io.seata</groupId>
+    <artifactId>seata-spring-boot-starter</artifactId>
+    <version>最新版</version>
+</dependency>
+<dependency>
+    <groupId>com.alibaba.cloud</groupId>
+    <artifactId>spring-cloud-starter-alibaba-seata</artifactId>
+    <version>2.2.1.RELEASE</version>
+    <exclusions>
+        <exclusion>
+            <groupId>io.seata</groupId>
+            <artifactId>seata-spring-boot-starter</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+
+还是无法启动，可以使用以下依赖：
+
+<dependency>
+     <groupId>com.alibaba.cloud</groupId>
+     <artifactId>spring-cloud-starter-alibaba-seata</artifactId>
+ </dependency>
+```
+
+
+
 
 
 # 服务监控

@@ -1,3 +1,5 @@
+### 常用dos命令
+
 ```cmd
 #dir  显示目录中的内容
 
@@ -50,6 +52,24 @@ del 删除文件   注意：目录及子目录都不会删除
 例：del test  // 删除当前目录下的test文件夹中的所有非只读文件（子目录下的文件不删除；删除前会进行确认；等价于del test\*）
 例：del /f test  // 删除当前目录下的test文件夹中的所有文件（含只读文件；子目录下的文件不删除；删除前会进行确认；等价于del /f test\*）
 例：del /f /s /q test d:\test2\*.doc  // 删除当前目录下的test文件夹中所有文件及d:\test2中所有doc文件（含只读文件；递归子目录下的文件；删除前不确认）
+删除目录下所有文件
+del /s /q 目录路径
+rmdir /s /q 目录  ##删除指定目录
+```
+
+#### maven仓库删除下载失败的jar
+
+```shell
+## 命名.bat
+set REPOSITORY_PATH=D:\m2\repository\com\lamh
+rem 正在搜索...
+## 循环条件
+for /f "delims=" %%i in ('dir /b /s "%REPOSITORY_PATH%\*lastUpdated*"') do (
+   echo %%i
+   del /s /q %%i  ##删除目录命令 rmdir
+)
+rem 搜索完毕
+pause
 ```
 
 
@@ -127,6 +147,52 @@ start cmd /k "cd/d D:\AA\service\redis &&redis-server.exe redis.windows.conf &&t
 start 是用来启动一个应用的，使用方式为：start 程序名
 cmd /k 表示cmd后面的命令执行完后不关闭窗口
 cmd /c 表示执行完cmd命令后关闭命令窗口
+```
+
+#### 运行启动命令脚本
+
+```shell
+#test.bat 如jar包则直接运行
+java -jar rocketmq-dashboard.jar  -Drocketmq.config.namesrvAdddrs[0]=192.168.1.53:9876 
+```
+
+```shell
+#test.bat 启动natapp 携带参数
+#start 调用外部程序，所有的 DOS命令 和 命令行程序 都可以由 start命令 来调用
+start natapp -authtoken=055b08b06973b95d
+```
+
+```shell
+#package.bat
+#echo 打开回显或关闭回显功能。
+@echo off
+echo.
+echo [信息] 打包Web工程，生成war/jar包文件。
+echo.
+
+## %cd% 当前目录
+%~d0
+cd %~dp0
+
+cd ..
+## call test2.bat   【%1  %2 表示传参，%0则是当前文件名】
+call mvn clean package -Dmaven.test.skip=true
+
+#pause 命令 会暂停批处理的执行并在屏幕上显示Press any key to continue...的提示，等待用户按任意键后继续
+pause
+```
+
+### BAT获取管理员权限
+
+```shell
+@ echo off
+%1 %2
+ver|find "5.">nul&&goto :Admin
+mshta vbscript:createobject("shell.application").shellexecute("%~s0","goto :Admin","","runas",1)(window.close)&goto :eof
+:Admin
+
+##下面开始执行命令
+
 ```
 
 
