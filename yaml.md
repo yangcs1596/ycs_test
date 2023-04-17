@@ -208,9 +208,19 @@ mkdir 文件夹名
 
 　　2. **初始化文件夹**
 
-```
+```shell
 git init
+
+#和远端仓库绑定
+git remote add origin git@github.com:jinzhaogit/git.git  
+#添加开源库upstream, 什么是upstream? 
+#个人理解：需要用一个大型开源项目作为项目起点，和之后自己开发的部分提交到另一个私有库，但同时需要和开源项目保持更新同步。
+#upstream远端项目结构和本地项目结构是一致的
+git remote add upstream git@github.com:cskefu/cskefu.git
+#upstream例子 https://docs.cskefu.com/docs/osc/engineering/ 
 ```
+
+
 
 　　3. **配置用户名和邮箱（第一次配置后，不需要再登录）**
 
@@ -512,9 +522,50 @@ HEAD^的意思是上一个版本，也可以写成HEAD~1，如果你进行了2�
 
 
 
-#### GitLab安装教程
 
 
+### GitLab安装教程
+
+Gitlab环境部署
+
+环境要求：内存不低于2G
+
+```shell
+$ mkdir /opt/gitlab
+
+```
+
+在gitlab目录下写一个 shell脚本
+
+```shell
+vim ins.sh
+
+#给 ins.sh 执行权限
+chmod u+x ins.sh
+```
+
+4、把下面的代码复制到 ins.sh （注意包名 和 目录名的一致 ）
+
+```shell
+sudo rpm -ivh /opt/gitlab/gitlab-ce-13.10.2-ce.0.el7.x86_64.rpm    
+sudo yum install -y curl policycoreutils-python openssh-server cronie
+sudo lokkit -s http -s ssh
+sudo yum install -y postfix
+sudo service postfix start
+sudo chkconfig postfix on
+curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.rpm.sh | sudo bash
+sudo EXTERNAL_URL="http://gitlab.example.com" yum -y install gitlab-ce 
+```
+
+#### 初始化gitlab
+
+1、执行 （ 时间较长 打印很多日志 等待一会 ）
+
+```shell
+$ gitlab-ctl reconfigure
+```
+
+最后一句出现 gitlab Reconfigured！ 则初始化成功
 
 ### RestFul风格
 
@@ -1347,6 +1398,52 @@ public class ThrottleTest {
 
 优点：既能限制数据的平均传输速率，又能允许某种程度的突发传输；
 
+例子结合gateway
+
+```xml
+<!--redis-->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
+    <version>2.1.3.RELEASE</version>
+</dependency>
+```
+
+在`GatewayApplicatioin`引导类中添加如下代码，`KeyResolver`用于计算某一个类型的限流的KEY也就是说，可以通过`KeyResolver`来指定限流的Key。
+
+```
+//定义一个KeyResolver
+@Bean
+public KeyResolver ipKeyResolver() {
+    return new KeyResolver() {
+        @Override
+        public Mono<String> resolve(ServerWebExchange exchange) {
+            return Mono.just(exchange.getRequest().getRemoteAddress().getHostName());
+        }
+    };
+}
+```
+
+```yaml
+网关配置
+    routes:
+      - id: goods
+        uri: lb://goods
+        predicates:
+        - Path=/goods/**
+        filters:
+        - StripPrefix= 1
+        - name: RequestRateLimiter #请求数限流 名字不能随便写 
+          args:
+            key-resolver: "#{@ipKeyResolver}"
+            redis-rate-limiter.replenishRate: 1
+            redis-rate-limiter.burstCapacity: 1
+解释：
+burstCapacity：令牌桶总容量。
+replenishRate：令牌桶每秒填充平均速率。
+key-resolver：用于限流的键的解析器的 Bean 对象的名字。它使用 SpEL 表达式根据#{@beanName}从 Spring 容器中获取 Bean 对象。
+```
+
 
 
 ```xml
@@ -1392,7 +1489,7 @@ redisTemplate.convertAndSend(channel_id, body);
 
 
 
-## LUA脚本使用
+### LUA脚本使用
 
 Redis 中使用EVAL命令来直接执行指定的 Lua 脚本。
 
@@ -1404,11 +1501,103 @@ luascript Lua 脚本文件。
 numkeys 指定的 Lua 脚本需要处理键的数量，其实就是 key数组的长度。
 key 传递给 Lua 脚本零到多个键，空格隔开，在 Lua 脚本中通过 KEYS[INDEX]来获取对应的值，其中1 <= INDEX <= numkeys。
 arg是传递给脚本的零到多个附加参数，空格隔开，在 Lua 脚本中通过ARGV[INDEX]来获取对应的值，其中1 <= INDEX <= numkeys。
+
+```
+
+java中的使用
+
+```java
+/**
+  * 库存扣减脚本
+  */
+@Bean
+public DefaultRedisScript<Boolean> quantityScript() {
+    DefaultRedisScript<Boolean> redisScript = new DefaultRedisScript<>();
+    redisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("script/quantity.lua")));
+    redisScript.setResultType(Boolean.class);
+    return redisScript;
+}
+
+// 使用
+//库存扣除结果
+private final StringRedisTemplate stringRedisTemplate;
+
+@Autowired
+private DefaultRedisScript<Boolean> quantityScript;
+ 	
+Boolean skuResult = stringRedisTemplate.execute(quantityScript, keys, values.toArray());
+```
+
+quantity.lua文件
+
+```LUA
+-- 可能回滚的列表，一个记录要回滚的skuid一个记录库存
+local id_list= {}
+local quantity_list= {}
+
+-- 调用放传递的keys 和 values  execute(RedisScript<T> script, List<K> keys, Object... args)
+local keys = KEYS
+local values = ARGV;
+
+local function deduction(key,num)
+    keys[1] = key;
+    local value = redis.call("get",keys[1])
+    if not value then
+        value = 0;
+    end
+    value = value + num
+    -- 变更后库存数量小于
+    if(value<0)
+    then
+        -- 发生超卖
+        return false;
+    end
+    redis.call("set",keys[1],value)
+
+    return true
+end
+
+local function rollback()
+    for i,k in ipairs (id_list) do
+        -- 还原库存
+        keys[1] = k;
+        redis.call("incrby",keys[1],0-quantity_list[i])
+    end
+end
+
+local function execute()
+    -- i 类java for循环 for(int i=0;i<?;i++) 下标
+    -- k 为遍历的值 具体值，非下标
+    for i, k in ipairs (values)
+    do
+        -- num 变更数量
+        -- key 为缓存key
+        local num = tonumber(k)
+        local key=  keys[i]
+        -- 进行库存扣减，为false 代表扣减失败，要进行回滚
+        local result = deduction(key,num)
+
+        -- 回滚
+        if (result == false)
+        then
+            rollback()
+            return false
+        else
+            -- 记录可能要回滚的数据
+            table.insert(id_list,key)
+            table.insert(quantity_list,num)
+        end
+
+    end
+    return true;
+end
+
+return execute()
 ```
 
 
 
-### Springboot session使用
+## Springboot session使用
 
 在单应用中我们的session来保存用户信息，通常会保存在服务器中（如tomcat），但是我们把应用搭建成分布式的集群，然后利用LVS或Nginx做负载均衡，那么来自同一用户的Http请求将有可能被分发到两个不同的应用中。
 
@@ -1450,30 +1639,6 @@ session 常用命令
 2.给session设置值：session.setAttribute("变量名",值对象);
 3.获取session中的值:session.getAttribute("变量名");
 4.删除session中的值：session.removeAttribute("变量名");session.invalidate();//删除所有session中保存的键
-```
-
-
-
-```java
-/**
-  * 库存扣减脚本
-  */
-@Bean
-public DefaultRedisScript<Boolean> quantityScript() {
-    DefaultRedisScript<Boolean> redisScript = new DefaultRedisScript<>();
-    redisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("script/quantity.lua")));
-    redisScript.setResultType(Boolean.class);
-    return redisScript;
-}
-
-// 使用
-//库存扣除结果
-private final StringRedisTemplate stringRedisTemplate;
-
-@Autowired
-private DefaultRedisScript<Boolean> quantityScript;
- 	
-Boolean skuResult = stringRedisTemplate.execute(quantityScript, keys, values.toArray());
 ```
 
 
@@ -2824,6 +2989,8 @@ $ npm config set registry http://registry.cnpmjs.org
 $ npm config set registry http://registry.npm.taobao.org
 
 如果有一天，换的源用不上了，用rm命令删掉它：npm config rm registry
+
+
 ```
 
 
@@ -3600,6 +3767,8 @@ devDependencies 节点下的模块是我们在开发时需要用的，比如项�
 
 #### npm编写组件步骤
 
+示例：https://github.com/ZacheryWu/el-table-transfer.git
+
 ##### 起步
 
 ```js
@@ -3643,36 +3812,39 @@ module.exports = {
 
 ##### 编写组件
 
-```vue
+```js
 packages目录 新建 组件文件夹 和 index.js
-（index.js内容） import columnSelect from './columnSelect'
-                // 存储组件列表
-                const components = [
-                  columnSelect
-                ] 
-                /* 
-                  定义install 方法，接收Vue作为参数，如果使用use注册插件，则所有的组件都将被注册
-                */
-                const install = function (Vue) {
-                  // 判断是否安装
-                  if(install.installed){return}
-                  // 遍历所有组件
-                  components.map(item => {
-                    Vue.component(item.name,item)
-                  })
-                }
-                // 判断是否引入文件
-                if(typeof window !== 'undefined' && window.Vue){
-                  install(window.Vue)
-                }
-                export default{
-                  install,
-                  columnSelect
-                }
+（index.js内容）
+
+import columnSelect from './columnSelect'
+// 存储组件列表
+const components = [
+    columnSelect
+] 
+/* 
+  定义install 方法，接收Vue作为参数，如果使用use注册插件，则所有的组件都将被注册
+ */
+const install = function (Vue) {
+    // 判断是否安装
+    if(install.installed){return}
+    // 遍历所有组件
+    components.map(item => {
+        Vue.component(item.name,item)
+    })
+}
+// 判断是否引入文件
+if(typeof window !== 'undefined' && window.Vue){
+    install(window.Vue)
+}
+export default{
+    install,
+    columnSelect
+}
 组件文件夹 新建 src文件夹（src下面新建组件名xxx.vue）和index.js
-（index.js内容） import xxx from './src/组件名xxx.vue'  
-                xxx.install = function(Vue){Vue.component(xxx.name, xxx)}
-                export default xxx
+（index.js内容） 
+import xxx from './src/组件名xxx.vue'  
+xxx.install = function(Vue){Vue.component(xxx.name, xxx)}
+export default xxx
 
 ```
 
@@ -3728,12 +3900,16 @@ babel.config.js
 
 ```
 npm config set registry 私服地址
+
+登录指定私服
+npm login --registry='http://localhost:8085/repository/falcon-npm-group/'
 ```
 
 ##### 发布
 
 ```
 终端执行 npm publish 
+或者 npm publish --registry='私服仓库地址'
 ```
 
 
@@ -5454,7 +5630,7 @@ server{
 
 #### 其它说明配置
 
-**1、nginx作为静态资源服务器配置**
+#### 1、nginx作为静态资源服务器配置
 
 ```
 location ^~/ceng/ {  
@@ -5477,7 +5653,7 @@ location ^~/hehe/ {
 
  
 
-**2、nginx作为反向代理服务器配置**
+#### 2、nginx作为反向代理服务器配置
 
 ```nginx
 #反向代理示例
@@ -5531,8 +5707,6 @@ proxy_redirect参数说明：
 #### host攻击防御
 
 ```nginx
-
-
 server {
     listen 80;
     server_name 127.0.0.1 192.168.1.32;
@@ -5722,6 +5896,15 @@ http {
 ```
 
 ##### 
+
+#### 访问静态文件txt
+
+```nginx
+location /EJyhBr8IAO.txt{
+        alias /opt/verify/EJyhBr8IAO.txt;
+}
+如果访问403可能没有权限，需要给文件目录读取权限
+```
 
 
 
@@ -7175,6 +7358,20 @@ exec
 
 ## MAVEN
 
+### 部署maven
+
+```shell
+# 配置java环境变量
+export JAVA_HOME=/usr/local/jdk
+export PATH=$PATH:$JAVA_HOME/bin
+
+# 配置maven环境变量
+export MAVEN_HOME=/usr/local/maven
+export PATH=$PATH:$MAVEN_HOME/bin
+```
+
+
+
 ### POM配置私服maven地址
 
 ### Nexus搭建私有仓库
@@ -8025,6 +8222,28 @@ mvn archetype:create-from-project
 ```
 
 
+
+### maven的插件记录
+
+```xml
+####https://github.com:apache/rocketmq-dashboard.git的插件记录
+
+https://blog.csdn.net/who7708/article/details/113115238
+
+maven-compiler-plugin  maven项目的打包插件
+frontend-maven-plugin  前后端一键打包
+maven-checkstyle-plugin  检测代码风格规范
+maven-jxr-plugin   生成java代码交叉引用和源代码的html格式
+findbugs-maven-plugin  FindBugs是一个分析工具，查找不容易发现的bug
+docker-maven-plugin   打包docker镜像推送仓库
+spring-boot-maven-plugin  springboot的maven打包插件
+jacoco-maven-plugin    生成单元测试覆盖率报告
+coveralls-maven-plugin 提交代码覆盖率报告到 Coveralls web服务 
+apache-rat-plugin    对授权文件的校验审核工具。
+maven-antrun-plugin  可以在Maven执行时,额外执行Ant脚本
+maven-compiler-plugin 编译Java源码的插件。
+maven-javadoc-plugin  javadoc 生成
+```
 
 
 
@@ -10277,6 +10496,10 @@ Electron是一个能够让你使用JavaScript 调用丰富的原生 APIs 来创�
 npm config set registry https://registry.npm.taobao.org
 npm install -g electron  #默认使用 --save,  dev表示仅在开发过程中使用
 npm install -g electron-forge --save-dev  #好像也是打包工具
+
+下载比较慢，可以用临时仓库，要现在package.json指定electron的版本
+npm install --registry=https://npm.taobao.org/mirrors/electron/
+
 #新建项目
 electron-forge init myapp 
 #启动
@@ -10286,15 +10509,24 @@ npm run make
 桌面应用即完成
 ```
 
+### 1、打包 
+
+会有一个app.asar文件的，基本是用electron开发
+
 ```cmd
 #打包2
 npm install  electron-builder --save-dev
 #打包3
 npm install -g electron-packager --save-dev
-##命令（注意把要下载的zip包放在目录下
+## 或在package.json中添加代码
+"scripts": {
+  "package": "electron-packager ./ myapp --all --out=package --electron-version 13.1.5 --overwrite --icon=./build/assets/favicon.ico
+}
+##electron-packager命令（注意把要下载的zip包放在目录下
 electron-packager . MyApp --platform=win32 --arch=x64 --out=./out --icon=./app.ico --app-version=0.01 --overwrite --electron-zip-dir=../
 基本代码命令说明：
 electron-packager <sourcedir> <appname> --platform=<platform> --arch=<arch> --out=out --icon=assets/app.ico --asar --overwrite --ignore=.git
+
 说明：
 sourcedir：项目源文件所在路径（唯一的必须参数）
 appname：项目名称（直接使用package.json文件中的name属性更方便）
@@ -10312,8 +10544,7 @@ testapp：appname，打包后可执行程序(.exe)的名字
 –win：platform，构建win平台的打包
 –out：打包后的地址，./outputs 就是打包后的地址
 ————————————————
-版权声明：本文为CSDN博主「漫-流」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
-原文链接：https://blog.csdn.net/u013116210/article/details/107809014
+https://blog.csdn.net/u013116210/article/details/107809014
 
 ```
 
@@ -10422,7 +10653,7 @@ https://www.zhihu.com/question/453979660/answer/2397193140
 
 ## NW.js
 
-桌面APP打包利器 —— Node-webkit  像微信开发者工具、抖音开发者工具
+桌面APP打包利器 —— Node-webkit  像微信开发者工具、抖音开发者工具；要下载sdk版本的
 
 https://tool.4xseo.com/article/219685.html
 
@@ -10483,6 +10714,36 @@ package.json 配置信息如下
     }
 }
 
+例子二
+{
+  "main": "index.html",
+  "name": "WeixinMenuEditor",
+  "description": "使用nw.js封装的一个微信公众号菜单编辑器App",
+  "version": "0.0.1",
+  "keywords": [ "微信", "菜单编辑器" ],
+  "window": {
+    "title": "微信菜单编辑器",
+    "icon": "app/logo.png",
+    "toolbar": true,
+    "frame": true,
+    "width": 750,
+    "height": 400,
+    "position": "center",
+    "min_width": 400,
+    "min_height": 200
+  },
+  "webkit": {
+    "plugin": true,
+    "java": false,
+    "page-cache": false
+  },
+  "chromium-args" :"-allow-file-access-from-files"
+}
+
+```
+
+```cmd
+copy /B nw.exe+sina.nw sina.exe
 ```
 
 

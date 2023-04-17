@@ -31,61 +31,6 @@
 对索引字段中文本的搜索进行优化
 ```
 
-## mysql的账号权限配置
-
-mysql添加用户对指定库有权限, 权限控制信息存储在表mysql.user中
-
-1、创建用户和密码
-
-```mysql
-create user 'acc'@'%' IDENTIFIED  by 'acc@password';
--- acc是账号  '@%'是host
-```
-
-2、刷新授权
-
-```mysql
-flush privileges;　
-```
-
-3、设置对某个数据库的权限（增删改查可以设置一个或多个） access_control:数据库， acc：用户
-
-```mysql
-grant create , select ,  insert ,  update ,  delete on access_control.*  to acc@'%';
-
-# '%'才是允许远程连接，用户地址可以是localhost，也可以是ip地址、机器名字、域名。也可以用’%'表示从任何地址连接。
-#safedogcloud数据库的所有权限
-GRANT ALL PRIVILEGES ON `access_control`.* TO 'safedog_cloud'@'%'
-#给来自10.163.225.87的用户joe分配可对数据库vtdc所有表进行所有操作的权限，并设定口令为123。
-grant all privileges on vtdc.* to joe@10.163.225.87 identified by ‘123′; 
-#所有数据库权限
-GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' 
-
-#收回权限
-#收回mysql库下的所有表的插删改查权限
-REVOKE SELECT,INSERT,UPDATE,DELETE ON mysql.* FROM acc@'%';
-```
-
-4, 刷新授权
-
-```mysql
-flush  privileges ;
-```
-
-```mysql
--- 查看用户权限
-show grants for root@'localhost';
--- 查看现有用户
-use mysql;
-select user,host, authentication_string from user;
--- 
-GRANT USAGE ON *.* TO 'discuz'@'localhost' IDENTIFIED BY PASSWORD '123456'
-
--- 删除用户
-delete from mysql.`user` where user ='';
-delete from mysql.`user` where host='192.168.2.2';
-```
-
 
 
 ## my.ini配置
@@ -563,6 +508,63 @@ GRANT ALL PRIVILEGES ON *.* TO 'sonar'@'%' IDENTIFIED BY 'sonar' WITH GRANT OPTI
 GRANT ALL PRIVILEGES ON *.* TO 'sonar'@'localhost' IDENTIFIED BY 'sonar' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 ```
+
+##### 5-1 mysql的账号权限配置
+
+mysql添加用户对指定库有权限, 权限控制信息存储在表mysql.user中
+
+1、创建用户和密码
+
+```mysql
+create user 'acc'@'%' IDENTIFIED  by 'acc@password';
+-- acc是账号  '@%'是host
+```
+
+2、刷新授权
+
+```mysql
+flush privileges;　
+```
+
+3、设置对某个数据库的权限（增删改查可以设置一个或多个） access_control:数据库， acc：用户
+
+```mysql
+grant create , select ,  insert ,  update ,  delete on access_control.*  to acc@'%';
+
+# '%'才是允许远程连接，用户地址可以是localhost，也可以是ip地址、机器名字、域名。也可以用’%'表示从任何地址连接。
+#safedogcloud数据库的所有权限
+GRANT ALL PRIVILEGES ON `access_control`.* TO 'safedog_cloud'@'%'
+#给来自10.163.225.87的用户joe分配可对数据库vtdc所有表进行所有操作的权限，并设定口令为123。
+grant all privileges on vtdc.* to joe@10.163.225.87 identified by ‘123′; 
+#所有数据库权限
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' 
+
+#收回权限
+#收回mysql库下的所有表的插删改查权限
+REVOKE SELECT,INSERT,UPDATE,DELETE ON mysql.* FROM acc@'%';
+```
+
+4, 刷新授权
+
+```mysql
+flush  privileges ;
+```
+
+```mysql
+-- 查看用户权限
+show grants for root@'localhost';
+-- 查看现有用户
+use mysql;
+select user,host, authentication_string from user;
+-- 
+GRANT USAGE ON *.* TO 'discuz'@'localhost' IDENTIFIED BY PASSWORD '123456'
+
+-- 删除用户
+delete from mysql.`user` where user ='';
+delete from mysql.`user` where host='192.168.2.2';
+```
+
+
 
 #### 6、创建随机函数
 

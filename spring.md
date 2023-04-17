@@ -459,3 +459,12 @@ public WebServer getWebServer(ServletContextInitializer... initializers) {
 - @SpringBootConfiguration:允许在上下文中注册额外的bean或导入其他配置类。
 - @EnableAutoConfiguration:启用 SpringBoot 的自动配置机制
 - @ComponentScan: 扫描常用的注解
+
+### @Import+ImportBeanDefinitionRegistrar
+
+实现自定义注册bean到spring容器中，常见的做法有两种 ClassPathBeanDefinitionScanner扫描器来获取我们所需要创建的Bean
+
+- @Import+ImportBeanDefinitionRegistrar
+- BeanDefinitionRegistryPostProcessor
+
+https://www.jianshu.com/p/1ca5290cc9f1

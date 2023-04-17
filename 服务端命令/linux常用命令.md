@@ -191,6 +191,13 @@ if[[ -f $home/$1 ]] 表示的是判断$home/$1是不是文件,并且存在 $1表
 -s filename 如果文件长度不为0，则为真
 -h filename 如果文件是软链接，则为真
 
+if  [ -z $string  ]             如果string 为空，则为真
+if  [ -n $string  ]             如果string 非空(非0），返回0(true)  
+逻辑与 –a                   条件表达式的并列
+if [ 表达式1  –a  表达式2 ]
+逻辑或 -o                   条件表达式的或
+if [ 表达式1  –o 表达式2 ]
+
 逻辑非 !条件表达式的相反
 if [ ! 表达式 ]
 ```
@@ -747,6 +754,66 @@ ping ip 查看网络是否通畅
    tcp 6 53 TIME_WAIT src=221.122.59.2 dst=219.239.xx.xx sport=7958 dport=8080 packets=9 bytes=1753
    src=172.18.10.205 dst=172.18.10.212 sport=80 dport=7958 packets=9 bytes=5777 [ASSURED] use=1
 
+### linux修改主机名
+
+阿里云服务器nacos注册后可能是127.0.0.1的IP问题
+
+ 配置的没有识别到主机名称需要把/etc/hosts配置 hostname对应到实际ip
+
+```shell
+//1、 查看主机名称
+hostnamectl status
+
+# 显示结果
+Static hostname: ibp1hgw1v5d5ugts0xw1v
+         Icon name: computer-vm
+           Chassis: vm
+        Machine ID: 20190711105006363114529432776998
+           Boot ID: 79c2e549f6b340dbb9c9087e19b7cc7b
+    Virtualization: kvm
+  Operating System: CentOS Linux 7 (Core)
+       CPE OS Name: cpe:/o:centos:centos:7
+            Kernel: Linux 3.10.0-957.21.3.el7.x86_64
+      Architecture: x86-64
+
+//2、配置/etc/hosts 文件
+172.22.196.189 ibp1hgw1v5d5ugts0xw1v  ibp1hgw1v5d5ugts0xw1v
+
+看静态、瞬态或灵活主机名，分别使用“–static”，“–transient”或“–pretty”选项
+想要永久性修改主机名需要同时修改静态、瞬态和灵活主机名.
+sudo hostnamectl set-hostname "新主机名"
+
+hostnamectl status --static
+hostnamectl status --transient
+hostnamectl status --pretty
+```
+
+* 2、或者这样修改主机名
+
+```
+vi /etc/sysconfig/network
+---------------------------------
+HOSTNAME=自定义主机名
+---------------------------------
+```
+
+* 3、修改hosts文件，让服务器认得这个名字
+
+```
+vi /etc/hosts
+---------------------------------
+127.0.0.1  server1
+---------------------------------
+```
+
+* 4、重启后生效
+
+```
+reboot
+```
+
+
+
 ## 命令详解
 
 ### 1、Curl
@@ -772,28 +839,14 @@ echo 'i=1; for a in $@; do echo "$i = $a"; i=$((i+1)); done' | bash -s -- -a1 -a
 示例
 
 ```shell
-curl -H  "Content-Type: application/json"  -d  '{
-  "appId": "x",
-  "sign": "782bdd5089e595eeb0bc3437bd9cdf40ed02f8e8",
-  "datetime": "2022-04-12 12:10:00",
-  "data": {
-    "riskLevelList": [
-      -1
-    ],
-    "osPatchList": [
-      "-1"
-    ],
-    "mdWarePatchList": [
-      "-1"
-    ],
-    "dbPatchList": [
-      "-1"
-    ]
-  }
-}' -X POST  https://10.164.148.23/thirdApi/getPatchManagerPage -k
 
 ## get例子
 curl --header "Authorization: 62b94903e4b0e57be39dbfc4" --header "id:5" --insecure  -X GET 'http://121.40.86.195:9200'
+## post
+curl -H "Content-Type: application/json" \
+-X POST \
+\-d '{"user_id": "123", "coin":100, "success":1, "msg":"OK!" }' "http://192.168.0.1:8001/test"
+
 ```
 
 

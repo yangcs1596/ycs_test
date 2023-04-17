@@ -11,7 +11,7 @@
 * 启动脚本
 
   ```cmd
-  java -Dserver.port=8080 -Dcsp.sentinel.dashboard.server=localhost:8080 -Dproject.name=sentinel-dashboard -jar sentinel-dashboard-1.8.0.jar
+  java -Dserver.port=8080 -Dcsp.sentinel.dashboard.server=localhost:8080 -Dproject.name=sentinel-dashboard -jar sentinel-dashboard-1.8.6.jar
   ```
 
 * 访问
@@ -63,7 +63,7 @@ Sentinel提供了多种数据源的支持，包括Nacos、Zookeeper、文件数�
 * 使用Nacos存储规则并实时更新
   Sentinel提供了多种数据源的支持，包括Nacos、Zookeeper、文件数据源等。
 
-## <span style="border-left: 5px solid rgb(248, 57, 41);">springboot项目接入nacos
+## Sentinel接入nacos数据源
 
 ### 引入依赖
 
@@ -436,6 +436,10 @@ public class CustomLoadBalancerCacheAutoConfiguration {
 
 
 # Gateway网关服务
+
+gateway官网：
+
+> https://spring.io/projects/spring-cloud-gateway
 
 取代Zuul网关
 
@@ -1464,7 +1468,47 @@ java -javaagent:/data/skywalking-agent/agent/skywalking-agent.jar
 -jar my-app-service.jar &
 ```
 
+* 在代码中获取traceId
 
+```xml
+<dependency>
+    <groupId>org.apache.skywalking</groupId>
+    <artifactId>apm-toolkit-trace</artifactId>
+    <version>8.9.0</version>
+</dependency> 
+
+
+```
+
+```java
+//判断是否是skywalking
+private static final boolean SKYWALKING_TRACE_CONTENT_PRESENT = ClassUtils.isPresent("org.apache.skywalking.apm.toolkit.trace.TraceContext", null);
+
+if (SKYWALKING_TRACE_CONTENT_PRESENT) {
+    String traceId = TraceContext.traceId();
+}
+```
+
+
+
+
+* Skywalking整合Log4j2在日志中打印TraceId
+    添加依赖
+
+```xml
+<dependency>
+    <groupId>org.apache.skywalking</groupId>
+    <artifactId>apm-toolkit-log4j-2.x</artifactId>
+    <version>8.9.0</version>
+</dependency>
+```
+
+6.3.2 在log4j2的配置文件中获得TraceId
+
+```properties
+通过 - [%traceId] - 标签可获取全局TraceId
+示例：%date{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%traceId] - %msg% 
+```
 
 
 

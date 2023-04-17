@@ -1722,7 +1722,7 @@ input {
 </dependency>
 ```
 
-
+## 拼音插件
 
 ## 分词器IK
 

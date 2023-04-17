@@ -785,6 +785,35 @@ spring:
 
 ​		-Dspring.profiles.active=dev
 
+#### jar启动虚拟参数-- 和-D区别
+
+* 一、java -D
+  java -Dmy.name=张三这种方式添加的参数是jvm的一些属性。此种方式添加的参数可以通过如下方式获取：
+
+  **-D 是java用来设置全局参数的，可覆盖yaml文件中的变量，但无法覆盖远程Nacos变量值**
+
+```java
+System.getProperties("my.name") 
+```
+
+* 二、java –
+  java --my.address=北京东城区这种方式添加的参数是操作系统的环境变量。可以通过如下方式获取
+
+```java
+System.getEnv("my.address"); 
+```
+
+* 三、在springboot中的应用
+  springboot项目，启动时，通过-D或者 --添加参数，可以直接覆盖yml配置文件中的同名配置，如果yml中没有，那么相当于添加一个配置。
+
+添加的参数名字为spring.application.name和SPRING_APPLICATION_NAME是一样的
+
+```shell
+在docker中，docker run -e "server.port"用-e操作指定的参数，将成为容器的环境变量，从而就指定了容器启动的端口号。
+```
+
+ 
+
 
 
 ## 6、配置文件加载位置
@@ -3520,6 +3549,9 @@ ip addr
 ```shell
 1、检查内核版本，必须是3.10及以上
 uname -r
+卸载旧版本
+# yum remove docker  docker-common docker-selinux docker-engine
+# yum list installed | grep docker 
 2、安装docker
 yum install docker
 3、输入y确认安装

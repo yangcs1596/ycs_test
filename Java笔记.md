@@ -137,6 +137,8 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 | lock4j 日志包                                     | https://github.com/baomidou/lock4j.git                       |
 | redisson封装不同模式                              | https://gitee.com/yangxixi_323/spring-boot-distributed-redisson.git<br />https://gitee.com/xxy6910/redisson-dcs-lock.git |
 | redis-cache-operator-java 缓存工具                | https://github.com/xsg1995/redis-cache-operator-java.git     |
+| redis-cache-封装可以仿造miaosha项目组件           | https://gitee.com/asdsix/SpringCloud-miaosha/tree/version2/miaosha-common/miaosha-common-data/src/main/java/tech/tengshe789/miaosha/common/data/redis |
+|                                                   |                                                              |
 | rocketmq                                          | https://github.com/apache/rocketmq-spring.git                |
 | rocketmq-dashboard<br />rocketmq的可视化界面      | https://github.com/apache/rocketmq-dashboard.git             |
 | ruoyi系统                                         | https://gitee.com/y_project/RuoYi.git                        |
@@ -147,7 +149,7 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 |                                                   |                                                              |
 | 微信开发weixin-java-mp<br />微信端第三方对接开发  | https://gitee.com/binary/weixin-java-tools.git               |
 | 项目推荐浏览页                                    | https://gitee.com/explore/backend                            |
-| justAuth多登录开源库                              | https://github.com/justauth/JustAuth.git<br />https://github.com/justauth/justauth-spring-boot-security-starter.git |
+| justAuth多登录开源库just-auth                     | https://github.com/justauth/JustAuth.git<br />https://github.com/justauth/justauth-spring-boot-security-starter.git |
 | security安全校验                                  | https://github.com/spring-projects/spring-security/wiki/OAuth-2.0-Migration-Guide |
 | 单商城开源系统ThinkPHP                            | https://gitee.com/likeshop_gitee                             |
 | DingTalk消息通知                                  | https://github.com/AnswerAIL/dingtalk-spring-boot-starter    |
@@ -155,6 +157,9 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 | guerlab-sms 不同的短信通道支持                    | https://gitee.com/guerlab_net/guerlab-sms?_from=gitee_search |
 | IJPay聚合支付                                     | https://gitee.com/javen205/IJPay?_from=gitee_search          |
 | 文件上传聚合存储平台                              | https://spring-file-storage.xuyanwu.cn/#/存储平台            |
+| [芋道源码](https://github.com/yudaocode)          | 可以关注一下labs学习https://gitee.com/zhijiantianya          |
+| 动态线程池，可简洁封装                            | https://gitee.com/dromara/dynamic-tp.git                     |
+|                                                   |                                                              |
 
 
 
@@ -167,6 +172,9 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 | spring-boot-admin 微服务监控 | https://gitee.com/mirrors/spring-boot-admin.git <br />原始仓库： https://github.com/codecentric/spring-boot-admin |
 | douyin-sdk 抖音对接          | https://toscode.gitee.com/amazecodecom/douyin-sdk.git<br />https://github.com/wulinyun/java-sdk-douyin.git |
 |                              |                                                              |
+| 低代码开发平台               | https://gitee.com/jeecg/jeecg-boot                           |
+| 组件封装                     | https://github.com/yangcs1596/boca                           |
+| jnpf白皮书项目               | https://github.com/anglamei/medical-java-cloud               |
 
 
 
@@ -255,8 +263,23 @@ Person person = objectMapper.readValue("{\"name\":\"davenkin\",\"address\":\"\",
 **下载Kibana**
 
 * Kibana，就是我们所说的ES的图形化用户界面，用于方便用户进行操作。
-
 * 网址： https://www.elastic.co/downloads/kibana
+
+
+
+##### -jsch连接linux服务器执行命令等
+
+```xml
+<dependency>
+    <groupId>com.jcraft</groupId>
+    <artifactId>jsch</artifactId>
+    <version>0.1.54</version>
+</dependency> 
+```
+
+##### - 连接ftp服务器上传下载文件处理
+
+https://www.jb51.net/article/270506.htm
 
 ### springboot开启异步
 
@@ -403,25 +426,28 @@ public xxx tt(Object obj){ //此处的obj，可以自动注入进来
   2 代理类拥有实现类的实例
   3 代理器里面的方法可以有对事项方法做控制
 
-
 // 动态代理
+
+```java
+创建代理对象
 (T) Proxy.newProxyInstance(
                 Thread.currentThread().getContextClassLoader(),
                 new Class[]{clientType},
                 new ProxyFallback(error, clientType)
-                
+创建代理对象                
 Proxy.newProxyInstance(car.getClass().getClassLoader(), Car.class.getInterfaces(), new xxHandler());
-
+代理关键
 public class xxHandler implements InvocationHandler {
-
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         System.out.println("---------before-------");
         Object invoke = method.invoke(vehical, args);
         System.out.println("---------after-------");
-     
+
         return invoke;
     }
 }
+```
+
   ```
 
 * 外观模式
@@ -1571,6 +1597,29 @@ static {
 }
 ```
 
+##### 2-1-2 例子
+
+```java
+ThreadPoolTaskExecutor poolTaskExecutor = new ThreadPoolTaskExecutor();
+//线程池所使用的缓冲队列
+poolTaskExecutor.setQueueCapacity(200);
+//线程池维护线程的最少数量
+poolTaskExecutor.setCorePoolSize(5);
+//线程池维护线程的最大数量
+poolTaskExecutor.setMaxPoolSize(1000);
+//线程池维护线程所允许的空闲时间
+poolTaskExecutor.setKeepAliveSeconds(30000);
+poolTaskExecutor.initialize();
+
+@Bean
+public TaskExecutor taskExecutor() {
+    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+    executor.setCorePoolSize(5);
+    executor.setMaxPoolSize(10);
+    return executor;
+}
+```
+
 
 
 #### 2-2 函数式接口
@@ -1815,7 +1864,9 @@ Mono.never().subscribe(System.out::println);
 
 
 
-* fromCallable()、fromCompletionStage()、fromFuture()、fromRunnable()和 fromSupplier()：分别从 Callable、CompletionStage、CompletableFuture、Runnable 和 Supplier 中创建 Mono。 
+* fromCallable()、fromCompletionStage()、fromFuture()、fromRunnable()和 fromSupplier()：
+
+  分别从 Callable、CompletionStage、CompletableFuture、Runnable 和 Supplier 中创建 Mono。 
 
   ```java
   //通过fromRunnable创建，并实现异常处理
@@ -4154,11 +4205,7 @@ Note : '#' 一般表示 '.' ，例如 Intent.getIntExtra(String name), 用注释
 
 ------
 
-### CheckStyle插件
-
-代码规范检测工具， 使用checkStyle可以选择单个文件，也可以扫描整个包或整个项目
-
-
+ 
 
 ## Request
 
