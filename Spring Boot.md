@@ -3564,18 +3564,27 @@ Docker version 1.12.6, build 3e8e77d/1.12.6
 Created symlink from /etc/systemd/system/multi-user.target.wants/docker.service to /usr/lib/systemd/system/docker.service.
 6、停止docker
 systemctl stop docker
+
+
+例子
+[root@localhost app]# docker -v
+Docker version 20.10.17, build 100c701
+[root@localhost app]# docker-compose -v
+Docker Compose version v2.6.0
+
 ```
 
 ## 4、Docker常用命令&操作
 
 ### 1）、镜像操作
 
-| 操作 | 命令                                            | 说明                                                     |
-| ---- | ----------------------------------------------- | -------------------------------------------------------- |
-| 检索 | docker  search 关键字  eg：docker  search redis | 我们经常去docker  hub上检索镜像的详细信息，如镜像的TAG。 |
-| 拉取 | docker pull 镜像名:tag                          | :tag是可选的，tag表示标签，多为软件的版本，默认是latest  |
-| 列表 | docker images  \| grep  镜像名                  | 查看所有本地镜像                                         |
-| 删除 | docker rmi image-id                             | 删除指定的本地镜像                                       |
+| 操作 | 命令                                            | 说明                                                         |
+| ---- | ----------------------------------------------- | ------------------------------------------------------------ |
+| 检索 | docker  search 关键字  eg：docker  search redis | 我们经常去docker  hub上检索镜像的详细信息，如镜像的TAG。     |
+| 拉取 | docker pull 镜像名:tag                          | :tag是可选的，tag表示标签，多为软件的版本，默认是latest      |
+| 列表 | docker images  \| grep  镜像名                  | 查看所有本地镜像                                             |
+| 删除 | docker rmi image-id                             | 删除指定的本地镜像                                           |
+| 批量 | 删除所有<none>镜像                              | docker images \| grep none\| awk '{print $3}' \|xargs docker rmi |
 
 https://hub.docker.com/
 
@@ -4943,7 +4952,74 @@ do
 done
 ```
 
+### 6-11 安装skywalking（待更新）
 
+skywalking 的安装，需要 elasticsearch - 存放数据、skywalking-oap 接收数据、skywalking-ui 界面展示。以及还需要一个 skywalking-agent 用于配置到应用程序中，采集监控数据。注意这些内容在官网中，都已提供，地址：[skywalking.apache.org/downloads/](https://link.juejin.cn?target=https%3A%2F%2Fskywalking.apache.org%2Fdownloads%2F)
+
+```shell
+## skywalking
+version: '3.8'
+services:
+  elasticsearch:
+    image: elasticsearch:7.16.2
+    container_name: elasticsearch
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./data/es_data:/usr/share/elasticsearch/data
+
+  oap:
+    image: apache/skywalking-oap-server:8.9.0
+    container_name: oap
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    links:
+      - elasticsearch
+    ports:
+      - "11800:11800"
+      - "12800:12800"
+    healthcheck:
+      test: [ "CMD-SHELL", "/skywalking/bin/swctl ch" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    environment:
+      SW_STORAGE: elasticsearch
+      SW_STORAGE_ES_CLUSTER_NODES: elasticsearch:9200
+      SW_HEALTH_CHECKER: default
+      SW_TELEMETRY: prometheus
+      JAVA_OPTS: "-Xms1024m -Xmx1024m"
+
+  skywalking-ui:
+    image: apache/skywalking-ui:8.9.0
+    container_name: skywalking-ui
+    depends_on:
+      oap:
+        condition: service_healthy
+    links:
+      - oap
+    ports:
+      - "9090:8080"
+    environment:
+      SW_OAP_ADDRESS: http://oap:12800
+
+```
 
 
 
@@ -5044,6 +5120,89 @@ services:
     volumes:
       - ./data:/data
       - /var/run/docker.sock:/var/run/docker.sock
+```
+
+### 6-16 安装confluence知识库管理
+
+镜像大概1G 不是很想安装
+
+```yml
+version: '3'
+
+services:
+  confluence:
+    image: atlassian/confluence-server:7.13
+    ports:
+      - '8090:8090'
+    volumes:
+      - './data/confluence:/var/atlassian/application-data/confluence'
+    environment:
+      - JVM_MINIMUM_MEMORY=1024m
+      - JVM_MAXIMUM_MEMORY=2048m
+      - JVM_SUPPORT_RECOMMENDED_ARGS=-Dfile.encoding=UTF8
+```
+
+#### 6-16-1 安装GitLab项目管理
+
+```sh
+# 保存步骤1中的文件，并命名为docker-compose-gitlab.yml
+# 进入yml文件所在目录，并运行下列命令
+docker-compose -f ./docker-compose-gitlab.yml up -d
+```
+
+```yml
+# docker-compose.yml文件的版本
+version: "3"
+# 管理的服务
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:15.6.3-ce.0
+    container_name: gitlab
+    restart: always
+    environment:
+      - REDIS_HOST=192.168.17.128
+      - REDIS_PORT=6379
+      - GITLAB_HOST=100.5.22.178
+      - GITLAB_PORT=13888
+      - GITLAB_SSH_PORT=13222    
+      - GITLAB_ROOT_PASSWORD=12345678
+      - GITLAB_ROOT_EMAIL=admin@163.com
+      #pg数据库
+      #- DB_ADAPTER=postgresql
+      #- DB_HOST=postgresql
+      #- DB_PORT=5432
+      #- DB_USER=gitlab
+      #- DB_PASS=password
+      #- DB_NAME=gitlabhq_production
+      #邮件配置
+      #- SMTP_ENABLED=false
+      #- SMTP_DOMAIN=www.example.com
+      #- SMTP_HOST=smtp.gmail.com
+      #- SMTP_PORT=587
+      #- SMTP_USER=mailer@example.com
+      #- SMTP_PASS=password
+      #- SMTP_STARTTLS=true
+      #- SMTP_AUTHENTICATION=login
+
+      #- IMAP_ENABLED=false
+      #- IMAP_HOST=imap.gmail.com
+      #- IMAP_PORT=993
+      #- IMAP_USER=mailer@example.com
+      #- IMAP_PASS=password
+      #- IMAP_SSL=true
+      #- IMAP_STARTTLS=false
+    ports:
+      - "13443:443"
+      - "13888:80"
+      - "13222:22"
+    volumes:
+      - "/home/docker-gitlab/config:/etc/gitlab"
+      - "/home/docker-gitlab/logs:/var/log/gitlab"
+      - "/home/docker-gitlab/data:/var/opt/gitlab"
+      - "/etc/localtime:/etc/localtime:ro"
+
+
+
 ```
 
 

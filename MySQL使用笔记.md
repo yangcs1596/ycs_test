@@ -118,6 +118,8 @@ set global slow_query_log = off;
 show OPEN TABLES where In_use > 0;
 
 In_use列表示有多少线程正在使用某张表，Name_locked表示表名是否被锁
+#查询正在执行的sql
+SELECT * FROM information_schema.INNODB_TRX
 2、查询进程
 show processlist
 查询到相对应的进程===然后 kill    id
@@ -139,7 +141,9 @@ show processlist 检查 MySQL状态
 
 查看 mysql tmp，是否够用，open tables 是否等于 table_open_cache。
 
-`SHOW GLOBAL STATUS LIKE ‘Open%tables`  `SHOW variables LIKE '%table_open%'`
+`SHOW GLOBAL STATUS LIKE ’Open%table'`  
+
+`SHOW variables LIKE '%table_open%'`
 
 #### select *的缺点
 
@@ -796,6 +800,16 @@ SELECT CURRENT_TIMESTAMP() -- 2018-10-06 10:58:25  和now()结果 一样
 SELECT CURRENT_USER()   
 ```
 
+#### DATE_SUB 函数
+
+```mysql
+select DATE_SUB(CURDATE(), INTERVAL 1 DAY)  -- 获取昨天的日期
+```
+
+
+
+
+
 #### MYSQL注意设置时间的时区
 
 ```mysql
@@ -1426,5 +1440,50 @@ mysql -uroot -p123456 cloud_system<D:\\mysql\\LOL3.sql
 
 执行sql脚本文件
 mysql> source sql脚本所在目录
+```
+
+# MySQL监控
+
+### Druid Monitor  
+
+不仅可以监控数据源和慢查询，还可以监控Web应用、URI监控、Session监控、Spring监控
+
+```xml
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>druid-spring-boot-starter</artifactId>
+    <version>1.2.6</version>
+</dependency
+```
+
+* 注入两个bean管理
+
+```java
+@Bean
+public ServletRegistrationBean druidServlet() {
+    ServletRegistrationBean reg = new ServletRegistrationBean();
+    reg.setServlet(new StatViewServlet());
+    //访问的URL的路径
+    reg.addUrlMappings("/druid/*");
+    //登录的账号密码 可以在配置中心配置
+    registrationBean.addInitParameter(StatViewServlet.PARAM_NAME_ALLOW, "127.0.0.1");//白名单
+ // registrationBean.addInitParameter(StatViewServlet.PARAM_NAME_DENY, "");//黑名单
+    reg.addInitParameter(StatViewServlet.PARAM_NAME_USERNAME, "admin");
+    reg.addInitParameter(StatViewServlet.PARAM_NAME_PASSWORD, "123");
+    return reg;
+}
+
+//注册过滤器
+@Bean
+public FilterRegistrationBean filterRegistrationBean() {
+    FilterRegistrationBean filterRegistrationBean = new FilterRegistrationBean();
+    // WebStatFilter statFilter = new WebStatFilter();
+    // statFilter.setSessionStatEnable(true);// 对session进行监控，默认为true
+    filterRegistrationBean.setFilter(new WebStatFilter());
+    filterRegistrationBean.addUrlPatterns("/*"); //监控所有的路径
+    filterRegistrationBean.addInitParameter(WebStatFilter.PARAM_NAME_EXCLUSIONS, "*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*"); //排除请求路径
+    filterRegistrationBean.addInitParameter(WebStatFilter.PARAM_NAME_PROFILE_ENABLE, "true");
+    return filterRegistrationBean;
+}
 ```
 

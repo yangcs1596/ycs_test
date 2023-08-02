@@ -107,7 +107,7 @@ curl -XGET "http://localhost:9200/test_index?pretty"
 curl -XGET "http://localhost:9200/test_index/_stats?pretty"
 #获取索引的mappings
 curl -XGET "http://localhost:9200/test_index/_mappings?pretty"
-#删除索引
+#删除索引, 多个用逗号隔开  如何需要账号 -u elastic:密码
 curl -XDELETE "http://localhost:9200/test_index"
 ```
 
@@ -988,6 +988,10 @@ srb = client.prepareSearch(indexName)
 
 ##### 模糊查询
 
+match: 只要匹配上任一个分词，则返回
+
+match_phase: 必须全部匹配，还要索引相邻
+
 ```json
 #match query实现模糊搜索，该方式会对匹配文本进行分词然后匹配分词后的每个词项，匹配操作有OR和AND，默认为OR
 {
@@ -1726,13 +1730,31 @@ input {
 
 ## 分词器IK
 
+### 分词示例
+
+```
+GET  table/_analyze
+{
+	"analyzer":"ik_max_word",
+	"text": "hello world"
+}
+```
+
+### 拼音器示例
+
+```
+POST /_analyze
+{
+  "tokenizer": "pinyin",
+  "text": "苹果"
+}
+```
+
 ```
 ik_max_word: 会将文本做最细粒度的拆分,比如会将 "中华人民共和国国歌"拆分为
    例："中华人民共和国,中华人民,中华,华人,人民共和国,人民,人,民,共和国,共和,和,国国,国歌"，会穷尽各种可能的组合
 ik_smart: 会做最粗粒度的拆分, 比如会将 "中华人民共和国国歌"拆分为 "中华人民共和国,国歌" .
 ```
-
-
 
 ```
 下载地址：https://github.com/medcl/elasticsearch-analysis-ik/releases
@@ -1933,6 +1955,32 @@ public class GoodsDispenseDoc {
   }
 }
 
+```
+
+## [IK分词器](https://so.csdn.net/so/search?q=IK分词器&spm=1001.2101.3001.7020)实现单个字搜索
+
+IK分词器给出了单个汉字的扩展
+**extra_single_word.dic**：常用的单个汉字
+**extra_single_word_full.dic**：全部的单个汉字
+**extra_single_word_low_freq.dic**：低频(不常用)单个汉字
+
+* 在es目录es/plugins/elasticsearch-analysis-ik-7.14.2/config
+
+* 找到IK分词器下的config下的IKAnalyzer.cfg.xml文件
+
+```xml
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+	<comment>IK Analyzer 扩展配置</comment>
+	<!--用户可以在这里配置自己的扩展字典 -->
+	<entry key="ext_dict">extra_single_word.dic</entry>
+	 <!--用户可以在这里配置自己的扩展停止词字典-->
+	<entry key="ext_stopwords"></entry>
+	<!--用户可以在这里配置远程扩展字典 -->
+	<!-- <entry key="remote_ext_dict">words_location</entry> -->
+	<!--用户可以在这里配置远程扩展停止词字典-->
+	<!-- <entry key="remote_ext_stopwords">words_location</entry> -->
+</properties>
 ```
 
 

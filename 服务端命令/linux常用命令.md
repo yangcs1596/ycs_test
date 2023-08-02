@@ -15,6 +15,8 @@ touch test{0001..2000}.txt
 pwd
 #创建目录
 mkdir /tmp/test
+#创建递归目录
+mkdir -p directory/../.. 
 #删除文件
 rm -rf '文件夹'  //千万注意不能使用【 rm -rf /* 】会导致系统瘫痪
 #复制文件
@@ -85,6 +87,15 @@ yum install -y lrzsz
 ```cmd
 指定目录安装：会把依赖、应用程序安装到指定目录
 yum install  java-1.8.0-openjdk --installroot=/home/xxx/percona-xtrabackup/
+```
+
+### Linux 查看占用资源cpu、内存最大的进程命令
+
+```shell
+#CPU
+ps aux|head -1;ps aux|grep -v PID|sort -rn -k 3|head
+#内存
+ps aux|head -1;ps aux|grep -v PID|sort -rn -k 4|head
 ```
 
 
@@ -633,6 +644,26 @@ passwd mybk
 #### 1、防火墙
 
 ```shell
+systemctl status firewalld   #查看防火墙状态
+systemctl start firewalld    #开启防火墙
+systemctl stop firewalld     #关闭防火墙
+service firewalld start      #开启防火墙
+若遇到无法开启
+先用：systemctl unmask firewalld.service 
+然后：systemctl start firewalld.service 
+####查看对外开放的端口状态
+netstat  -ntulp                #查询开放的所有端口
+netstat  -ntulp | grep 8080    #查询8080端口是否开放
+####对外开发端口
+firewall-cmd --query-port=6379/tcp               #查看6379端口是否已开
+firewall-cmd --add-port=123/tcp --permanent      #添加指定需要开放的端口123
+firewall-cmd --query-port=123/tcp                #查询指定端口123是否开启成功
+firewall-cmd --permanent --remove-port=123/tcp   #移除指定端口123
+firewall-cmd --reload                            #重载入添加的端口
+————————————————
+版权声明：本文为CSDN博主「wuxl570」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/qq_40598817/article/details/125693571
+###开放端口
 firewall-cmd --zone=public --add-port=2181/tcp --permanent #网页端口
 firewall-cmd --zone=public --add-port=5672/tcp --permanent  #AMQP端口,java使用
 firewall-cmd --reload # 重新加载
@@ -647,7 +678,7 @@ firewall-cmd --reload # 重新加载
 /etc/rc.d/init.d/iptables save #保存配置 
 /etc/rc.d/init.d/iptables restart #重启服务 
 
-查看端口号
+###查看防火墙端口号
 1、lsof -i:端口号
 2、netstat -tunlp|grep 端口号
 可以通过"netstat -anp" 来查看哪些端口被打开
@@ -1331,6 +1362,24 @@ pushd -0 #如果要更改到堆栈底部的目录，可以使用以下命令：
 popd 1 #将目录栈移除
 
 ```
+
+### 14、docker删除所有none镜像
+
+```shell
+docker images  | grep none | awk '{print $3}' | xargs docker rmi
+
+解析
+xargs: 管道只是前一个命令的标准输出作为后一个命令的标准输入。
+1） 前一个命令的标准输出作为后面命令的标准输入，并处理管道传输过来的标准输入。
+2） 将处理后的标准输入内容传递到后面命令的正确位置上
+
+xargs处理的优先级或顺序了：先分割，再分批，然后传递到参数位。
+如何分割（xargs、xargs -d、xargs -0）
+如何划批（xargs -n、xargs -L）
+参数如何传递（xargs -i）
+```
+
+
 
 
 

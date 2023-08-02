@@ -165,16 +165,18 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 
 ## 其它一些项目学习
 
-|                              |                                                              |
-| ---------------------------- | ------------------------------------------------------------ |
-| wepush 简小的推送工具        | https://gitee.com/zhoubochina/WePush.git                     |
-| Jeewx-Boot 免费微信管家平台  | https://gitee.com/jeecg/jeewx-boot.git                       |
-| spring-boot-admin 微服务监控 | https://gitee.com/mirrors/spring-boot-admin.git <br />原始仓库： https://github.com/codecentric/spring-boot-admin |
-| douyin-sdk 抖音对接          | https://toscode.gitee.com/amazecodecom/douyin-sdk.git<br />https://github.com/wulinyun/java-sdk-douyin.git |
-|                              |                                                              |
-| 低代码开发平台               | https://gitee.com/jeecg/jeecg-boot                           |
-| 组件封装                     | https://github.com/yangcs1596/boca                           |
-| jnpf白皮书项目               | https://github.com/anglamei/medical-java-cloud               |
+|                                          |                                                              |
+| ---------------------------------------- | ------------------------------------------------------------ |
+| wepush 简小的推送工具                    | https://gitee.com/zhoubochina/WePush.git                     |
+| Jeewx-Boot 免费微信管家平台              | https://gitee.com/jeecg/jeewx-boot.git                       |
+| spring-boot-admin 微服务监控             | https://gitee.com/mirrors/spring-boot-admin.git <br />原始仓库： https://github.com/codecentric/spring-boot-admin |
+| douyin-sdk 抖音对接                      | https://toscode.gitee.com/amazecodecom/douyin-sdk.git<br />https://github.com/wulinyun/java-sdk-douyin.git |
+|                                          |                                                              |
+| 低代码开发平台                           | https://gitee.com/jeecg/jeecg-boot                           |
+| 组件封装                                 | https://github.com/yangcs1596/boca                           |
+| jnpf白皮书项目                           | https://github.com/anglamei/medical-java-cloud               |
+| pigx学习微服务<br />这人4.2k的仓库就离谱 | https://github.com/cckmit/pigx-1.git <br />https://github.com/cckmit/wallet-parent.git<br />还有翻墙软件 |
+|                                          |                                                              |
 
 
 
@@ -446,6 +448,8 @@ public class xxHandler implements InvocationHandler {
         return invoke;
     }
 }
+    
+AopContext.currentProxy() 代理service事务失效问题
 ```
 
   ```
@@ -454,7 +458,12 @@ public class xxHandler implements InvocationHandler {
 
   ```java
   起到类和类之间解耦的作用
+  
   ```
+
+* 责任链模式
+
+  https://mp.weixin.qq.com/s/LvgzVm67oZjOdfC3jZ4X0w
 
 ##### springboot的策略模式+工程模式例子
 
@@ -4580,6 +4589,40 @@ resultMap=”userResultMap”>
     where id = #{id}
 </select>
 ```
+
+##### 一对一、一对多
+
+```xml
+<resultMap type="com.lzmh.composite.modular.settlement.model.vo.SettleSiteOrderVO" id="SiteOrderResult">
+        <id property="siteSn" column="site_sn"/>
+        <result property="billSn" column="bill_sn"/>
+        <result property="orderSn" column="order_sn"/>
+        <result property="suckType" column="suck_type"/>
+        <result property="suckAppId" column="suck_app_id"/>
+        <result property="couponPrice" column="coupon_price"/>
+        <result property="orderIncome" column="order_income"/>
+        <association property="siteItem" column="site_sn" javaType="com.lzmh.composite.modular.settlement.model.vo.SettleSiteOrderItemVO" resultMap="siteOrderItemResult"/>
+        <collection property="codeList" javaType="java.util.List" resultMap="siteOrderCodeResult"/>
+    </resultMap>
+映射到实体的map或者list
+
+
+-- 嵌套查询
+<!--association使用select属性引入另外一条SQL语句 -->
+<association property="card "
+ javaType="card"
+ column="cid" <!--引入另外定制sql的参数值，这里是person表里的外键cid-->
+ select="cn.wyu .mapper.CardMapper.findCardById"></association>
+
+<collection
+property="orders"javaType="list"ofType="Order "
+column="id" <!--这里是user表中的id-->
+select="cn.wyu .mapper.0rderMapper.find0rderByUid"></collection>
+
+
+```
+
+
 
 #### choose, when, otherwise 
 

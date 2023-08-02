@@ -1234,7 +1234,7 @@ c、LCN有控制台界面，Seata没有控制台界面
  </dependency>
 ```
 
-
+@GlobalTransactional 开启分布式事务
 
 
 

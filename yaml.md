@@ -1595,6 +1595,26 @@ end
 return execute()
 ```
 
+### Springboot获取redis信息
+
+```java
+@GetMapping("/get-monitor-info")
+@Operation(summary = "获得 Redis 监控信息")
+@PreAuthorize("@ss.hasPermission('infra:redis:get-monitor-info')")
+public CommonResult<RedisMonitorRespVO> getRedisMonitorInfo() {
+    // 获得 Redis 统计信息
+    Properties info = stringRedisTemplate.execute((RedisCallback<Properties>) RedisServerCommands::info);
+    Long dbSize = stringRedisTemplate.execute(RedisServerCommands::dbSize);
+    Properties commandStats = stringRedisTemplate.execute((
+        RedisCallback<Properties>) connection -> connection.info("commandstats"));
+    assert commandStats != null; // 断言，避免警告
+    // 拼接结果返回
+    return success(RedisConvert.INSTANCE.build(info, dbSize, commandStats));
+}
+```
+
+
+
 
 
 ## Springboot session使用
@@ -2954,8 +2974,12 @@ https://www.jianshu.com/p/5858b2a9b509
   #命令
   npm config set registry http://registry.npm.taobao.org
   npm config get registry
+  
+  # 安装 pnpm
+  npm install -g pnpm
+  #pnpm可以替代npm的命令，下载包之类的效率更高
   ```
-
+  
   
 
 ##### nrm的使用
@@ -3011,10 +3035,12 @@ $ npm config set registry http://registry.npm.taobao.org
 #### 创建一个新项目
 
 ```
-npm install -g @vue/cli
+npm install -g @vue/cli  ## 先安装vue
+
+vue --version   输出 5.0.8
+npm -v  输出6.14.14
+node -v 输出v14.17.4
 ```
-
-
 
 * **vue init**
 
@@ -3027,7 +3053,8 @@ webpack是官方推荐的标准模板名
 electron-vue的模板(github上的项目)
 使用方式：vue init simulatedgreg/electron-vue 项目名称
 
-
+ #安装element-ui
+ cnpm i element-ui -S
 ```
 
 * vue create
@@ -3045,6 +3072,12 @@ $ cnpm install
 $ cnpm run dev
  DONE  Compiled successfully in 4388ms
 ```
+
+Vue十个常用的js工具库
+
+方法可自封装utils
+
+https://zhuanlan.zhihu.com/p/458319047?utm_id=0
 
 ### vue解决缓存问题
 
@@ -3208,7 +3241,18 @@ var detail = new Vue({
 })
 ```
 
+##### Vue使用mixins配置公用属性和方法
+
 ##### Vue使用draggable实现拖拽
+
+##### Vue使用cloneDeep深拷贝
+
+```vue
+单级多级均为深拷贝，使用lodash工具中cloneDeep方法实现深拷贝，需要通过npm引入lodash库
+npm i -save lodash //全局安装
+```
+
+
 
 ##### Vue使用goJs实现绘制流程图
 
@@ -3392,6 +3436,21 @@ props:{
 }
 ```
 
+##### vue动态组件
+
+```vue
+核心代码
+<component :is="componentTag"></component>
+
+data() {
+    return {
+        componentTag: '',
+    }
+},
+```
+
+
+
 ##### 全局自定义组件、指令
 
 ```js
@@ -3435,7 +3494,9 @@ import pre from '@/aiqi'
 Vue.use(pre)
 ```
 
+##### 自定义插件开发
 
+* 若依 dicts: ['status']
 
 #### this.$的调用参数或方法
 
@@ -3498,6 +3559,18 @@ export default new Vuex.Store({
   ```
 
   
+
+#### this.$nextTick() 
+
+例如：
+ 1.你改变了dom元素数据，然后你又想输出dom，那你只能等到dom更新完成之后才会实现.
+ 2.通过事件改变data数据，然后输出dom，在方法里直接打印的话， 由于dom元素还没有更新， 因此打印出来的还是未改变之前的值，而通过this.$nextTick()获取到的值为dom更新之后的值.
+
+```js
+this.$nextTick(function(){
+    console.log("methods22",this.$refs["hello"].innerText)
+})
+```
 
 
 
@@ -7471,7 +7544,7 @@ mvn dependency:tree -U -f notary-cloud-provider-order/pom.xml
 ```xml
 Maven Release Plugin插件
 1 设置新的版本号
-mvn versions:set -DnewVersion=3.2.11.1-SNAPSHOT
+mvn versions:set -DnewVersion=1.0.3-SNAPSHOT
 2 撤销设置
 mvn versions:revert
 3 提交设置
@@ -8013,25 +8086,62 @@ src/main/java下的默认只打包java文件，如果想打包xml文件，则加
         <resource>    
             <!-- 设定主资源目录  -->    
             <directory>src/main/java</directory>    
-
             <!-- maven default生命周期，process-resources阶段执行maven-resources-plugin插件的resources目标处理主资源目下的资源文件时，只处理如下配置中包含的资源类型 -->     
             <includes>
                 <include>**/*.xml</include>
             </includes>  
-
             <!-- maven default生命周期，process-resources阶段执行maven-resources-plugin插件的resources目标处理主资源目下的资源文件时，不处理如下配置中包含的资源类型（剔除下如下配置中包含的资源类型）-->      
             <excludes>  
                 <exclude>**/*.yaml</exclude>  
             </excludes>  
 <!-- maven default生命周期，process-resources阶段执行maven-resources-plugin插件的resources目标处理主资源目下的资源文件时，指定处理后的资源文件输出目录，默认是${build.outputDirectory}指定的目录-->      
             <!--<targetPath>${build.outputDirectory}</targetPath> -->      
-
             <!-- maven default生命周期，process-resources阶段执行maven-resources-plugin插件的resources目标处理主资源目下的资源文件时，是否对主资源目录开启资源过滤 -->    
             <filtering>true</filtering>     
         </resource>  			
     </resources> 	
 </build>
 ```
+
+##### demo例子
+
+```xml
+ <build>
+     <finalName>${project.name}</finalName>
+     <resources>
+         <resource>
+             <directory>src/main/resources</directory>
+             <filtering>true</filtering>
+         </resource>
+     </resources>
+
+     <pluginManagement>
+         <plugins>
+             <plugin>
+                 <groupId>org.springframework.boot</groupId>
+                 <artifactId>spring-boot-maven-plugin</artifactId>
+                 <version>2.5.4</version>
+             </plugin>
+         </plugins>
+     </pluginManagement>
+
+     <plugins>
+         <plugin>
+             <groupId>org.apache.maven.plugins</groupId>
+             <artifactId>maven-compiler-plugin</artifactId>
+             <version>${maven-compiler.version:##3.8.1}</version>
+             <configuration>
+                 <source>${java.version}</source>
+                 <target>${java.version}</target>
+                 <encoding>${project.build.sourceEncoding}</encoding>
+                 <skip>true</skip>
+             </configuration>
+         </plugin>
+     </plugins>
+</build>
+```
+
+
 
 ##### 默认resources目录下的文件都会被打包
 
@@ -8243,6 +8353,44 @@ apache-rat-plugin    对授权文件的校验审核工具。
 maven-antrun-plugin  可以在Maven执行时,额外执行Ant脚本
 maven-compiler-plugin 编译Java源码的插件。
 maven-javadoc-plugin  javadoc 生成
+maven-source-plugin  源码打包
+
+```
+
+```xml
+<!-- 开源的意义 打包生成源码和doc -->
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>3.2.1</version>
+            <executions>
+                <execution>
+                    <id>attach-sources</id>
+                    <phase>verify</phase>
+                    <goals>
+                        <goal>jar-no-fork</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+        <!-- Javadoc -->
+      <!--<plugin>-->
+        <!--<groupId>org.apache.maven.plugins</groupId>-->
+        <!--<artifactId>maven-javadoc-plugin</artifactId>-->
+        <!--<version>3.2.1</version>-->
+        <!--<executions>-->
+          <!--<execution>-->
+            <!--<phase>package</phase>-->
+            <!--<goals>-->
+              <!--<goal>jar</goal>-->
+            <!--</goals>-->
+          <!--</execution>-->
+        <!--</executions>-->
+      <!--</plugin>-->
+    </plugins>
+</build>
 ```
 
 
@@ -8350,6 +8498,7 @@ FROM registry.k8s.ing:5000/notarycloud/notary-cloud-image-prometheus-openjdk
 ADD target/${project.artifactId}-${project.version}.${project.packaging} ${project.artifactId}.${project.packaging}
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime; echo "Asia/Shanghai" > /etc/timezone
 EXPOSE 8080
+
 EXPOSE 1234
 ENTRYPOINT java -javaagent:/prometheus/${jmx_prometheus_javaagent.name}=1234:/prometheus/jmx_exporter.yaml -jar  -Xmx1024m -Dspring.profiles.active=${PROFILES_ACTIVE} -Dserver.port=8080 ${project.artifactId}.${project.packaging}
 ```
@@ -8727,6 +8876,8 @@ https://www.jianshu.com/p/f1167e8850cd
 
 https://testerhome.com/wiki/pipelinedoccn
 
+https://mp.weixin.qq.com/s/QmviWlPR_vVK_8Hy4Vwu6w
+
 ```groovy
 pipeline{
     agent any  //全局必须带有agent表明此pipeline执行节点
@@ -9079,6 +9230,14 @@ stage节为具体的pipeline步骤
 
 # kubectl常用示例
 
+#### kubectl explain ... 命令查看配置文件
+
+```shell
+kubectl explain --help
+```
+
+
+
 k8s用于容器化应用程序的部署、扩展和管理
 k8s提供了容器编排、资源调度、弹性伸缩、部署管理、服务发现等一系列功能
 k8s的目标是让部署容器化应用简单高效
@@ -9162,7 +9321,7 @@ spec:
 
 ## K8s部署springcloud的学习
 
-### deploy配置
+### deploy.yml配置
 
 ```yaml
 #deploy
@@ -9248,6 +9407,49 @@ OS name: "linux", version: "3.10.0-957.el7.x86_64", arch: "amd64", family: "unix
   <url>http://maven.aliyun.com/nexus/content/groups/public</url>
 </mirror>
 ```
+
+### 高级存储pv.yml
+
+```yaml
+# cat pv.yaml 
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: tomcat-jcsj-data
+spec:
+  capacity: #存储能力，目前只支持存储空间的设置
+    storage: 5Gi 
+  accessModes: #访问模式ReadWrite读写 ReadOnlyMany 只读ReadWriteMany 读写(可以多节点)
+  - ReadWriteMany 
+  nfs: #存储类型，与底层真正存储戏
+    path: /home/tomcat_jcsj
+    server: 192.168.115.6
+  persistentVolumeReclaimPolicy: Recycle #回收策略Retain（保留）Recycle (回收）Delete (删除）
+ 
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: tomcat-jcsj-data
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+```
+
+```shell
+#创建pv
+kubectl create -f pv.yml
+# 查看pv
+kubectl get pv -o wide
+```
+
+
+
+
 
 ### Dockerfile例子
 
@@ -10349,6 +10551,8 @@ public FilterRegistrationBean filterRegistrationBean(@Qualifier("sitemesh3")WebS
 
 #### 3、swagger和gateway的聚合多服务swagger
 
+https://zhuanlan.zhihu.com/p/400091887?utm_id=0 仿造的ruoyi系统？
+
 
 
 
@@ -10477,6 +10681,10 @@ git checkout -- aaa.html
 
 * 与 搜索引擎Elasticsearch 合作, logstash
 * 日志可视化工具
+
+### logstash收集日志
+
+* https://gitee.com/beijing_hongye_huicheng/lilishop-spring-learning/tree/master/elk
 
 ## CodeMirror使用小结
 
@@ -10789,11 +10997,15 @@ onlyOffice开源文档编辑器  [kkFileView](https://gitee.com/kekingcn/file-on
 
 **Linux：**Nginx、Docker、Kubernetes、Jenkins、kibana、elasticsearch、fastDFS、Portainer(docker管理工具)
 
+```
+Harbor 封装了Docker的registry v2，帮用户提供了许多便捷管理的特性，方便用户操作
+```
+
 **代码管理：** SVNtortoise、Git、GitLable、私服Nexus
 
+**图片或视频水印**： FFmpeg
 
-
-思维导图软件：XMind， GitMind
+**思维导图软件**：XMind， GitMind
 
 
 
@@ -10805,11 +11017,14 @@ Typora的破解下载地址： https://dyyidc.jb51.net/202112/tools/typorapj_jb5
 
 
 
-* hutool开源地址：https://github.com/dromara/hutool   https://gitee.com/dromara/hutool
-
  
 
 **内网穿透**
 
 * uTools: https://res.u-tools.cn/version2/uTools-2.6.3.exe
 * 花生壳 需要实名验证
+* https://natapp.cn/tunnel/edit/06r7nw7qpd   netapp内外穿透
+
+
+
+vercel官网 ： https://vercel.com/login 作用是可以部署github上的项目，待研究
