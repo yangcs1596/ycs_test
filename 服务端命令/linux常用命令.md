@@ -98,13 +98,161 @@ ps aux|head -1;ps aux|grep -v PID|sort -rn -k 3|head
 ps aux|head -1;ps aux|grep -v PID|sort -rn -k 4|head
 ```
 
+### Linux 用户操作
 
+```shell
+### 
+#切换用户命令
+su - username #切换后则完全切换到了目标用户的环境
+su username   #切换后的环境变量大部分还是切换前用户的环境
+```
+
+**文件位置：**
+
+* /etc/passwd ：保存用户名称、宿主目录、登录shell等基本信息
+
+* /etc/shadow ：保存用户的账号、密码等有效信息
+
+- /etc/group —— 管理用户组相关信息
+- /etc/gshadow —— 管理用户组管理员相关信息
+
+```shell
+## /etc/passwd
+示例： head -5 /etc/passwd**
+账号名称 : 密码 : UID : GID : 用户信息说明列 : 主文件夹 : shell
+root : x : 0 : 0 : root : /root : /bin/bash
+【/bin/bash】说明：登录Shell信息（/bin/bash为可登录系统，/sbin/nologin和bin/false为禁用户登录系统)
+
+## /etc/shadow 参数说明
+账号名称 : 密码 : 最近改动密码的日期 : 密码不可被改变的天数 : 密码需要重新更改的天数 : 更改提醒天数 : 密码过期后账号的宽限时间 : 账号失效日期 : 保留
+root : (字符串，此处打码) : 200 : 0 : 99999 : 7 : : :
+
+## /etc/group
+用户组名称 : 用户组密码 : GID : 此用户组包含的账号名称
+
+root : x : 0 : root
+## /etc/gshadow
+用户组名 : 密码 : 用户组管理员账号 : 该用户组包含的账号名称
+root : : : root
+```
+
+#### 新增用户 useradd
+
+https://zhuanlan.zhihu.com/p/105482468
+
+```shell
+# useradd [options] [username]
+# passwd [options] [username] 重设密码
+# adduser， useradd 默认不在 /home 下创建用户同名的主文件夹，而 adduser 默认创建
+```
+
+#### 文件权限chmod
+
+```shell
+语法：chmod [OPTION]... MODE[,MODE]... FILE...
+其中的命令选项说明如下：
+操作对象：
+    u：用户user，表示文件或目录所有者
+    g：用户组group，表示文件或目录所属组
+    o：其他用户other
+    a：所有用户all
+操作符：
+    +：添加权限
+    -：减少权限
+    =：给定特定权限
+赋予的权限：
+    r：读权限
+    w：写权限
+    x：执行权限
+    
+## 示例 将shell脚本变成可执行文件
+chmod +x 文件名
+ 
+```
+
+#### 文件所属组chown
+
+* 只允许root管理员
+
+```shell
+语法：chown [OPTION]... [OWNER][:[GROUP]] FILE...
+其中的命令选项说明如下：
+    -c : 显示更改的部分的信息
+    -f : 忽略错误信息
+    -h :修复符号链接
+    -v : 显示详细的处理信息
+    -R : 处理指定目录以及其子目录下的所有文件
+ 
+chown [-cfhvR] [--help] [--version] user[:group] file...
+    -c : 显示更改的部分的信息
+    -f : 忽略错误信息
+    -h : 修复符号链接
+    -v : 显示详细的处理信息
+    -R : 处理指定目录以及其子目录下的所有文件
+    --help : 显示辅助说明
+    --version : 显示版本
+```
+
+* 示例 文件权限操作
+
+```shell
+用法：chown 【选项】 用户【：用户组】 file
+   
+将test.java 文件所属的用户设置成 yangyuanliang
+chown yangyuanliang test.php
+     
+
+将test.java 文件的所属用户设置成yangyuanliang，所属用户组设置成staff   
+chown yangyuanliang:staff test.php
+
+ 
+将test 及其内部文件所属用户设置成yangyuanliang，所属用户组设置成staff
+chown -R yangyuanliang:staff  test/
+```
+
+#### 修改文件属组chgrp
+
+* 只允许root管理员
+
+```shell
+语法：chgrp [OPTION]... GROUP FILE...
+其中的命令选项说明如下：
+-v：显示指令执行过程
+-c：效果类似“-v”参数，但是只回报更改的部分
+-f：不显示错误信息
+-h：只修改符号连接的文件，而不对其他任何相关文件进行变动
+-R：递归处理，即将指定目录下的所有文件及子目录一并处理
+根据配置场景更改文件所属群组。
+-c或--changes 效果类似"-v"参数，但仅回报更改的部分。
+-f或--quiet或--silent 　不显示错误信息。
+-h或--no-dereference 　只对符号连接的文件作修改，而不更动其他任何相关文件。
+-R或--recursive 　递归处理，将指定目录下的所有文件及子目录一并处理。
+-v或--verbose 　显示指令执行过程。
+--help 　在线帮助。
+--reference=<参考文件或目录> 　把指定文件或目录的所属群组全部设成和参考文件或目录的所属群组相同。
+--version 　显示版本信息。
+```
+
+
+
+```
+#更改权限
+chgrp  用户名组  文件名  -R
+切换所在组
+chown 用户名组  文件名  
+```
 
 
 
 ## Linux在任意目录下执行指定的脚本
 
 ### 安装jdk
+
+### 环境变量
+
+```shell
+env 查看所有变量
+```
 
 ```shell
 ## /etc/profile 配置java和maven环境
@@ -153,27 +301,6 @@ chmod +x 文件名
 vim /etc/hosts
 #生效
 sudo /etc/init.d/networking restart
-```
-
-
-
-
-
-### 文件权限操作
-
-```shell
-用法：chown 【选项】 用户【：用户组】 file
-   
-将test.java 文件所属的用户设置成 yangyuanliang
-chown yangyuanliang test.php
-     
-
-将test.java 文件的所属用户设置成yangyuanliang，所属用户组设置成staff   
-chown yangyuanliang:staff test.php
-
- 
-将test 及其内部文件所属用户设置成yangyuanliang，所属用户组设置成staff
-chown -R yangyuanliang:staff  test/
 ```
 
 
@@ -256,9 +383,7 @@ rm -rf '文件夹'
 　-v或–verbose 　显示指令执行过程。 删除文件 不给出提示
 rm -rf * 删除当前目录的所有文件
 
-#切换用户命令
-su - username #切换后则完全切换到了目标用户的环境
-su username   #切换后的环境变量大部分还是切换前用户的环境
+
 .tar
 打包语法：tar cvf newFileName.tar fileName || dirName 
 解包语法：tar xvf newFileName.tar fileName（-C dirName）
@@ -297,12 +422,7 @@ su username   #切换后的环境变量大部分还是切换前用户的环境
     -0  这个是阿拉伯数字，只打包不压缩的意思
 ```
 
-```
-#更改权限
-chgrp  用户名  文件名  -R
-切换所在组
-chown 用户名  文件名  
-```
+
 
 ```
 #重命名
@@ -652,31 +772,34 @@ service firewalld start      #开启防火墙
 先用：systemctl unmask firewalld.service 
 然后：systemctl start firewalld.service 
 ####查看对外开放的端口状态
-netstat  -ntulp                #查询开放的所有端口
-netstat  -ntulp | grep 8080    #查询8080端口是否开放
+netstat  -ntulp                #查询端口使用情况
+netstat  -ntulp | grep 8080    #查询8080端口
+
+firewall-cmd --zone=public --list-ports #查询防火墙开放的所有端口
+firewall-cmd --list-all   # 查看防火墙规则
 ####对外开发端口
 firewall-cmd --query-port=6379/tcp               #查看6379端口是否已开
 firewall-cmd --add-port=123/tcp --permanent      #添加指定需要开放的端口123
 firewall-cmd --query-port=123/tcp                #查询指定端口123是否开启成功
 firewall-cmd --permanent --remove-port=123/tcp   #移除指定端口123
 firewall-cmd --reload                            #重载入添加的端口
-————————————————
-版权声明：本文为CSDN博主「wuxl570」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
-原文链接：https://blog.csdn.net/qq_40598817/article/details/125693571
-###开放端口
-firewall-cmd --zone=public --add-port=2181/tcp --permanent #网页端口
-firewall-cmd --zone=public --add-port=5672/tcp --permanent  #AMQP端口,java使用
+———————————————— 
 firewall-cmd --reload # 重新加载
-//关闭某个端口
-"sudo iptables -A INPUT -p tcp --dport $PORT -j DROP"
-"sudo iptables -A OUTPUT -p tcp --dport $PORT -j DROP" 
-//linux或者
-/sbin/iptables -I INPUT -p tcp --dport 9092 -j ACCEPT  
-/sbin/iptables -I INPUT -p tcp --dport 15672 -j ACCEPT
-备注一下
-/sbin/iptables -I INPUT -p tcp --dport 8011 -j ACCEPT #开启8011端口 
+
+#### iptables
+sudo iptables -nL --line-number                               #查看
+sudo iptables -D INPUT 5                      #根据行号删除某个规则，注意 INPUT为规则名称(chain INPUT)
+sudo iptables -D OUTPUT -p tcp --dport 443 -j ACCEPT          #删除
+"sudo iptables -A INPUT -p tcp --dport $PORT -j DROP"         #关闭某个端口
+"sudo iptables -A OUTPUT -p tcp --dport $PORT -j DROP"        #关闭某个端口
+sudo iptables -I INPUT -p tcp --dport 8011 -j ACCEPT         #开启8011端口
+
+iptables -A OUTPUT -s 192.168.88.94 -p tcp -m tcp --dport 15674 -j ACCEPT  #指定ip
+iptables -R TEST_CHAIN 1  -s 10.0.0.12 -p tcp -m multiport  --dports 80,443,8080 -j REJECT #替换
+#multiport可以指定多个端口，最多15个
+
 /etc/rc.d/init.d/iptables save #保存配置 
-/etc/rc.d/init.d/iptables restart #重启服务 
+sudo iptables restart #重启服务 
 
 ###查看防火墙端口号
 1、lsof -i:端口号
@@ -696,8 +819,7 @@ service iptables status
 启动指令:service iptables start   
 重启指令:service iptables restart   
 关闭指令:service iptables stop 
-
-iptables -A OUTPUT -s 192.168.88.94 -p tcp -m tcp --sport 15674 -j ACCEPT 
+ 
 
 
 也可以直接编辑配置文件，添加iptables防火墙规则：
@@ -1377,6 +1499,14 @@ xargs处理的优先级或顺序了：先分割，再分批，然后传递到参
 如何分割（xargs、xargs -d、xargs -0）
 如何划批（xargs -n、xargs -L）
 参数如何传递（xargs -i）
+```
+
+### 15、Ansible 
+
+在 多台 Linux 上自动执行重复性任务
+
+```shell
+Ansible是当下比较流行的自动化运维工具，可通过SSH协议对远程服务器进行集中化的配置管理、应用部署等，常结合Jenkins来实现自动化部署。
 ```
 
 

@@ -3578,13 +3578,15 @@ Docker Compose version v2.6.0
 
 ### 1）、镜像操作
 
-| 操作 | 命令                                            | 说明                                                         |
-| ---- | ----------------------------------------------- | ------------------------------------------------------------ |
-| 检索 | docker  search 关键字  eg：docker  search redis | 我们经常去docker  hub上检索镜像的详细信息，如镜像的TAG。     |
-| 拉取 | docker pull 镜像名:tag                          | :tag是可选的，tag表示标签，多为软件的版本，默认是latest      |
-| 列表 | docker images  \| grep  镜像名                  | 查看所有本地镜像                                             |
-| 删除 | docker rmi image-id                             | 删除指定的本地镜像                                           |
-| 批量 | 删除所有<none>镜像                              | docker images \| grep none\| awk '{print $3}' \|xargs docker rmi |
+| 操作 | 命令                                            | 说明                                                     |
+| ---- | ----------------------------------------------- | -------------------------------------------------------- |
+| 检索 | docker  search 关键字  eg：docker  search redis | 我们经常去docker  hub上检索镜像的详细信息，如镜像的TAG。 |
+| 拉取 | docker pull 镜像名:tag                          | :tag是可选的，tag表示标签，多为软件的版本，默认是latest  |
+| 列表 | docker images  \| grep  镜像名                  | 查看所有本地镜像                                         |
+| 删除 | docker rmi image-id                             | 删除指定的本地镜像                                       |
+|      |                                                 |                                                          |
+
+删除所有<none>镜像  :  docker images | grep none| awk '{print $3}' |xargs docker rmi
 
 https://hub.docker.com/
 
@@ -3630,6 +3632,29 @@ docker info #查看docker信息确认仓库是否添加
 #将本地镜像打上标签
 docker tag tomcat bxy-registry:5000/tomcat:v1 　　#tag操作
 docker push bxy-registry:5000/tomcat:v1　　　　    #推送镜像
+```
+
+#### 1-1）daemon.json的配置
+
+参考 https://www.jianshu.com/p/3d1878f857eb
+
+```json
+{
+    "registry-mirrors": [
+        "http://hub-mirror.c.163.com",
+        "https://docker.mirrors.ustc.edu.cn",
+        "https://registry.docker-cn.com"
+    ],
+    // "insecure-registries": ["120.123.122.123:12312"], # ———————设置私有仓库地址可以设为http
+    // "iptables": false, # ————————启用iptables规则添加（默认为true）
+    //====配置容器的日志大小 ====
+    //max-size=50m，意味着一个容器日志大小上限是50M，max-file=3，意味着一个容器有三个日志，分别是id+.json、id+1.json、id+2.json。 查看所有容器日志大小命令 sudo find /var/lib/docker/containers/ -name *-json.log |xargs du -sh
+    "log-driver":"json-file",
+    //"log-level":"", # ——————设置日志记录级别（"调试"，"信息"，"警告"，"错误"，"致命"）（默认为"信息"）
+    "log-opts":{
+        "max-size" :"50m","max-file":"1"
+    }
+}
 ```
 
 
@@ -4027,7 +4052,7 @@ docker run -d -v nginx:/etc/nginx -p 80:80 --name nginx nginx:1.14
 6)、dockerfile例子
 
 ```dockerfile
-FROM openjdk:8-jdk-alpine
+FROM openjdk:8-jdk-alpine  #或者FROM openjdk:8-jre-slim
 VOLUME /tmp
 ADD weixin-java-mp-demo-springboot-1.0.0-SNAPSHOT.jar app.jar
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
@@ -4037,7 +4062,7 @@ ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
 ### 5-1 docker镜像容器增加字体
 
 ```yaml
-Dockerfile文件
+Dockerfile文件  解决导出失败问题
 # 添加字体
 RUN apk add --update font-adobe-100dpi ttf-dejavu fontconfig
 
@@ -4060,6 +4085,10 @@ RUN chmod 777 /usr/share/fonts/win/yahei.ttf  \
 删除网络： docker network rm <NETWORK ID>|<NAME>
 
 桥接：容器IP变动的时候可以通过网络名称访问，而不受影响
+
+把docker0网卡添加到trusted域
+firewall-cmd --permanent --zone=trusted --change-interface=docker0
+firewall-cmd --reload
 ```
 
 
@@ -4324,6 +4353,81 @@ show master status;
 
 ![在这里插入图片描述](./image/canal-config.png)
 
+```
+canal.instance.filter.regex常用配置
+1、所有表： .*或者.*\\..*
+2、canal库下的所有表： canal\\..*
+3、canal下的以canal开头的表： canal\\.canal.*
+4、canal下的一张表：canal.test
+5、多个规则组合 【使用逗号分隔】
+
+```
+
+
+
+#### 安装canal-admin
+
+- zoo.cfg 配置文件
+
+```cfg
+dataDir=/data
+dataLogDir=/datalog
+tickTime=2000
+initLimit=5
+syncLimit=2
+autopurge.snapRetainCount=3
+autopurge.purgeInterval=0
+maxClientCnxns=60
+standaloneEnabled=true
+admin.enableServer=true
+server.1=zk1:2888:3888;2181
+```
+
+```yaml
+version: "3.1"
+services:
+  canal-admin:
+    image: "canal/canal-admin:v1.1.5"
+    privileged: true
+    restart: always
+    container_name: canal-admin
+    environment:
+      - TZ=Asia/Shanghai
+      - server.port=8089
+      - canal.adminUser=admin
+      - canal.adminPasswd=123456
+    ports:
+      - "8089:8089"
+```
+
+#### 安装zookeeper
+
+```yaml
+version: '3'
+services:
+  zk1:
+    image: zookeeper:3.6
+    restart: always
+    container_name: zk1
+    hostname: zk1
+    # 给docker容器给超级权限，访问宿主机目录
+    privileged: true
+    ports:
+      - 2181:2181
+      - 2888:2888
+      - 3888:3888
+    environment:
+      # 当前zk实例的id
+      ZOO_MY_ID: 1
+      # 整个zk集群的机器端口列表（2181：对client端提供服务的端口，3888：选举leader使用，2888：集群内机器通讯使用（Leader监听此端口））
+    volumes:
+      - '/docker/zookeeper/data:/data'
+      - '/docker/zookeeper/datalog:/datalog'
+      - '/docker/zookeeper/conf:/conf'
+```
+
+
+
 ### 6-4 安装elasticsearch
 
 ```yaml
@@ -4345,7 +4449,7 @@ services:
     environment:
       - "discovery.type=single-node"
       - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
-     # 配置认证权限
+     # 配置认证权限 用户名默认是elastic
      # - "ELASTIC_PASSWORD=Ns8shp4i6wZViAzFA6u7"
      # - "xpack.security.enabled=true"
 
@@ -4609,7 +4713,7 @@ services:
       - /opt/filebeat/data:/usr/share/filebeat/data
       # 映射配置文件到容器中 配置项
       - /opt/filebeat/conf/filebeat.yml:/usr/share/filebeat/filebeat.yml
-    # 使用主机网络模式
+    # 使用主机网络模式、默认是桥接bridge
     network_mode: host
 ```
 
@@ -4731,6 +4835,16 @@ services:
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_general_ci
       --explicit_defaults_for_timestamp=true
+      //其它一些配置、可以参考本文件下的my.ini
+      --server_id=100 #主站ID
+      --log-bin=/var/lib/mysql/mysql-bin #开启binlog的文件名
+      --sync_binlog=1
+      --binlog-ignore-db=mysql
+      --binlog_format=ROW # binlog格式为ROW
+      --expire_logs_days=7 # binlog文件存活时间
+      --explicit_defaults_for_timestamp=true
+      --lower_case_table_names=1
+      --sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
 ```
 
 **配置允许远程连接**
@@ -4771,6 +4885,23 @@ services:
       - ./wwwroot:/usr/share/nginx/wwwroot
 
 ```
+
+#### 6-8-1 安装tengine
+
+```yaml
+version: '3'
+services:
+  tengine:
+    image: nginxinc/nginx-unprivileged:stable-alpine #可以自己指定
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./html:/usr/share/nginx/html
+```
+
+
 
 ### 6-9 安装redis
 
@@ -5039,10 +5170,10 @@ Docker run -it --network test-network --network-alias a a
 Docker run -it --network test-network --network-alias b b
 ```
 
-### 6-13 打包一个springboot服务 容器化
+### 6-13 打包一个springboot服务 容器化Dockerfile
 
 ```dockerfile
-FROM openjdk:8-jdk-alpine
+FROM openjdk:8-jdk-alpine  #FROM openjdk:8-jre-slim   实测alpine的包更小
 ADD lzmh-search.jar /usr/local/docker/service/search/
 WORKDIR /usr/local/docker/service/search
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
@@ -5056,7 +5187,7 @@ services:
   lzmh-search:
     container_name: lzmh-search
     image: lzmh-search
-    network_mode: host
+    network_mode: host   #host会共用宿主机ip和port, 此时ports会无效
     build:
       context: ./
       dockerfile: dockerfile
@@ -5205,6 +5336,238 @@ services:
 
 ```
 
+### 6-17 安装minio
+
+minio 历史版本下载地址：https://dl.min.io/server/minio/release/
+
+简单的单机部署
+
+```yaml
+version: "3.8"
+
+services:
+  minio:
+  # image: minio/minio:RELEASE.2021-06-17T00-10-46Z  #旧版本和新版本控制台区别比较大，旧版本简洁点
+    image: minio/minio:RELEASE.2022-08-02T23-59-16Z
+    container_name: lzmh-cloud-minio
+    privileged: true
+    restart: always
+  # command: server /data   #旧版本操作
+    command: server --address ":9000" --console-address ":9001" /data
+    # --address是上传访问api端口，默认9000  --console-address是浏览器页面访问端口， 默认9000
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - ./minio/data:/data
+      - ./minio/config:/root/.minio
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=admin123456
+```
+
+* minio集群部署
+
+https://zhuanlan.zhihu.com/p/642751868
+
+```yaml
+version: '3.7'
+
+# 所有容器通用的设置和配置
+x-minio-common: &minio-common
+  image: minio/minio:RELEASE.2022-08-02T23-59-16Z
+  command: server --console-address ":9001" http://minio{1...4}/data
+  expose:
+    - "9000"
+  # environment:
+    # MINIO_ROOT_USER: minioadmin
+    # MINIO_ROOT_PASSWORD: minioadmin
+  healthcheck:
+    test: ["CMD", "curl", "-f", "http://192.168.10.106:9000/minio/health/live"]
+    interval: 30s
+    timeout: 20s
+    retries: 3
+
+# 启动4个docker容器运行minio服务器实例
+# 使用nginx反向代理9000端口，负载均衡, 你可以通过9001、9002、9003、9004端口访问它们的web console
+services:
+  minio1:
+    <<: *minio-common
+    hostname: minio1
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./data/data1:/data
+
+  minio2:
+    <<: *minio-common
+    hostname: minio2
+    ports:
+      - "9002:9001"
+    volumes:
+      - ./data/data2:/data
+
+  minio3:
+    <<: *minio-common
+    hostname: minio3
+    ports:
+      - "9003:9001"
+    volumes:
+      - ./data/data3:/data
+
+  minio4:
+    <<: *minio-common
+    hostname: minio4
+    ports:
+      - "9004:9001"
+    volumes:
+      - ./data/data4:/data
+
+  nginx:
+    image: nginx:1.19.2-alpine
+    hostname: nginx
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "9000:9000"
+    depends_on:
+      - minio1
+      - minio2
+      - minio3
+      - minio4
+```
+
+###### minio集群部署的nginx.conf
+
+```nginx
+user  nginx;
+worker_processes  auto;
+
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+
+events {
+    worker_connections  4096;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+    sendfile        on;
+    keepalive_timeout  65;
+
+    # include /etc/nginx/conf.d/*.conf;
+
+    upstream minio {
+        server minio1:9000;
+        server minio2:9000;
+        server minio3:9000;
+        server minio4:9000;
+    }
+
+    server {
+        listen       9000;
+        listen  [::]:9000;
+        server_name  192.168.10.106;
+
+        # To allow special characters in headers
+        ignore_invalid_headers off;
+        # Allow any size file to be uploaded.
+        # Set to a value such as 1000m; to restrict file size to a specific value
+        client_max_body_size 0;
+        # To disable buffering
+        proxy_buffering off;
+
+        location / {
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+            proxy_connect_timeout 300;
+            # Default is HTTP/1, keepalive is only enabled in HTTP/1.1
+            proxy_http_version 1.1;
+            proxy_set_header Connection "";
+            chunked_transfer_encoding off;
+
+            proxy_pass http://minio;
+        }
+    }
+
+}
+```
+
+### 6.18 安装seata-server
+
+```yml
+version: "3.5"
+
+services:
+  mall4cloud-seata:
+    image: seataio/seata-server:1.6.1
+    container_name: mall4cloud-seata
+    restart: always
+    #depends_on:
+    #  - mall4cloud-mysql
+    #  - mall4cloud-nacos
+    ports:
+      - 8091:8091
+      - 7091:7091
+    environment:
+      - SEATA_IP=192.168.1.46
+    volumes:
+      - ./seata/application.yml:/seata-server/resources/application.yml
+```
+
+```yml
+#application.yml
+server:
+  port: 7091
+
+console:
+  user:
+    username: seata
+    password: seata
+
+seata:
+  config:
+    # support: nacos, consul, apollo, zk, etcd3
+    type: nacos
+    nacos:
+      server-addr: 192.168.1.46:8848
+      namespace: 4b70485d-72dd-44df-a76a-7a3f578a3001
+      group: SEATA_GROUP
+      username: nacos
+      password: nacos
+  registry:
+    # support: nacos, eureka, redis, zk, consul, etcd3, sofa
+    type: nacos
+    nacos:
+      application: seata-server
+      server-addr: 192.168.1.46:8848
+      group: SEATA_GROUP
+      cluster: default
+      namespace: 4b70485d-72dd-44df-a76a-7a3f578a3001
+      username: nacos
+      password: nacos
+  #  server:
+  #    service-port: 8091 #If not configured, the default is '${server.port} + 1000'
+  security:
+    secretKey: SeataSecretKey0c382ef121d778043159209298fd40bf3850a017
+    tokenValidityInMilliseconds: 1800000
+    ignore:
+      urls: /,/**/*.css,/**/*.js,/**/*.html,/**/*.map,/**/*.svg,/**/*.png,/**/*.ico,/console-fe/public/**,/api/v1/auth/login
+
+```
+
+
+
 
 
 ## 7、集运centos构建镜像
@@ -5219,6 +5582,29 @@ ENV CLASS_PATH=:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:$JAVA_HOME/jre/li
 ```
 
 ### 
+
+## Portainer.io远程 
+
+docker 可视化界面管理工具
+
+```shell
+# 远程机 
+1. 编辑docker.service
+vim /usr/lib/systemd/system/docker.service
+找到 ExecStart字段修改如下
+ExecStart=/usr/bin/dockerd-current -H tcp://0.0.0.0:2375 -H unix://var/run/docker.sock 
+
+2.重启docker重新读取配置文件，重新启动docker服务
+systemctl daemon-reload
+systemctl restart docker
+3. 开放防火墙端口
+firewall-cmd --zone=public --add-port=6379/tcp --permanent
+ 
+4.刷新防火墙
+firewall-cmd --reload
+ 
+5.再次配置远程docker就可以了
+```
 
 
 

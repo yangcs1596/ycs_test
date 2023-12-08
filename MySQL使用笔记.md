@@ -35,7 +35,7 @@
 
 ## my.ini配置
 
-### mysql日志记录慢查询
+## mysql日志记录慢查询
 
 my.ini配置
 
@@ -91,8 +91,16 @@ default-character-set=utf8mb4
 #一、配置的方式是永久开启
 log-slow-queries=/data/mysql/mysql-slow.log
 long_query_time=1
-
 #所有执行时间超过1秒的sql都将被记录到慢查询文件中（我这里就是 /data/mysql/mysql-slow.log
+#其它config..
+slow_query_log = 1                                            #开启慢查询日志
+slow_query_log_file = /mydata/3306/log/mysql.slow.log     #慢查询日志文件目录
+log_queries_not_using_indexes = 1                           #开启记录未使用索引的SQL
+log_slow_admin_statements = 1                               #开启记录管理语句
+log_slow_slave_statements = 1                               #开启主从复制中从库的慢查询
+log_throttle_queries_not_using_indexes = 10  #限制每分钟写入慢日志的未用索引的SQL的数量
+long_query_time = 2                                         #定义慢查询的SQL执行时长
+min_examined_row_limit = 100                  #该SQL检索的行数小于100则不会记录到慢日志
 
 #二、临时开启的命令
 #1、开启
@@ -426,6 +434,12 @@ show index from tableName
 truncate table 表名
 ```
 
+###### 1-1-4 重置自增主键索引编号
+
+```mysql
+ALTER table tableName auto_increment=2
+```
+
 
 
 ##### 1-2 查询强制索引
@@ -441,7 +455,7 @@ select * from table as a force index(index_name)
 #### 2、添加字段
 
 ~~~mysql
-alter table   table1 
+alter table  table1 
 add (
     id int unsigned not Null auto_increment primary key COMMENT '备注',
  )
@@ -663,7 +677,37 @@ INSERT INTO table_name ( field1, field2,...fieldN )
 CREATE OR REPLACE VIEW yourViewName AS SELECT *FROM yourTableName;
 ```
 
+#### 11、WITH AS 短语
 
+```mysql
+with t as (
+select * from consumer
+)
+select * from t
+1234
+```
+
+该语句的作用是在, 大量的报表查询时, 使用 with as 可以提取出大量的子查询, 更加简洁
+
+- 和视图的区别：with as 等同于一次性视图，只会持续到下一个查询。在之后就不能再被引用
+
+#### 12、regexp 是包含关系
+
+```
+select A regexp B|C|D  标识判断 A包含B或C或D 
+```
+
+mysql 字段内有逗号间隔的，查询该字段是否包含一个或多个字符串
+
+```mysql
+
+SELECT * FROM table WHERE 1=1
+AND (字段 REGEXP(REPLACE('参数逗号间隔', ',', '|')));
+
+-- 拼接其他特殊字符比较
+SELECT * FROM table WHERE CONCAT(',',字段,',') 
+REGEXP(SELECT CONCAT(',',REPLACE('参数逗号间隔', ',', ',|,'),',')); 
+```
 
 
 
@@ -1233,6 +1277,18 @@ leave：类似于java中的break，跳出循环，执行之后的语句。
 * **replace**( '要修改的总体数据' , '被替换的内容' , '要替换的内容' )
 
   **str_replace()** 
+
+说明：长度存在限制，默认1024
+
+```mysql
+SHOW VARIABLES LIKE "group_concat_max_len"; #查询最大值
+
+#修改默认的长度
+SET GLOBAL group_concat_max_len=10240000;
+SET SESSION group_concat_max_len=10240000;
+```
+
+
 
 #### 2、FIND_IN_SET查询子节点
 

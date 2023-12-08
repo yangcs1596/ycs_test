@@ -2394,10 +2394,25 @@ public void finishOrder(Order order){
     });
 }
 
-// 实现方式二  @TransactionalEventListener
+// 实现方式二  @TransactionalEventListener 示例
+@Service
+public class UserService {
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
+    @Transactional
+    public void createUser(User user) {
+        // 创建用户的逻辑
+        eventPublisher.publishEvent(new UserCreatedEvent(user));
+    }
 
-// 方法进行封装
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, classes = UserCreatedEvent.class)
+    public void handleUserCreatedEvent(UserCreatedEvent event) {
+        // 处理用户创建事件的逻辑
+    }
+}
+
+// 对方式一方法进行封装
 @Component
 public class CallBackService {
     public void execute(final CallBackAction action) {
@@ -3109,7 +3124,7 @@ location = /index.html {
 	# v-model 指令来实现双向数据绑定：
 <input v-model="message">
 	# v-bind 样式绑定
-<div v-bind:class="{'class1': use}">
+<div v-bind:class="{'class1': true|false}">
     # v-on 监听 DOM 事件
 <!-- 完整语法 --><a v-on:click="doSomething"></a>
 <!-- 缩写 --><a @click="doSomething"></a>
@@ -3155,7 +3170,7 @@ this.$router.push({path:"/menLink",params:{alert:"页面跳转成功"}})
 <div style="color:red">两种方式的区别是query传参的参数会带在url后边展示在地址栏，params传参的参数不会展示到地址栏。<p>需要注意的是接收参数的时候是route而不是router。两种方式一一对应，名字不能混用</p></div>
 ##### vue中provide和inject 
 
-```vue
+```js
 由于vue有$parent属性可以让子组件访问父组件。但孙组件想要访问祖先组件就比较困难。通过provide/inject可以轻松实现跨级访问祖先组件的数据
 
 父组件
@@ -3185,6 +3200,24 @@ export default {
 
 ```
 
+#### JS高级----可选链
+
+```json
+const obj = {
+   name:"Peter",
+   age:23,
+   street:{
+     main:"Street main"
+     city:"Nan jing"
+  }
+}
+// 正常写法
+console.log(obj.street.city) 
+//但问题是如果obj或者street和city都有可能为null/undefined呢
+// 短路可以简写  用法
+console.log(obj?.street?.city)  
+```
+
 
 
 #### Vue.js的实例
@@ -3194,13 +3227,24 @@ var detail = new Vue({
     el: '#app',
     mixins: [mixin],  // 混入 一些共用的属性方法等
     directives: {},//钩子函数的用法，自定义指令
-    data: {
-        #数据属性
-    },
     components:{}, #组件注册，自定义局部组件
-    props: {}, #父组件向子组件传递数据
+    emits: ['addClick'], #父组件向子组件的方法
+    props: {
+            itemData: {
+				type: Object,
+				default: () => {}
+			},
+			subText: {
+				type: String,
+				default: '今'
+			},
+            type: String
+          }, #父组件向子组件传递数据
     mounted: function () {
         #初始化
+    },
+    data: {
+        #数据属性
     },
     methods: {
         #函数方法
@@ -3250,6 +3294,13 @@ var detail = new Vue({
 ```vue
 单级多级均为深拷贝，使用lodash工具中cloneDeep方法实现深拷贝，需要通过npm引入lodash库
 npm i -save lodash //全局安装
+```
+
+##### Vue的子级点击事件
+
+```vue
+<view @click.stop="method"></view>
+<a @click.prevent='notLink' href="http://www.baidu.com">百度</a>
 ```
 
 
@@ -3436,6 +3487,44 @@ props:{
 }
 ```
 
+##### 子组件修改父组件数据.sync
+
+```js
+## .sync 
+<child :page.sync="page"></child>
+
+props: {
+    page:String
+}
+在子组件中数据值修改方法
+this.$emit("update:page", newVal)
+
+```
+
+##### 父组件调用子组件ref
+
+```js
+## ref 如果在普通的DOM元素上，引用指向的就是该DOM元素;
+## 如果在子组件上，引用的指向就是子组件实例;
+## 父组件可以通过 ref 主动获取子组件的属性或者调用子组件的方法
+<child ref="child"></child>
+#父组件中
+const child = this.$refs.child
+console.log(child.name)
+child.someMethod("调用了子组件的方法")
+```
+
+##### 子组件调用父组件方法$emit
+
+```js
+emits: ['addClick'], #父组件向子组件的方法
+props: 参数
+#使用
+this.$emit('addClick', params)
+```
+
+
+
 ##### vue动态组件
 
 ```vue
@@ -3444,7 +3533,7 @@ props:{
 
 data() {
     return {
-        componentTag: '',
+        componentTag: '', //组件名称
     }
 },
 ```
@@ -3570,6 +3659,16 @@ export default new Vuex.Store({
 this.$nextTick(function(){
     console.log("methods22",this.$refs["hello"].innerText)
 })
+```
+
+#### 更改数据不刷新几种解决方式
+
+```vue
+更改数据不刷新
+this.$forceUpdate(); 
+
+对于某个属性的赋值
+this.$set(item, 'checked', true)
 ```
 
 
@@ -4085,6 +4184,14 @@ sdtomcat的shell例子：
  sleep 2
 ```
 
+* windows原理：
+
+```
+1、复制webapp目录
+2、编辑/conf/server.xml, 拷贝<Service>标签下的所有配置
+注意端口号和指向复制的webapp目录
+```
+
 
 
 #### 部署vue项目
@@ -4147,6 +4254,28 @@ export CATALINA_BASE=/usr/local/tomcat${tomcat_version}/$i #服务地址
 <Connector connectionTimeout="20000" port="8080" protocol="HTTP/1.1" redirectPort="8443"  URIEncoding="UTF-8"/>
 加上URIEncoding="UTF-8。
 
+```
+
+#### 添加context的方法
+
+```shell
+#方法一
+1、在/conf/server.xml中增加context配置
+...
+<Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="true">
+<Context path= "/test" docBase= "D:\private\tomcat\test.war" />
+...
+#方法二
+2、设置CATALINA_BASE的目录，windows直接在\conf\Catalina\localhost\xxx.xml新建服务对应的配置
+<Context path= "/test" docBase= "D:\private\tomcat\test.war" />
+```
+
+产生的日志有乱码的情况出现，乱码解决
+修改D:\az\Tomcat\Tomcat 8.5\conf目录下的文件logging.properties文件：
+
+```
+默认是：java.util.logging.ConsoleHandler.encoding = UTF-8
+修改为：java.util.logging.ConsoleHandler.encoding = GBK
 ```
 
 
@@ -5967,6 +6096,22 @@ http {
      }
 }
 ```
+
+## 分布式部署，websocket共享问题
+
+我们不妨设想一下，如果我们后端部署了多台服务器，其中某一个用户发布了消息，需要实时通知到其他在线的用户，以上示例是无法实现的。
+因为WebSocket Session是不支持序列化的，无法存储也就没有办法将所有后端服务器中连接的用户会话放到一起。
+既然无法把会话存放到一起统一管理，那么就定义一个公共的频道，每个服务器都向该频道发布消息，所有订阅该频道的服务器都接收消息，用来判断当前所连接的用户是否需要接收到该消息，需要则推送不需要则不推送，则刚好符合发布订阅模式。
+
+每个应用节点都订阅该topic的频道，这样新消息一注册，每个节点服务器都能接收到Object，然后从各自的节点中寻找正在连接的webSocket会话，进行消息推送。
+
+就这样通过Redis的发布/订阅功能实现session共享。 
+
+```
+https://blog.csdn.net/qq_42922707/article/details/113918644
+```
+
+
 
 ##### 
 
@@ -8072,6 +8217,27 @@ deploy去掉时间戳
 </build>
 ```
 
+#### springboot-web项目打包必须
+
+```xml
+## springboot打包必须要有spring-boot-maven-plugin 、 其它依赖包则不需要
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>repackage</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+```
+
 
 
 #### java打包项目的配置
@@ -8103,7 +8269,7 @@ src/main/java下的默认只打包java文件，如果想打包xml文件，则加
 </build>
 ```
 
-##### demo例子
+##### springboot的demo例子
 
 ```xml
  <build>
@@ -8206,7 +8372,7 @@ src/main/java下的默认只打包java文件，如果想打包xml文件，则加
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-source-plugin</artifactId>
-            <version>2.1</version>
+            <version>3.2.1</version>
             <configuration>
                 <attach>true</attach>
             </configuration>
@@ -8291,7 +8457,45 @@ nohup java -jar cloud-upgrade.jar --spring.profiles.active=prod -Dcatalina.base=
 nohup java -jar xxx.jar > msg.log  2>&1 &
 ```
 
+##### java启动命令中-D和--的区别
+
+```shell
+#在 SpringBoot 项目中，启动时，通过 -D 或 -- 添加参数，都可以直接覆盖 yml 或 properties 配置文件中的同名配置，如果不存在则相当于添加了一个配置
+java -Dserver.port=1234 这种方式添加的参数是 jvm 的一些属性。
+java --server.port=1234 这种方式添加的参数是操作系统的 环境变量
+
+System.getPorperties("server.port"); //java -D 添加的参数方式获取
+System.getEnv("server.port");  // java -- 添加的参数方式获取
+#参数
+注意： -D 要放到 -jar 前面，否则参数无效。 -- 要放到 jar 包后面，否则报错。
+```
+
+
+
 ### archetype脚手架生成
+
+```xml
+##样例根目录配置自定义archetype
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-archetype-plugin</artifactId>
+    <version>xxx</version>
+    <configuration>
+    	<addDefaultExcludes>false</addDefaultExcludes>
+    </configuration>
+</plugin>
+
+```
+
+默认会有的一些变量
+
+| ${rootArtifactId}      | controller                          |
+| ---------------------- | ----------------------------------- |
+| ${artifactId}          | controller-(api,dao,server,service) |
+| ${package}             |                                     |
+| ${packageInPathFormat} |                                     |
+| ${groupId}             | com.hzphfin.app                     |
+| ${version}             | 0.0.1-SNAPSHOT                      |
 
 ```cmd
 mvn archetype:create-from-project
@@ -8347,7 +8551,7 @@ maven-jxr-plugin   生成java代码交叉引用和源代码的html格式
 findbugs-maven-plugin  FindBugs是一个分析工具，查找不容易发现的bug
 docker-maven-plugin   打包docker镜像推送仓库
 spring-boot-maven-plugin  springboot的maven打包插件
-jacoco-maven-plugin    生成单元测试覆盖率报告
+jacoco-maven-plugin    生成单元测试覆盖率报告  可以查看seata的开源示例
 coveralls-maven-plugin 提交代码覆盖率报告到 Coveralls web服务 
 apache-rat-plugin    对授权文件的校验审核工具。
 maven-antrun-plugin  可以在Maven执行时,额外执行Ant脚本
@@ -8356,6 +8560,8 @@ maven-javadoc-plugin  javadoc 生成
 maven-source-plugin  源码打包
 
 ```
+
+#### 源码打包
 
 ```xml
 <!-- 开源的意义 打包生成源码和doc -->
@@ -10651,9 +10857,31 @@ https://zhuanlan.zhihu.com/p/400091887?utm_id=0 仿造的ruoyi系统？
 
 
 
+## JAVA也可以爬虫
+
+```java
+github地址：https://github.com/code4craft/webmagic/blob/master/README-zh.md
+gitee地址： https://gitee.com/flashsword20/webmagic?_from=gitee_search
+基于webmagic
+```
+
+## JAVA获取系统信息
+
+https://gitee.com/mirrors/WGCLOUD.git
+
+oshi-core组件是开源的获取系统信息的工具，通过该工具可以方便的帮助我们获取丰富的系统信息，包括：操作系统信息、服务器信息、jvm信息、磁盘信息等等。
+
+```xml
+<dependency>
+    <groupId>com.github.oshi</groupId>
+    <artifactId>oshi-core</artifactId>
+    <version>5.3.6</version>
+</dependency>
+```
 
 
-JenKins
+
+## JenKins
 
 GitLab  ;  GitBook
 
@@ -10696,9 +10924,11 @@ https://blog.csdn.net/haoyanyu_/article/details/82252583 学习地址
 
 # 如何开发一个桌面应用
 
-## electron
+## 1、electron
 
 Electron是一个能够让你使用JavaScript 调用丰富的原生 APIs 来创造桌面应用。 **一个 Electron 有且只有一个主进程**
+
+学习例子pdmaner：   https://gitee.com/robergroup/pdmaner
 
 ```cmd
 npm config set registry https://registry.npm.taobao.org
@@ -10859,7 +11089,7 @@ https://baijiahao.baidu.com/s?id=1680087990414788282&wfr=spider&for=pc
 
 https://www.zhihu.com/question/453979660/answer/2397193140
 
-## NW.js
+## 2、NW.js
 
 桌面APP打包利器 —— Node-webkit  像微信开发者工具、抖音开发者工具；要下载sdk版本的
 
@@ -10954,30 +11184,9 @@ package.json 配置信息如下
 copy /B nw.exe+sina.nw sina.exe
 ```
 
+## 3、wails 和vue
 
-
-## Portainer.io远程
-
-```shell
-# 远程机 
-1. 编辑docker.service
-vim /usr/lib/systemd/system/docker.service
-找到 ExecStart字段修改如下
-ExecStart=/usr/bin/dockerd-current -H tcp://0.0.0.0:2375 -H unix://var/run/docker.sock 
-
-2.重启docker重新读取配置文件，重新启动docker服务
-systemctl daemon-reload
-systemctl restart docker
-3. 开放防火墙端口
-firewall-cmd --zone=public --add-port=6379/tcp --permanent
- 
-4.刷新防火墙
-firewall-cmd --reload
- 
-5.再次配置远程docker就可以了
-```
-
-
+查看go.md文件
 
 
 
@@ -11028,3 +11237,13 @@ Typora的破解下载地址： https://dyyidc.jb51.net/202112/tools/typorapj_jb5
 
 
 vercel官网 ： https://vercel.com/login 作用是可以部署github上的项目，待研究
+
+
+
+
+
+## 记录Ip属地解析地址：
+
+https://www.cz88.net/api/cz88/ip/openIPInfo?ip=110.87.98.42  
+
+http://whois.pconline.com.cn/ipJson.jsp?ip=xxx.xxx.xxx.xxx&json=true

@@ -127,39 +127,41 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 
 ## git项目可封装的地址
 
-| 项目名称                                          | 项目地址                                                     |
-| :------------------------------------------------ | ------------------------------------------------------------ |
-| canal 缓存同步工具                                | https://github.com/alibaba/canal.git                         |
-| canal胶水层 可封装                                | https://gitee.com/throwableDoge/canal-glue.git               |
-| dynamic-datasource-spring-boot-starter 动态数据源 | https://github.com/baomidou/dynamic-datasource-spring-boot-starter.git |
-| guava-retrying 重试工具                           | https://github.com/rholder/guava-retrying.git                |
-| hutool  糊涂工具                                  | https://gitee.com/dromara/hutool.git                         |
-| lock4j 日志包                                     | https://github.com/baomidou/lock4j.git                       |
-| redisson封装不同模式                              | https://gitee.com/yangxixi_323/spring-boot-distributed-redisson.git<br />https://gitee.com/xxy6910/redisson-dcs-lock.git |
-| redis-cache-operator-java 缓存工具                | https://github.com/xsg1995/redis-cache-operator-java.git     |
-| redis-cache-封装可以仿造miaosha项目组件           | https://gitee.com/asdsix/SpringCloud-miaosha/tree/version2/miaosha-common/miaosha-common-data/src/main/java/tech/tengshe789/miaosha/common/data/redis |
-|                                                   |                                                              |
-| rocketmq                                          | https://github.com/apache/rocketmq-spring.git                |
-| rocketmq-dashboard<br />rocketmq的可视化界面      | https://github.com/apache/rocketmq-dashboard.git             |
-| ruoyi系统                                         | https://gitee.com/y_project/RuoYi.git                        |
-|                                                   | https://gitee.com/y_project                                  |
-| swagger-starter                                   | https://github.com/SpringForAll/spring-boot-starter-swagger.git |
-| xxl-job                                           | https://gitee.com/xuxueli0323/xxl-job.git<br />https://github.com/zero9102/xxl-job-spring-boot-starter.git |
-| 闪验                                              | https://gitee.com/hiwepy/shanyan-spring-boot-starter.git     |
-|                                                   |                                                              |
-| 微信开发weixin-java-mp<br />微信端第三方对接开发  | https://gitee.com/binary/weixin-java-tools.git               |
-| 项目推荐浏览页                                    | https://gitee.com/explore/backend                            |
-| justAuth多登录开源库just-auth                     | https://github.com/justauth/JustAuth.git<br />https://github.com/justauth/justauth-spring-boot-security-starter.git |
-| security安全校验                                  | https://github.com/spring-projects/spring-security/wiki/OAuth-2.0-Migration-Guide |
-| 单商城开源系统ThinkPHP                            | https://gitee.com/likeshop_gitee                             |
-| DingTalk消息通知                                  | https://github.com/AnswerAIL/dingtalk-spring-boot-starter    |
-| 异常通知的框架                                    | https://gitee.com/ITEater/prometheus-spring-boot-starter     |
-| guerlab-sms 不同的短信通道支持                    | https://gitee.com/guerlab_net/guerlab-sms?_from=gitee_search |
-| IJPay聚合支付                                     | https://gitee.com/javen205/IJPay?_from=gitee_search          |
-| 文件上传聚合存储平台                              | https://spring-file-storage.xuyanwu.cn/#/存储平台            |
-| [芋道源码](https://github.com/yudaocode)          | 可以关注一下labs学习https://gitee.com/zhijiantianya          |
-| 动态线程池，可简洁封装                            | https://gitee.com/dromara/dynamic-tp.git                     |
-|                                                   |                                                              |
+| 项目名称                                                     | 项目地址                                                     |
+| :----------------------------------------------------------- | ------------------------------------------------------------ |
+| canal 缓存同步工具                                           | https://github.com/alibaba/canal.git                         |
+| canal胶水层 可封装                                           | https://gitee.com/throwableDoge/canal-glue.git               |
+| dynamic-datasource-spring-boot-starter 动态数据源            | https://github.com/baomidou/dynamic-datasource-spring-boot-starter.git |
+| guava-retrying 重试工具                                      | https://github.com/rholder/guava-retrying.git                |
+| hutool  糊涂工具                                             | https://gitee.com/dromara/hutool.git                         |
+| lock4j 日志包                                                | https://github.com/baomidou/lock4j.git                       |
+| redisson封装不同模式                                         | https://gitee.com/yangxixi_323/spring-boot-distributed-redisson.git<br />https://gitee.com/xxy6910/redisson-dcs-lock.git |
+| redis-cache-operator-java 缓存工具                           | https://github.com/xsg1995/redis-cache-operator-java.git     |
+| redis-cache-封装可以仿造miaosha项目组件                      | https://gitee.com/asdsix/SpringCloud-miaosha/tree/version2/miaosha-common/miaosha-common-data/src/main/java/tech/tengshe789/miaosha/common/data/redis |
+|                                                              |                                                              |
+| rocketmq                                                     | https://github.com/apache/rocketmq-spring.git                |
+| rocketmq-dashboard<br />rocketmq的可视化界面                 | https://github.com/apache/rocketmq-dashboard.git             |
+| 通用的RocketMQ消息幂等去重消费者工具类，开箱即用             | https://gitee.com/johnvwan/RocketMQDedupListener.git         |
+| ruoyi系统                                                    | https://gitee.com/y_project/RuoYi.git                        |
+|                                                              | https://gitee.com/y_project                                  |
+| swagger-starter                                              | https://github.com/SpringForAll/spring-boot-starter-swagger.git |
+| xxl-job                                                      | https://gitee.com/xuxueli0323/xxl-job.git<br />https://github.com/zero9102/xxl-job-spring-boot-starter.git |
+| 闪验                                                         | https://gitee.com/hiwepy/shanyan-spring-boot-starter.git     |
+|                                                              |                                                              |
+| 微信开发weixin-java-mp<br />微信端第三方对接开发             | https://gitee.com/binary/weixin-java-tools.git               |
+| 项目推荐浏览页                                               | https://gitee.com/explore/backend                            |
+| justAuth多登录开源库just-auth                                | https://github.com/justauth/JustAuth.git<br />https://github.com/justauth/justauth-spring-boot-security-starter.git |
+| security安全校验                                             | https://github.com/spring-projects/spring-security/wiki/OAuth-2.0-Migration-Guide |
+| 单商城开源系统ThinkPHP                                       | https://gitee.com/likeshop_gitee                             |
+| DingTalk消息通知                                             | https://github.com/AnswerAIL/dingtalk-spring-boot-starter    |
+| 异常通知的框架                                               | https://gitee.com/ITEater/prometheus-spring-boot-starter     |
+| guerlab-sms 不同的短信通道支持                               | https://gitee.com/guerlab_net/guerlab-sms?_from=gitee_search |
+| UMS 是一个非侵入式、与业务高度解耦、可自定义的用户管理脚手架 | https://gitee.com/pcore/UMS?_from=gitee_search               |
+| IJPay聚合支付                                                | https://gitee.com/javen205/IJPay?_from=gitee_search          |
+| 文件上传聚合存储平台                                         | https://spring-file-storage.xuyanwu.cn/#/存储平台            |
+| [芋道源码](https://github.com/yudaocode)                     | 可以关注一下labs学习https://gitee.com/zhijiantianya          |
+| 动态线程池，可简洁封装                                       | https://gitee.com/dromara/dynamic-tp.git                     |
+|                                                              |                                                              |
 
 
 
@@ -521,8 +523,11 @@ public class Test implements InitializingBean {
 
 
 #### Spring事件分发
-有自定义监听器ApplicationListener
-和注解监听器@EventListener
+
+两种实现方式
+
+* 有自定义监听器ApplicationListener
+* 和注解监听器@EventListener
 
 ```java
 /**事件源**/
@@ -871,7 +876,7 @@ public class DEvent extends ApplicationEvent {
 
 ```java
 //类名
-Class clazz=Class.forName(String classname);//通过类名获取Class
+Class clazz=Class.forName(String classname);//通过com.cloud.xxx.java类名获取Class
 
 String methodName=“方法名称”；
 Object[] methodparams=new Object[]{请求方法所需参数};
@@ -1206,9 +1211,38 @@ XttblogService xttblogService = message -> System.out.println("Hello " + message
 
 本地缓存：GuavaCache、ehcache、CaffeineCache，分布式缓存(网络缓存)：redis、memcached
 
+##### 1-7-3-1 使用ConcurrentHashMap实现本地缓存
 
+使用简单，但还需要考虑淘汰、最大限制、缓存过期时间淘汰等等功能；
 
-##### 1-7-3   最佳内存缓存框架Caffeine
+##### 1-7-3-2 基于Guava Cache实现本地缓存
+
+```xml
+ <dependency>
+    <groupId>com.google.guava</groupId>
+    <artifactId>guava</artifactId>
+</dependency>
+
+```
+
+```java
+Cache<String, String> cache = CacheBuilder.newBuilder()
+    .initialCapacity(5)  // 初始容量
+    .maximumSize(10)     // 最大缓存数，超出淘汰
+    .expireAfterWrite(60, TimeUnit.SECONDS) // 过期时间
+    .build();
+    //通过asyncReloading实现全异步加载，包括refreshAfterWrite被阻塞的加载线程
+    .build(CacheLoader.asyncReloading(loader, Executors.newCachedThreadPool()));
+    
+ CacheLoader loader = new CacheLoader<KeyValue<String, String>, DictDataRespDTO>() {
+    @Override
+    public DictDataRespDTO load(KeyValue<String, String> key) throws Exception {
+    	return ObjectUtil.defaultIfNull([xx获取数据方法], DICT_DATA_NULL);
+    }
+}
+```
+
+##### 1-7-3-3   最佳内存缓存框架Caffeine
 
 ```xml
  <dependency>
@@ -1224,10 +1258,10 @@ public class CaffeineCacheConfig {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager();
         //Caffeine配置
         Caffeine<Object, Object> caffeine = Caffeine.newBuilder()
-                                            //最后一次写入后经过固定时间过期
-                                            .expireAfterWrite(10, TimeUnit.SECONDS)
-                                            //maximumSize=[long]: 缓存的最大条数
-                                            .maximumSize(1000);
+            //最后一次写入后经过固定时间过期
+            .expireAfterWrite(10, TimeUnit.SECONDS)
+            //缓存的最大条数
+            .maximumSize(1000);
         cacheManager.setCaffeine(caffeine);
         return cacheManager;
     }
@@ -1285,7 +1319,13 @@ public UserInfo getByName(Integer id) {
 }
 ```
 
+##### 1-7-3-4 本地缓存问题
 
+* 缓存一致性
+
+1、可以使用MQ的广播模式，当数据修改时向MQ发送消息，节点监听并消费消息，删除本地缓存，达到最终一致性
+
+2、Canal + MQ  订阅数据库变更日志，再操作缓存
 
 #### 1-8 多实现类的注入问题
 
@@ -1632,6 +1672,32 @@ public TaskExecutor taskExecutor() {
 
 
 #### 2-2 函数式接口
+
+* 无参无返回的普通接口
+
+  例子
+
+  ```java
+  public class ScloudDemoTests {
+  	// 定义接口
+      public interface DoSomeThing {
+          void doSome();
+      }
+  
+      public static void doit(DoSomeThing doSomeThing){
+          System.out.println("before");
+          doSomeThing.doSome();
+          System.out.println("end");
+      }
+      @Test
+      public void test(){
+          this.doit(() -> System.out.println("666"));
+      }
+  }
+  
+  ```
+
+  
 
 * Supplier接口
 
@@ -3017,8 +3083,7 @@ PaymentEnum(String value, String desc) {
 
 static {
     values = Maps.newLinkedHashMapWithExpectedSize(values().length);
-    for (PaymentEnum payment : values()
-        ) {
+    for (PaymentEnum payment : values()) {
         values.put(payment.value, payment.desc);
     }
 }
@@ -3316,7 +3381,67 @@ SerializedLambda lambda = (SerializedLambda)method.invoke(fn);
 String methodName = lambda.getImplMethodName(); //此处即可获取lambda表达式的方法名称
 ```
 
+#### 利用反射获取任意包下所有类
 
+```java
+ResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
+// 监听的包
+String basePackage = "com.lhz.wx.test";
+String resourcePattern = "/**/*.class";
+String pattern = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +
+    ClassUtils.convertClassNameToResourcePath(basePackage) + resourcePattern;
+//  获取指定包路径下的类资源
+Resource[] resources = resourcePatternResolver.getResources(pattern);
+//MetadataReader 的工厂类
+MetadataReaderFactory readerfactory = new CachingMetadataReaderFactory(resourcePatternResolver);
+for (Resource resource : resources) {
+    //用于读取类信息
+    MetadataReader reader = readerfactory.getMetadataReader(resource);
+    //扫描到的class
+    String classname = reader.getClassMetadata().getClassName();
+    Class<?> clazz = Class.forName(classname);
+}
+```
+
+##### 获取类注解(伪代码)
+
+```java
+Class<?> clazz = Class.forName(classname);
+// 1、判断类中是否存在ClassAnnotation注解，如果存在则打印
+ClassAnnotation classAnnotation = clazz.getAnnotation(ClassAnnotation.class);
+if (classAnnotation != null) {
+    // 获取属性
+    System.out.println("类中注解——code：" + classAnnotation.code() + "；name：" + classAnnotation.name());
+}
+```
+
+##### 获取方法注解(伪代码)
+
+```jaav
+Method[] methods = clazz.getMethods();
+    for (Method method : methods) {
+    MethodAnnotation methodAnnotation = method.getAnnotation(MethodAnnotation.class);
+    if (methodAnnotation != null) {
+    // 获取属性
+    System.out.println("方法中注解——code：" + methodAnnotation.code() + "；name：" + methodAnnotation.name());
+    }
+}
+```
+
+
+
+##### 获取字段注解(伪代码)	
+
+```java
+Field[] fields = clazz.getFields();
+for (Field field : fields) {
+    FiledAnnotation filedAnnotation = field.getAnnotation(FiledAnnotation.class);
+    if (filedAnnotation != null) {
+        // 获取属性
+        System.out.println("字段中注解——code：" + filedAnnotation.code() + "；name：" + filedAnnotation.name());
+    }
+}
+```
 
 
 
@@ -4620,6 +4745,79 @@ column="id" <!--这里是user表中的id-->
 select="cn.wyu .mapper.0rderMapper.find0rderByUid"></collection>
 
 
+```
+
+##### 实际例子
+
+```java
+实体
+@TableName("sys_user")
+public class SysUser {
+	...
+    @TableField(exist = false)
+    private SysDept dept; //对应resultMap的association
+
+    @TableField(exist = false)
+    private List<SysRole> roles; //对应resultMap的collection
+    ...
+}
+```
+
+```xml
+<sql id="selectUserVo">
+        select u.id,
+               u.dept_id,
+               d.id as deptId,
+               d.parent_id,
+               d.status as dept_status,
+               r.id as roleId,
+               r.role_name,
+               r.role_key,
+               r.role_sort,
+               r.ds_type as role_ds_type,
+               r.data_scope,
+               r.status as role_status
+        from sys_user u
+                 left join sys_dept d on u.dept_id = d.id
+                 left join sys_user_role ur on u.id = ur.user_id
+                 left join sys_role r on r.id = ur.role_id
+<select id="selectUserByUserId" parameterType="Long" resultMap="SysUserResult">
+    <include refid="selectUserVo"/>
+    where u.id = #{userId}
+</select>
+
+# 示例
+<resultMap type="com.lzmh.api.system.domain.SysUser" id="SysUserResult">
+        <id property="id" column="id"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="nickname" column="nickname"/>
+        <result property="email" column="email"/>
+        <result property="phone" column="phone"/>
+        <result property="sex" column="sex"/>
+        <result property="avatar" column="avatar"/>
+        <association property="dept" column="dept_id" javaType="SysDept" resultMap="deptResult"/>
+        <collection property="roles" javaType="java.util.List" resultMap="RoleResult"/>
+    </resultMap>
+
+    <resultMap id="deptResult" type="com.lzmh.api.system.domain.SysDept">
+        <id property="id" column="deptId"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="deptName" column="dept_name"/>
+        <result property="orderNum" column="order_num"/>
+        <result property="leader" column="leader"/>
+        <result property="status" column="dept_status"/>
+    </resultMap>
+
+    <resultMap id="RoleResult" type="com.lzmh.api.system.domain.SysRole">
+        <id property="id" column="roleId"/>
+        <result property="roleName" column="role_name"/>
+        <result property="roleKey" column="role_key"/>
+        <result property="roleSort" column="role_sort"/>
+        <result property="dsType" column="role_ds_type"/>
+        <result property="dataScope" column="data_scope"/>
+        <result property="status" column="role_status"/>
+    </resultMap>
 ```
 
 

@@ -2,10 +2,12 @@
 
 前提：
 
+### 安装
+
 适合Go做的比较成熟的软件开发方向主要包括服务器开发，云平台开发，微服务实践和重构，区块链开发
 
 ```go
-//安装wails
+//安装Wails v1.16.9
 go get -u github.com/wailsapp/wails/cmd/wails11
 
 go mod download github.com/wailsapp/wails
@@ -216,6 +218,8 @@ window.backend.Todos.SaveList(JSON.stringify(todos, null, 2));
 
 
 # 常用命令
+
+## 运行
 
 ```go
 go run 文件名.go //运行

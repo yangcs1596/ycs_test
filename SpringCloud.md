@@ -1,3 +1,13 @@
+
+
+# 版本说明
+
+```
+https://github.com/alibaba/spring-cloud-alibaba/wiki/版本说明
+```
+
+
+
 # <span style="border-left: 5px solid rgb(248, 57, 41);">Sentinel+Nacos流量控制</span>
 
 实现资源流控、降级、热点、授权
@@ -11,7 +21,9 @@
 * 启动脚本
 
   ```cmd
-  java -Dserver.port=8080 -Dcsp.sentinel.dashboard.server=localhost:8080 -Dproject.name=sentinel-dashboard -jar sentinel-dashboard-1.8.6.jar
+  java -Dserver.port=8080 -Dcsp.sentinel.dashboard.server=localhost:8080 -Dproject.name=sentinel-dashboard -jar sentinel-dashboard-1.8.6.jar 
+  # 上面这种是将自己dashboard服务也注册上去，如果不需要则
+  java -Dserver.port=8080 -jar sentinel-dashboard-1.8.6.jar
   ```
 
 * 访问
@@ -22,10 +34,17 @@
 
 * 引入依赖 在网关服务使用
 
-```引入依赖
+```xml
+<!-- SpringCloud Alibaba Sentinel -->
 <dependency>
     <groupId>com.alibaba.cloud</groupId>
     <artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
+</dependency>
+
+<!-- SpringCloud Alibaba Sentinel Gateway -->
+<dependency>
+    <groupId>com.alibaba.cloud</groupId>
+    <artifactId>spring-cloud-alibaba-sentinel-gateway</artifactId>
 </dependency>
 ```
 
@@ -117,7 +136,8 @@ spring:
 * 启动效果
 
   启动项目，配置好Nacos后，我们可以直接在Sentinel控制台看到nacos的配置已经同步到Sentinel控制台了，并且规则已经生效了，以后该规则只需要在Naocs配置规则就能实时生效了
-  
+
+* 网关如果不成功就增加启动参数-Dcsp.sentinel.app.type=1 -Dcsp.sentinel.dashboard.server=localhost:8718; rule-type设置成gw-flow
 
 # loadbalancer负载均衡
 
@@ -743,9 +763,14 @@ public interface UserClient {
 }
 ```
 
+### get请求多入参的情况注解
 
+* @SpringQueryMap
 
-
+```java
+@GetMapping("/page")
+R<PageVO<AuthLoginLogVO>> page(@SpringQueryMap AuthLoginLogListParam param);
+```
 
 # Hystix 熔断器
 
@@ -1460,6 +1485,8 @@ services:
 ```
 
 ## java服务接入
+
+* 下载agent地址： https://archive.apache.org/dist/java-agent/  8.91版本
 
 ```cmd
 java -javaagent:/data/skywalking-agent/agent/skywalking-agent.jar
