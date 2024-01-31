@@ -2377,7 +2377,7 @@ Propagation是一个枚举，定义了七大行为类型
 * NESTED 如果当前事务存在，在嵌套事务中执行，就像需要的传播一样;内部事务方法异常回滚并不会影响外部方法。
 * REQUIRES_NEW 无论如何都创建一个新的事务来执行被标识的方法。一般局部数据操作一致性都用此方法
 
-#### 事务提交后执行
+#### 事务提交后执行 如mq消息发送
 
 ```java
 @Transactional
@@ -6167,8 +6167,6 @@ msg.setDelayTimeLevel(5);
 producer.send(msg);
 ```
 
-
-
 ## Spark 
 
 spark通用数据处理引擎， 通用内存并行计算框架
@@ -8489,21 +8487,21 @@ System.getEnv("server.port");  // java -- 添加的参数方式获取
 
 默认会有的一些变量
 
-| ${rootArtifactId}      | controller                          |
-| ---------------------- | ----------------------------------- |
-| ${artifactId}          | controller-(api,dao,server,service) |
-| ${package}             |                                     |
-| ${packageInPathFormat} |                                     |
-| ${groupId}             | com.hzphfin.app                     |
-| ${version}             | 0.0.1-SNAPSHOT                      |
+| ${rootArtifactId}      | 它保存用户输入的值作为项目名（maven在用户运行原型时在提示符中询问为artifactid:的值） |
+| ---------------------- | ------------------------------------------------------------ |
+| ${artifactId}          | 如果您的项目由一个模块组成，则此变量的值将与${rootArtifactId}相同，但如果项目包含多个模块，则此变量将由每个模块文件夹中的模块名替换 |
+| ${package}             | 用户为项目提供的包，也在用户运行原型时由maven提示            |
+| ${packageInPathFormat} | 与${package}变量的值相同，但将“.”替换为字符“/”，例如：，对于包com.foo.bar，此变量为com/foo/bar |
+| ${groupId}             | 用户为项目提供的groupid，在用户运行原型时由maven提示         |
+| ${version}             | 版本号                                                       |
 
 ```cmd
-mvn archetype:create-from-project
+mvn archetype:create-from-project  //生成脚手架，在target/目录下
 ```
 
 * 生成文件后主要编写  archetype-metadata.xml 文件
 
-  属性变量定义
+  自定义变量（需要在test/resources/projects/archetype.properties里配置自定义参数）
 
   ```xml
   <requiredProperties>
@@ -8519,20 +8517,46 @@ mvn archetype:create-from-project
   </requiredProperties>
   ```
 
-  这些属性能够在资源元文件里的任意一个文件里经过${var}来引用，因此的元文件最终均可以选择经过velocity引擎来执行替换后生成。
-  默认的属性有：groupId，artifactId，packeage，version等
+  去替换文件中的内容，路径中的参数是双下划线_*参数名*_，文件内部的参数是${参数名}
 
-* 通过mvn clean install 命令把该jar包安装到本地仓库
+  ```xml
+  一般xml文件、java文件模板会自动替换占位符，另外有一些自定义文件，模板不会识别，比如sh脚本、md文件等，我们以Dockerfile为例(随便自己定义个文件也行)，在archetype-metadata.xml写<fileSets>
+  <fileSets>
+      <!-- 写进模板，但不替换占位符的，不设置 filtered="true"即可-->
+      <!-- 写进模板，要替换的占位符的，filtered="true"-->
+      <fileSet encoding="UTF-8" filtered="true">
+          <directory></directory>
+          <includes>
+              <include>Dockerfile</include>
+              <include>README.md</include>
+          </includes>
+      </fileSet>
+  </fileSets>
+  
+  ```
+
+* 通过`mvn clean install `命令把该jar包安装到本地仓库
+
+  然后会在 maven 仓库（repository）中生成脚手架的配置文件： archetype_catelog.xml
 
 * 生成一个项目看看效果，使用以下命令：
 
 ```cmd
- mvn archetype:generate 
-　　-DgroupId=comthebeastshop 
-　　-DartifactId=beast-test 
-　　-Dpackage="com.thebeastshop.test" 
-　　-DarchetypeGroupId=com.thebeastshop 
-　　-DarchetypeArtifactId=beast-archetype -DarchetypeVersion=1.1 -X -DarchetypeCatalog=local
+mvn archetype:generate
+-DgroupId=com.example         #新建项目的工程名
+-DartifactId=projectname           #要创建的项目名称
+-Dversion=1.0-SNAPSHOT              #要创建的项目的版本号
+-Dpackage=com.tianjingle.wang         #要创建的项目的基础包名
+
+-DarchetypeGroupId=com.example         #./m2下的xml里的
+-DarchetypeArtifactId=fccdemo1-archetype   #./m2下的xml里的
+-DarchetypeVersion=1.0-SNAPSHOT     #./m2下的xml里的
+-B
+-DarchetypeCatalog=local               #从本地仓库选取模板
+-DinteractiveMode=false
+
+使用-B参数：该参数表示让Maven使用批处理模式构建项目，能够避免一些需要人工参与交互而造成的挂起状态。
+使用-X参数：开启DEBUG模式
 ```
 
 
@@ -8558,6 +8582,7 @@ maven-antrun-plugin  可以在Maven执行时,额外执行Ant脚本
 maven-compiler-plugin 编译Java源码的插件。
 maven-javadoc-plugin  javadoc 生成
 maven-source-plugin  源码打包
+maven-surefire-plugin 执行测试用例的插件
 
 ```
 
@@ -9448,6 +9473,97 @@ k8s用于容器化应用程序的部署、扩展和管理
 k8s提供了容器编排、资源调度、弹性伸缩、部署管理、服务发现等一系列功能
 k8s的目标是让部署容器化应用简单高效
 总结：可以理解成一个容器平台、微服务平台（非常适合微服务架构）、便携式云平台
+
+## K8s部署搭建
+
+### 整体架构
+
+* Master 
+
+k8s集群控制节点，对集群进行调度管理，接受集群外用户去集群操作请求。
+Master Node由API Server、Scheduler、ClusterState Store(ETCD数据库) 和Controller ManagerServer组成；
+
+* Nodes 
+
+集群工作节点，运行用户业务应用容器；
+Nodes节点也叫WorkerNode,包含kubelet、kube proxy 和Pod(Container Runtime); 
+
+### 开始搭建
+
+```
+kubeadm工具
+官方地址：https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm/
+使用Kubeadm工具可以快速搭建一个k8s集群，主要包括初始化控制平面节点和加入Worker节点，提供的主要功能如下：
+
+kubeadm init：初始化一个Master节点
+kubeadm join：将Worker节点加入集群
+kubeadm upgrade：升级K8s版本
+kubeadm token：管理 kubeadm join 使用的令牌
+kubeadm reset：清空 kubeadm init 或者 kubeadm join 对主机所做的任何更改
+kubeadm version：打印 kubeadm 版本
+kubeadm alpha：预览可用的新功能 
+```
+
+```shell
+配置环境的相关策略
+关闭防火墙
+# systemctl stop firewalld.service
+# systemctl disable firewalld.service
+
+关闭selinux
+# sed -i 's/enforceing/disabled/' /etc/selinux/config#永久
+# setenforce 0 #临时
+
+关闭swap(k8s禁止虚拟内存以提高性能)
+# swapoff -a  #临时
+# sed -ri 's/.*swap.*/#&/' /etc/fstab #永久
+
+在master添加hosts
+cat >> /etc/hosts << EOF
+192.168.10.30  k8s-master
+192.168.10.31  k8s-node1
+EOF
+
+设置网桥参数
+cat >> /etc/sysctl.d/k8s.conf << EOF
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+sysctl --system
+
+时间同步
+yum -y install ntpdate
+由于操作系统默认安装是英文的，所以时间同步是美国的纽约时间，所以需要修改。
+mv /etc/localtime /etc/localtime.bak
+ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+ntpdate ntp1.aliyun.com
+```
+
+```shell
+搭建kubeadm、kubelet、kubectl
+添加k8s的阿里云YUN源
+
+cat > /etc/yum.repos.d/kubernetes.repo << EOF
+[kubernetes]
+name=Kubernetes
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg
+https://mirrors.aliyun.com/kurbernetes/yum/doc/rpm-package-key.gpg
+EOF
+
+开始安装 注意版本号自己找下
+yum -y install kubelet-1.19.4 kubeadm-1.19.4 kubectl-1.19.4
+systemctl enable kubelet
+
+master初始化命令
+kubeadm init --apiserver-advertise-address=192.168.10.30 --image-repository registry.aliyuncs.com/google_containers --kubernetes-version  v1.19.4 --service-cidr=10.96.0.0/12 --pod-network-cidr=10.244.0.0/16
+
+```
+
+
 
 ## k8s搭建一个java-web应用
 

@@ -4061,6 +4061,8 @@ ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
 
 ### 5-1 docker镜像容器增加字体
 
+#### 5-1-1导出问题
+
 ```yaml
 Dockerfile文件  解决导出失败问题
 # 添加字体
@@ -4840,8 +4842,11 @@ services:
       --log-bin=/var/lib/mysql/mysql-bin #开启binlog的文件名
       --sync_binlog=1
       --binlog-ignore-db=mysql
-      --binlog_format=ROW # binlog格式为ROW
-      --expire_logs_days=7 # binlog文件存活时间
+      --binlog_format=ROW #binlog格式为ROW
+      --expire_logs_days=7 #binlog文件存活时间
+	  --binlog_cache_size=4m  #binlog缓存大小
+	  --max_binlog_cache_size=512m #最大binlog缓存大小
+      --max_binlog_size=100m  #binlog每个日志文件大小
       --explicit_defaults_for_timestamp=true
       --lower_case_table_names=1
       --sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
@@ -5568,7 +5573,40 @@ seata:
 
 
 
+### 6-19  安装nsfwjs 图片鉴黄API
 
+```yml
+version: '3.8'
+services:
+  nsfwjs:
+    container_name: nsfwjs
+    image: eugencepoi/nsfw_api # 替换为你自己构建或从其他地方获取的NSFW JS图像
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data # 将本地数据目录挂载到容器内的数据目录
+    environment:
+      PORT: 5000
+```
+
+安装成功后访问：
+
+```sh
+curl -X GET -H 'Content-Type: application/json' "http://127.0.0.1:5000?url=https://file.quanxianglife.cn/20240105/c060e77cab5b4ed382d1d13e24bc46ae.png"
+```
+
+**注意：经过xiaoz测试，如果图片URL地址带有端口号会识别不了而报错。**
+
+```
+返回结果示例
+{
+    "score": 0.00016061133646871895,
+    "url": "https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png"
+}
+```
+
+`score`是图片得分，范围在`0-1`之间，1 表示它肯定是成人内容，而 0 则不是。经过xiaoz测试，其实大于`0.9`就可以认为是成人内容。
 
 ## 7、集运centos构建镜像
 

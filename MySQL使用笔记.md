@@ -709,6 +709,16 @@ SELECT * FROM table WHERE CONCAT(',',字段,',')
 REGEXP(SELECT CONCAT(',',REPLACE('参数逗号间隔', ',', ',|,'),',')); 
 ```
 
+#### 13、group by中WITH ROLLUP使用统计
+
+当需要对数据库数据进行分类统计的时候，往往会用上 groupby 进行分组。
+
+```mysql
+SELECT name, SUM(signin) as signin_count 
+FROM  employee_tbl 
+GROUP BY name WITH ROLLUP;
+```
+
 
 
 ## mysql命令行执行sql文件时忽略异常继续执行
@@ -1488,7 +1498,7 @@ mysqldump -ucloudpassport -pCtx1ytxA@3zdj cloudpassport risk_sys_info --no-autoc
 
 ## 
 
-# 导入sql脚本文件
+## 3、导入sql脚本文件
 
 ```mysql
 mysql -ucloudpassport -pCtx1ytxA@3zdj 数据库名 < 存放位置
@@ -1497,6 +1507,43 @@ mysql -uroot -p123456 cloud_system<D:\\mysql\\LOL3.sql
 执行sql脚本文件
 mysql> source sql脚本所在目录
 ```
+
+## 4、如何根据BindLog日志文件恢复数据
+
+4-1 数据恢复
+
+防止恢复数据后影响最新业务，需要执行flush logs，产生一个新的binlog文件，此时旧的binlog文件不会再有写入。
+
+恢复时需要在binlog中找到两个位置：
+
+- 数据恢复的起始位置
+- 数据恢复的结束位置
+
+通过mysqlbinlog将binlog转为**sql**，以方便查询具体位置
+
+```bash
+mysqlbinlog --set-charset=utf-8 /var/lib/mysql/mysql-bin.000001>backuptmp.sql
+```
+
+查看生成的backuptmp.sql，最终确定需要恢复的起始位置为219，结束位置为982
+
+```mysql
+# at 982
+....
+drop database test;
+....
+# at 983
+```
+
+* 通过命令恢复
+
+```shell
+mysqlbinlog -v /var/lib/mysql/mysql-bin.000001 --start-position=219 --stop-position=982 | mysql -uroot -p123456
+```
+
+
+
+
 
 # MySQL监控
 
