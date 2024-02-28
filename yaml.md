@@ -503,6 +503,9 @@ git push origin --delete dev20181018
 #慎用
 git push -f origin development 
 #注释： origin远程仓库名，master分支名，-f为force，意为：强行、强制
+
+#可以删除未被版本控制的文件
+git clean -df
 ```
 
 #### Git commit回退
@@ -515,9 +518,23 @@ HEAD^的意思是上一个版本，也可以写成HEAD~1，如果你进行了2�
 --mixed 不删除工作空间改动代码，撤销commit，并且撤销git add . 操作，这个为默认参数,git reset --mixed HEAD^ 和 git reset HEAD^ 效果是一样的。
 --soft  不删除工作空间改动代码，撤销commit，不撤销git add .
 --hard 删除工作空间改动代码，撤销commit，撤销git add .
-————————————————
-版权声明：本文为CSDN博主「panjiayue」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
-原文链接：https://blog.csdn.net/panjiayue/article/details/121983178
+ 
+```
+
+#### GIT 取消本地文件的修改
+
+```shell
+ #撤销对所有文件的修改  谨慎考虑
+ git reset --hard HEAD
+ #指定文件
+ git reset HEAD <文件名>
+ 
+ #可以撤销对单个文件的修改
+ git checkout -- file
+ #放弃对所有文件的修改
+ git checkout .
+ 
+ git revert <commit>
 ```
 
 
@@ -1805,6 +1822,8 @@ private static void zipFile() throws ZipException {
 
 form编码格式必须为multipart/form-data
 ```
+#### 使用commons-io的文件观察器，实现文件动态变动的监听
+* https://gitee.com/liuyueyi/quick-task 
 
 ```java
 判断是否为文件上传请求
@@ -3278,6 +3297,12 @@ var detail = new Vue({
         搜索数据**/
     watch:{
         #data里的数据属性监听 监听属性的变化
+        item: {
+            handler(val) {
+                this.item = val
+            },
+            deep: true #深度监听
+        }
     }
     filters:{
     	#过滤器
@@ -3525,15 +3550,18 @@ this.$emit('addClick', params)
 
 
 
-##### vue动态组件
+##### vue动态组件 :is
 
 ```vue
 核心代码
-<component :is="componentTag"></component>
+<component :is="type1"></component>
 
+import templates from './template/index'
+import templates2 from './template/index'
 data() {
     return {
-        componentTag: '', //组件名称
+        type1: templates, //组件名称
+		templates2,
     }
 },
 ```
@@ -7721,7 +7749,11 @@ mvn clean package -pl lzmh-modules/lzmh-app -am -DskipTests
 mvn -s "D:\program\maven-3.6.3\maven3\conf\settings.xml" clean install
 ```
 
-
+#### Maven打包指定profile
+```cmd
+mvn clean package -Ptest -DskipTests
+#指定pom文件里profiles里的test配置
+```
 
 #### Maven的脚本
 

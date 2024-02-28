@@ -4188,6 +4188,40 @@ environment:
 2、docker cp /usr/share/zoneinfo/Asia/Shanghai 容器名:/etc/localtime
 ```
 
+#### docker-compose  deploy配置
+
+```yml
+version: '3'
+services:
+  webapp:
+    build: .
+    ports:
+      - "80:80"
+    networks:
+      - frontend
+    deploy:
+      replicas: 5  #表示要创建多少个容器来运行此服务（默认为1）
+      restart_policy: # 重启策略
+        condition: on-failure  #定义了当容器退出时重新启动的条件（默认为always）；
+        max_attempts: 3
+      resources:   #resources可以限制每个容器使用的CPU和内存资源量
+        limits:   #上限值
+          cpus: '0.5'
+          memory: 1G
+        reservations: #警告值
+          memory: 512M
+      update_config:   #定义了更新服务时的并发性、延迟等参数；
+        parallelism: 2 #
+        delay: 10s
+      endpoint_mode: dnsrr #指定了服务之间通信的模式（默认为vip）
+      #若非特殊服务，以上deploy节点的配置能够满足大部分部署场景了
+networks:
+  frontend:
+    driver: overlay
+```
+
+
+
 
 
 ### 6-1  安装mysql和tomcat nginx
@@ -5175,7 +5209,9 @@ Docker run -it --network test-network --network-alias a a
 Docker run -it --network test-network --network-alias b b
 ```
 
-### 6-13 打包一个springboot服务 容器化Dockerfile
+### 6-13 打包一个springboot服务 
+
+#### 6-13-1 容器化Dockerfile
 
 ```dockerfile
 FROM openjdk:8-jdk-alpine  #FROM openjdk:8-jre-slim   实测alpine的包更小
@@ -5210,8 +5246,50 @@ services:
       - "lzmh-es:192.168.1.55"
       - "lzmh-mongo:192.168.1.55"
       - "lzmh-xxl-job:192.168.1.12"
-
 ```
+
+#### 6-13-2 不需要打包镜像运行服务？
+
+* 不需要dockerfile文件
+
+```yml
+#docker-compose.yml
+version: '3.8'
+services:
+  lzmh-user:
+    image: adoptopenjdk/openjdk8:jdk8u402-b06-centos
+    container_name: lzmh-user
+    restart: always
+    network_mode: host
+    environment:
+      - TZ="Asia/Shanghai"
+    volumes:
+      - ./logs:/logs/lzmh-user
+      - ./lzmh-user.jar:/usr/local/docker/service/user/lzmh-user.jar
+    ports:
+      - "18111:18111"
+    command: 
+      - java
+      - -jar
+      - -Xms512m 
+      - -Xmx512m
+      - -Duser.timezone=Asia/Shanghai
+      - /usr/local/docker/service/user/lzmh-user.jar
+    extra_hosts:
+      - "lzmh-gateway:172.22.196.190"
+      - "lzmh-register:172.20.188.69"
+      - "lzmh-xxl-job:172.22.196.190"
+      - "lzmh-rocketmq:172.22.196.190"
+      - "lzmh-mongodb:172.20.188.69"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 512M
+```
+
+
 
 ### 6-14 openjdk-alpine镜像字体问题
 
@@ -5607,6 +5685,10 @@ curl -X GET -H 'Content-Type: application/json' "http://127.0.0.1:5000?url=https
 ```
 
 `score`是图片得分，范围在`0-1`之间，1 表示它肯定是成人内容，而 0 则不是。经过xiaoz测试，其实大于`0.9`就可以认为是成人内容。
+
+
+
+
 
 ## 7、集运centos构建镜像
 

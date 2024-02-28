@@ -513,7 +513,7 @@ management:  #actuator
       exposure:
         include: "*" #默认只有health和info
 ```
-
+访问 /actuator/health 健康检查
 
 
 `/gateway`为默认端点

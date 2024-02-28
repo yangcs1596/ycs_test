@@ -178,7 +178,7 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 | 组件封装                                 | https://github.com/yangcs1596/boca                           |
 | jnpf白皮书项目                           | https://github.com/anglamei/medical-java-cloud               |
 | pigx学习微服务<br />这人4.2k的仓库就离谱 | https://github.com/cckmit/pigx-1.git <br />https://github.com/cckmit/wallet-parent.git<br />还有翻墙软件 |
-|                                          |                                                              |
+| java加密和解密工具                       | https://mp.weixin.qq.com/s?__biz=Mzg5Mzg1ODg2OA==&mid=2247484590&idx=8&sn=fbcec5eba567697bda6dd6f0b272c8ff&chksm=c02921f5f75ea8e3bb9413de1274d9591d10e32427899c0751676076d3ff09ae1cc83ba08049&scene=27<br /><br />https://gitee.com/yuquan0405/org.yq.tools.encrypt.git |
 
 
 
@@ -1427,7 +1427,11 @@ class XX implements Runnable
 }
 ```
 
-线程在执行期间不允许其它线程进入-------用同步   synchronized
+####  2-0 synchronized
+
+线程在执行期间不允许其它线程进入-------用同步  
+
+`synchronized`的使用其实比较简单，可以用它来修饰实例方法和静态方法，也可以用来修饰代码块。
 
 ```java
 class XX implements Runnable
@@ -1452,11 +1456,16 @@ class XX implements Runnable
 同步的前提：多个线程在同步中必须使用同一个锁obj。这才是对多个线程的同步。
 ```
 
+补充一个常见的面试题：构造方法可以用synchronized关键字修饰吗？
+
+> 不能，也不需要，因为构造方法本身就是线程安全的
+
 ```java
 //同步函数
 public sysnchronized void func(){
     
 }
+
 //同步函数用的锁就是this
 
 //解决单例效率地的问题，用双重判断的形式。
