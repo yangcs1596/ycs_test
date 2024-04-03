@@ -24,7 +24,14 @@
 
 [详细参照微服务文档](https://martinfowler.com/articles/microservices.html#MicroservicesAndSoa)
 
+**如果你想要在启动Spring Boot应用时通过命令行参数直接设置JVM参数，你可以在`JAVA_OPTS`或`_JAVA_OPTIONS`环境变量中设置**
 
+**JAVA_OPTS**是某些软件如tomcat的启动脚本设置的  
+
+**_JAVA_OPTIONS** 和 **JAVA_TOOL_OPTIONS** ，如果只有一个存在，则java/javac会使用有值的设置；
+如果同时存在，会先检测到JAVA_TOOL_OPTIONS，java命令使用所有变量设置的值；
+_JAVA_OPTIONS中同名的值会覆盖JAVA_TOOL_OPTIONS中设置的值（如JVM堆大小），使用jvisualvm查看运行的程序可以发现。
+但不确定上述两个变量哪个对java或javac是特定的
 
 ## 3、环境准备
 
@@ -2947,6 +2954,8 @@ Jetty
 
 Undertow
 
+是一个用Java编写的高性能Web服务器，它比Apache Tomcat和Jetty更轻量级，适合用于嵌入式和移动环境
+
 ```xml
 <!-- 引入web模块 -->
 <dependency>
@@ -3544,6 +3553,8 @@ ip addr
 
 #### 2）、在linux虚拟机上安装docker
 
+> 一键安装 https://www.oschina.net/p/install-docker
+
 步骤：
 
 ```shell
@@ -3638,6 +3649,8 @@ docker push bxy-registry:5000/tomcat:v1　　　　    #推送镜像
 
 参考 https://www.jianshu.com/p/3d1878f857eb
 
+/etc/docker/daemon.json
+
 ```json
 {
     "registry-mirrors": [
@@ -3655,6 +3668,14 @@ docker push bxy-registry:5000/tomcat:v1　　　　    #推送镜像
         "max-size" :"50m","max-file":"1"
     }
 }
+```
+
+#### 1-2)查看内存占用
+
+```sh
+docker stats
+docker stats --no-stream
+docker stats --format "table {{.Container}}\t{{.Name}}\t{{.MemUsage}}"
 ```
 
 
@@ -4093,8 +4114,6 @@ firewall-cmd --permanent --zone=trusted --change-interface=docker0
 firewall-cmd --reload
 ```
 
-
-
 ## 6、docker-compose
 
 ### 初始环境准备
@@ -4186,6 +4205,21 @@ environment:
 ```shell
 1、进入容器docker exec -it 容器名 sh
 2、docker cp /usr/share/zoneinfo/Asia/Shanghai 容器名:/etc/localtime
+```
+
+#### docker-compose的命令初始化区别
+
+* entrypoint  指定了容器启动时默认要运行的命令，可以看作是容器的入口点。`entrypoint` 可以是可执行文件或脚本，它在容器启动时只运行一次。
+* `command` 是在 `entrypoint` 之后运行的，它可以覆盖 `entrypoint` 的默认行为，并为容器提供默认的命令。`command` 在每次容器启动时都会执行。
+
+```yaml
+#示例
+version: '3'
+services:
+  myservice:
+    image: myimage
+    entrypoint: ["sh /path/to/entrypoint.sh"]
+    command: ["default", "command"]
 ```
 
 #### docker-compose  deploy配置
@@ -4299,7 +4333,7 @@ services:
       - ./application.properties:/home/nacos/conf/application.properties
 ```
 
-### 6-3 安装canal
+### 6-3 安装canal-server
 
 ```yaml
 version: '3'
@@ -4462,7 +4496,12 @@ services:
       - '/docker/zookeeper/conf:/conf'
 ```
 
+#### 6-3-1 canal-server和canal-adapter
 
+> |               |                                     |
+> | ------------- | ----------------------------------- |
+> | canal-adapter | 订阅canal-adapter，向目标库写入数据 |
+> | canal-server  | 监听源库，获取源数据                |
 
 ### 6-4 安装elasticsearch
 
@@ -4477,6 +4516,7 @@ services:
   elasticsearch:
     image: elasticsearch:7.14.2
     container_name: elasticsearch
+    restart: always
     ports:
       - 9200:9200
       - 9300:9300
@@ -4499,6 +4539,7 @@ services:
   kibana:
     image: kibana:7.14.2
     container_name: kibana
+    restart: always
     ports:
       - 5601:5601
     networks:
@@ -5017,7 +5058,7 @@ services:
       - NAMESRV_ADDR=namesrv:9876
 ```
 
-####  例子二
+####  安装示例二
 
 ```yaml
 version: '3.8'
@@ -5170,12 +5211,15 @@ services:
       retries: 3
       start_period: 10s
     environment:
+      TZ: Asia/Shanghai
       SW_STORAGE: elasticsearch
       SW_STORAGE_ES_CLUSTER_NODES: elasticsearch:9200
       SW_HEALTH_CHECKER: default
       SW_TELEMETRY: prometheus
       JAVA_OPTS: "-Xms1024m -Xmx1024m"
-
+    volumes:
+      - ./oap-config/application.yml:/skywalking/config/application.yml
+      - ./oap-config/alarm-settings.yml:/skywalking/config/alarm-settings.yml
   skywalking-ui:
     image: apache/skywalking-ui:8.9.0
     container_name: skywalking-ui
@@ -5187,8 +5231,27 @@ services:
     ports:
       - "9090:8080"
     environment:
+      TZ: Asia/Shanghai
       SW_OAP_ADDRESS: http://oap:12800
 
+```
+
+#### 6-11-1 容器服务使用agent
+
+```yaml
+#简单示例
+version: '3'
+services:
+  your-service:
+    image: your-service-image  #可看6-13-2免dockerfile部署java服务
+    environment:
+      - SW_AGENT_NAME=your-service-name
+      - SW_AGENT_COLLECTOR_BACKEND_SERVICES=gRPC地址:11800
+      - TZ=Asia/Shanghai # 配置程序默认时区为上海（中国标准时间）
+    volumes:
+      - /path/to/skywalking/agent:/skywalking/agent
+    entrypoint: java -javaagent:/skywalking/agent/skywalking-agent.jar -Dskywalking.agent.service_name=${SW_AGENT_NAME} -jar your-service-jar
+     
 ```
 
 
@@ -5686,7 +5749,143 @@ curl -X GET -H 'Content-Type: application/json' "http://127.0.0.1:5000?url=https
 
 `score`是图片得分，范围在`0-1`之间，1 表示它肯定是成人内容，而 0 则不是。经过xiaoz测试，其实大于`0.9`就可以认为是成人内容。
 
+### 6-20 安装Prometheus+grafana 
 
+* 初始化 Prometheus+grafana
+  创建相关目录并给予权限，持久化目录需要给777权限，否则容器启动失败
+
+```shell
+cd ~ && mkdir prometheus && chmod 777 prometheus
+cd prometheus && mkdir grafana_data prometheus_data && chmod 777 grafana_data prometheus_data
+
+chmod 777 grafana_data/ prometheus_data/ #个人根据配置文件中具体的挂在目录进行权限修改
+```
+
+
+```yml
+version: "3.7"
+services:
+  node-exporter: #启动node-exporter采集机器信息
+    image: prom/node-exporter:latest
+    container_name: "node-exporter0"
+    ports:
+      - "9100:9100"
+    restart: always
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: "prometheus0"
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - "./prometheus.yml:/etc/prometheus/prometheus.yml"
+      - "./prometheus_data:/prometheus"
+  grafana:
+    image: grafana/grafana
+    container_name: "grafana0"
+    ports:
+      - "3000:3000"
+    restart: always
+    volumes:
+      - "./grafana_data:/var/lib/grafana"
+
+
+```
+
+* vim prometheus.yml
+
+```yml
+global:
+  scrape_interval:     15s # 默认抓取周期
+  external_labels:
+    monitor: 'codelab-monitor'
+scrape_configs:
+  - job_name: 'node-exporter' #服务的名称
+    scrape_interval: 5s
+    metrics_path: /metrics  #获取指标的url
+    static_configs:
+      - targets: ['xxx.xx.xx.xxx:9100'] # 这个为监听指定服务服务的ip和port，需要修改为自己的ip，貌似云服务必须用公网ip
+
+```
+
+* 开放端口
+
+> 9100 ：node-exporter
+> 9090 ：prometheus
+> 3000 ：grafana
+>
+> 访问主机的9090端口可以查到Prometheus监控到的数据，访问3000端口是grafana的界面，账密admin/admin
+>
+> 输入模板号 9276，点击load 或者 8919
+
+#### 6-20-1 node_exporter安装启动
+
+>  exporter插件是prometheus安装在远程机器上收集监控数据。
+
+```shell
+下载node_exporter 组件地址
+ 
+https://prometheus.io/download/
+ 
+cd /home/GPE
+wget  https://github.com/prometheus/node_exporter/releases/download/v1.0.0/node_exporter-1.0.0.linux-amd64.tar.gz
+tar -zvxf node_exporter-1.0.0.linux-amd64.tar.gz
+```
+
+```shell
+启动
+cd /home/GPE/node_exporter-1.0.0.linux-amd64
+nohup ./node_exporter &
+## 如果想修改端口号：
+nohup ./node_exporter --web.listen-address=":<port>"  & 
+```
+
+>  修改Prometheus配置文件
+
+`node_exporter`启动成功之后，我们需要在`Prometheus`的配置新增一个任务来收集`node_exporter`收集的服务器相关信息。下面修改`prometheus.yml`配置信息：
+
+```yml
+cd /home/GPE/prometheus-2.18.1.linux-amd64
+vi prometheus.yml
+## 添加内容
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+    static_configs:
+    - targets: ['localhost:9090']
+  - job_name: 'linux'
+    static_configs:
+    - targets: ['localhost:9100']
+      labels:
+        instance: my_ubuntu
+```
+
+#### 6-20-2 jmx_exporter安装启动
+
+```yaml
+#在Docker Compose中使用jmx_prometheus_javaagent和jmx_exporter可以帮助你监控运行在Docker容器中的Java应用程序的JMX指标并将其转换为Prometheus格式的指标。
+以下是一个简单的示例，展示了如何在docker-compose.yml文件中配置Java应用程序以使用jmx_prometheus_javaagent和jmx_exporter
+version: '3'
+services:
+  java-app:
+    image: your-java-app-image
+    ports:
+      - "8080:8080" # 假设Java应用程序暴露8080端口
+    environment:
+      - JAVA_OPTS=-javaagent:/path/to/jmx_prometheus_javaagent-0.16.1.jar=8081:/path/to/jmx-config.yaml
+    volumes:
+      - /path/to/jmx_prometheus_javaagent.jar:/path/to/jmx_prometheus_javaagent.jar
+      - /path/to/jmx-config.yaml:/path/to/jmx-config.yaml
+ 
+  jmx-exporter:
+    image: prom/jmx-exporter
+    ports:
+      - "8081:8080" # jmx_exporter默认监听8080端口
+    depends_on:
+      - java-app
+```
 
 
 

@@ -8363,7 +8363,12 @@ src/main/java下的默认只打包java文件，如果想打包xml文件，则加
 ```xml
 <build>
     <plugin>  
-        <artifactId>maven-resources-plugin</artifactId>  
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <configuration>
+            <delimiters>@</delimiters>
+            <useDefaultDelimiters>false</useDefaultDelimiters>
+        </configuration>
         <executions>  
             <execution>  
                 <id>copy-resources</id>  

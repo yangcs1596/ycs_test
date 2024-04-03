@@ -263,7 +263,7 @@ lpad(str1,length,str2)。
 
 
 
-#### 自定义函数
+#### 7、自定义函数
 
 ```mysql
 -- 最简单的仅有一条sql的函数
@@ -291,6 +291,59 @@ select myselect5("python");
 查看所有函数：show function status [like 'pattern'];
 修改alter function 函数名 选项；
 删除drop function 函数名;
+```
+
+#### 8、触发器 TRIGGER
+
+在插入、更新和删除语句前后自动执行的一堆SQL代码，可以修改任何表中的数据，**除了触发器所在表**。
+
+- **payments_after_insert**：触发器的名称；'after'/'before'表示在SQL语句之后/之前触发trigger；引爆trigger的SQL语句类型
+- **FOR EACH ROW**：trigger作用于每一个受影响的行，表级别的trigger只需触发一次
+- **BEGIN...END**：中间主体，写任意SQL语句修改数据
+- **NEW**：返回新插入的行，每次插入数据时，NEW.amount获取新的付款值
+- **OLD**：返回更新前的行以及对应数值
+
+```mysql
+#创建
+CREATE TRIGGER payments_after_insert
+    AFTER INSERT ON payments
+    FOR EACH ROW
+BEGIN
+    UPDATE invoices
+    SET payment_total = payment_total + NEW.amount
+    WHERE invoice_id = NEW.invoice_id;  #注意多个语句要用分号;隔开
+END 
+#查看触发器
+SHOW TRIGGERS
+#删除
+DROP TRIGGER IF EXISTS payments_after_insert
+```
+
+#### 9、事件 EVENT
+
+- yearly_delete_stale_audit_rows：事件执行的时间间隔打头命名
+- 执行一次：AT '2023-11-25'
+- 定期执行：EVERY 1 YEAR STARTS '2019-01-01' ENDS '2024-01-01'
+
+```mysql
+#删除某一年的数据
+CREATE EVENT yearly_delete_stale_audit_rows
+ON SCHEDULE
+    -- AT '2023-11-25'
+    EVERY 1 YEAR STARTS '2019-01-01' ENDS '2024-01-01'
+DO BEGIN
+    DELETE FROM payments_audit
+    WHERE action_date < NOW() - INTERVAL 1 YEAR;
+    
+END
+#查看、删除和修改事件
+SHOW EVENTS LIKE 'yearly%';
+DROP EVENT IF EXISTS yearly_delete_stale_audit_rows;
+
+#替换CREATE EVENT，修改query
+#暂时启用/禁用事件
+ALTER EVENT yearly_delete_stale_audit_rows DISABLE;
+ALTER EVENT yearly_delete_stale_audit_rows ENABLE;
 ```
 
 

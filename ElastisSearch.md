@@ -111,35 +111,31 @@ curl -XGET "http://localhost:9200/test_index/_mappings?pretty"
 curl -XDELETE "http://localhost:9200/test_index"
 ```
 
-## 3、文档
-
-
+## 3、文档基础操作
 
 ```shell
 #插入数据
 curl -H "Content-Type: application/json"  -XPOST 'http://localhost:9200/test_index/person/?pretty' -d '{"date":11222, "name": "abc", "status": 1,"type":134}'
 
 #查询索引中的全部内容
-curl -XGET "http://localhost:9200/test_index/_search?pretty"
+curl -XGET "http://localhost:9200/${index_name}/_search?pretty"
 #查询某个type的内容
-curl -XGET "http://localhost:9200/test_index/person/_search?pretty"
+curl -XGET "http://localhost:9200/${index_name}/${_type}/_search?pretty"
 
 #根据文档的id查询文档，如果需要查询多个字段使用逗号进行隔开，不指定就是显示全部字段
-curl -XGET "http://localhost:9200/test_index/person/zbyJjXYB2UzVbYB2ykZa?_source=name,type&pretty"
+curl -XGET "http://localhost:9200/${index_name}/${_type}/${_id}?_source=name,type&pretty"
 
 #根据条件进行简单查询
-curl -XGET "http://localhost:9200/test_index/person/_search?q=name:&pretty"
+curl -XGET "http://localhost:9200/${index_name}/${type}/_search?q=name:&pretty"
 
 #更新文档内容
-curl -H "Content-Type: application/json"  -XPOST 'http://localhost:9200/test_index/person/0LyYjXYB2UzVbYB2qUZi/_update?pretty' -d '{"doc":{ "name": "wxg111", "status": 1,"type":134}}'
+curl -H "Content-Type: application/json"  -XPOST "http://localhost:9200/${index_name}/${type}/${_id}/_update?pretty" -d '{"doc":{ "name": "wxg111", "status": 1,"type":134}}'
 
 #删除文档内容
-curl -XDELETE  "http://localhost:9200/test_index/person/zryOjXYB2UzVbYB2AkbI?&pretty"
+curl -XDELETE  "/${index_name}/_doc/${_id}"
 ```
 
 ## 4、DSL
-
-
 
 ```shell
 #查询索引下所有文档
@@ -286,7 +282,9 @@ GET /product/_search
 
 
 
-## 综合场景查询
+## bool综合场景查询
+
+bool查询包含四种操作符，分别是**must,should,must_not,filter**。它们均是一种数组，数组里面是对应的判断条件
 
 **must** ——所有的语句都 必须（must） 匹配，与 AND 等价。
 **must_not** ——所有的语句都 不能（must not） 匹配，与 NOT 等价。
@@ -361,23 +359,6 @@ GET /product/_search
 }
 ```
 
-### query-term精确查询，类似mysql语句
-
-
-
-
-```json
-SELECT document FROM products WHERE price = 20;
-#GET /my_store/products/_search
-{
-    "query":{
-        "term":{
-            "price":20
-        }
-    }
-}
-```
-
 ### filters 过滤器
 
 当进行精确值查找时， 我们会使用过滤器（filters）。过滤器很重要，因为它们执行速度非常快，不会计算相关度（直接跳过了整个评分阶段）而且很容易被缓存。如下： 使用 constant_score 查询以非评分模式来执行 term 查询并以一作为统一评分。
@@ -419,6 +400,7 @@ WHERE price BETWEEN 20 AND 40
 ES中对应的DSL如下：
 
 ```json
+方式一： gt lt等
 #GET /my_store/products/_search
 {
     "query":{
@@ -432,6 +414,18 @@ ES中对应的DSL如下：
                 }
             }
         }
+    }
+}
+
+
+方式二： from&to
+{"range": {
+    "dispense.buyEndTime": {
+        "from": "2024-03-27 11:22:02",
+        "to": null,
+        "include_lower": true, #默认true
+        "include_upper": true, #默认true
+        "boost": 1
     }
 }
 ```
@@ -449,12 +443,35 @@ ES中，exist查询某个字段是否存在：
 GET /my_index/posts/_search
 {
     "query" : {
-        "constant_score" : {
-            "filter" : {
-                "exists" : { "field" : "tags" }
-            }
-        }
+        "exists": { "field": "date_field" }
     }
+}
+
+##不存在
+{
+  "query": {
+    "bool": {
+      "must_not": {
+        "exists": { "field": "date_field" }
+      }
+    }
+  }
+}
+
+##不为空
+{
+  "query": {
+    "bool": {
+      "must_not": [
+        {
+          "exists": { "field": "date_field" }
+        },
+        {
+          "match": { "date_field": "" }
+        }
+      ]
+    }
+  }
 }
 ```
 
@@ -528,14 +545,73 @@ lte :小于等于
 
 ```
 
-##### Query 和 match 和 bool
+## Query 和 match 和 bool
 
 ```
 match Query即全文检索，它的搜索方式是先将搜索字符串分词，再使用各各词条从索引中搜索。
-
 match query与Term query区别是match query在搜索前先将搜索关键字分词，再拿各各词语去索引中搜索。
-
 布尔查询对应于Lucene的BooleanQuery查询，实现将多个查询组合起来。
+```
+
+### match的参数
+
+在match中支持以下参数：
+
+* query：查询条件
+
+* operator：匹配条件（AND、OR (Default)）
+
+* minimum_should_match：最小匹配的数量，用来指定文档中至少包含几个关键字才算匹配到
+
+* fuzziness：最大编辑距离，详细参考Term级别查询中fuzzy查询一节的内容。
+
+* prefix_length：通过最大编辑距离进行模糊查询额时候，开始的多少个字符不允许被模糊，默认值为0。下面有例子
+
+* fuzzy_transpositions：boolean值，默认true，表示扩展模糊选项的时候，是否包含两个相邻字符的位置互换这种手段
+
+* fuzzy_rewrite：可以重写查询方法，目前还没实践到，关于更多说明可以参考：rewrite parameter
+
+* analyzer：可以指定分词器，如果不指定，用默认的
+
+* max_expansions：参考Term级别查询中fuzzy查询一节的内容。默认 50
+
+* zero_terms_query：在实际的文档中，可能有很多这样的词，比如中文中的的，了，呢，或者英文中的or、and、is、do等。那么这样的词对我们的搜索可能是没有任何帮助的，我们把这些的词叫做停用词，ES中有一个停用词分析器：Stop token filter，如果我们的查询请求的关键字中包括这些词，并且用到了这个分析器，那么他会帮我们把这些停用词移除掉。如果我们的查询请求中所有的关键字都被移除掉了，就不会匹配到任何文档，那么这个时候，是否要给用户返回一个空呢？ES提供了两种策略，也就是通过这个字段去表示的：
+
+  none (default)：不返回任何文档
+
+  all：返回所有文档，相当于执行了match_all
+
+* lenient：lenient有仁慈的，宽容的意思。这里表示是否忽略一些输入错误，比如为一个数字类型的字段输入了一个字符串去匹配，如果设置为true，会忽略，默认值是false
+
+* auto_generate_synonyms_phrase_query：默认是true 同义词查询
+
+
+
+##### match_all检索全部数据
+
+```
+ 
+#match_all 匹配所有的， 当不给查询条件时，默认全查，匹配所有字段。
+{ "match_all": {}}
+
+#multi_match 同时对查询的关键词，多个字段同时进行匹配，只要其中一个字段匹配到值就返回结果
+{
+    "query":{
+        "multi_match":{
+            "query":"2501",
+            "fields":["merchant_id","_id"]
+        }
+    }
+}
+```
+
+bool查询包含四种操作符，分别是**must,should,must_not,filter**。它们均是一种数组，数组里面是对应的判断条件
+
+```
+must： 必须匹配，与and等价。贡献算分
+must_not：必须不匹配，与not等价，常过滤子句用，但不贡献算分
+should： 选择性匹配，至少满足一条，与 OR 等价。贡献算分
+filter： 过滤子句，必须匹配，但不贡献算分
 ```
 
 
@@ -1272,6 +1348,10 @@ select * from user_info order by field(gender, 'Male', 'Female'), id desc;
             }
         }
     },
+    // 风险高？
+    //"query": {
+    //    "match_all": {}
+    //  },
     "script": {
         "inline":"ctx._source.updateTime = 1467907200000;ctx._source.userId=params.userId",
         "params":{
@@ -2012,6 +2092,151 @@ IK分词器给出了单个汉字的扩展
             "assetName",
             "assetVersion"
         ]
+    }
+}
+```
+
+## 评分模式
+
+```json
+{
+    "from": 0,
+    "size": 10,
+    "query": {
+        "bool": {
+            "filter": [
+                {
+                    "bool": {
+                        "must": [
+                            {
+                                "term": {
+                                    "appId": {
+                                        "value": "15",
+                                        "boost": 1
+                                    }
+                                }
+                            },
+                            {
+                                "range": {
+                                    "dispense.showStartTime": {
+                                        "from": null,
+                                        "to": "2024-03-27 11:22:02",
+                                        "include_lower": true,
+                                        "include_upper": true,
+                                        "boost": 1
+                                    }
+                                }
+                            }
+                        ],
+                        "adjust_pure_negative": true,
+                        "boost": 1
+                    }
+                }
+            ],
+            "must_not": [
+                {
+                    "match": {
+                        "goods.goodsTitle": {
+                            "query": "66",
+                            "operator": "OR",
+                            "prefix_length": 0,
+                            "max_expansions": 50,
+                            "fuzzy_transpositions": true,
+                            "lenient": false,
+                            "zero_terms_query": "NONE",
+                            "auto_generate_synonyms_phrase_query": true,
+                            "boost": 1
+                        }
+                    }
+                }
+            ],
+            "adjust_pure_negative": true,
+            "boost": 1
+        }
+    },
+    "sort": [
+        {
+            "_score": {
+                "order": "desc"
+            }
+        },
+        {
+            "goods.createTime": {
+                "order": "desc"
+            }
+        }
+    ],
+    "aggregations": {
+        "collapseTotal": {
+            "cardinality": {
+                "field": "goods.goodsId"
+            }
+        }
+    },
+    "highlight": {
+        "pre_tags": [
+            "<font color='red'>"
+        ],
+        "post_tags": [
+            "</font>"
+        ],
+        "require_field_match": true,
+        "fields": {
+            "goods.goodsTitle": {
+
+            }
+        }
+    },
+    "collapse": {
+        "field": "goods.goodsId"
+    }
+}
+```
+
+## 精准查询
+
+```json
+{
+    "from": 0,
+    "size": 10,
+    "query": {
+        "bool": {
+            "must": [
+                {
+                    "term": {
+                        "draft": {
+                            "value": "0",
+                            "boost": 1
+                        }
+                    }
+                }
+            ],
+            "adjust_pure_negative": true,
+            "boost": 1
+        }
+    },
+    "sort": [
+        {
+            "bizId": {
+                "order": "desc"
+            }
+        }
+    ],
+    "track_total_hits": 2147483647,
+    "highlight": {
+        "pre_tags": [
+            "<em>"
+        ],
+        "post_tags": [
+            "</em>"
+        ],
+        "fragment_size": 10,
+        "number_of_fragments": 2,
+        "fields": {
+            "content": {
+                "type": "unified"
+            }
+        }
     }
 }
 ```

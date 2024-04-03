@@ -189,6 +189,26 @@ Jprofiler，有可视化界面，功能也比较完善，能够打开JVM工具(�
 输入命令后，会以表格的形式显示存活对象的信息，并按照所占内存大小排序
 ```
 
+* 启动命令
+```bash
+#=====startup.sh======
+#!/bin/bash
+nohup java -Xms1024m -Xmx1024m -jar lzmh-app.jar >nohup.out 2>&1 &
+# 解决没有日志输出问题
+# nohup java -jar your_program.jar > output.log & 
+
+#========stop.sh=====
+#!/bin/bash
+PID=$(ps -ef | grep lzmh-app.jar | grep -v grep | awk '{ print $2 }')
+if [ -z "$PID" ]
+then
+    echo Application is already stopped
+else
+    echo kill -9 $PID
+    kill -9 $PID
+
+```
+
 - 执行代码时，通过设置JVM参数达到OOM的目的
 
 ```shell

@@ -1268,7 +1268,7 @@ c、LCN有控制台界面，Seata没有控制台界面
 ## Spring-Boot Admin
 
 ```xml
-<spring-boot-admin.version>2.1.6</spring-boot-admin.version>
+<spring-boot-admin.version>2.6.2</spring-boot-admin.version>
 <!-- 客户端 -->
 <dependency>
 	<groupId>de.codecentric</groupId>
@@ -1422,6 +1422,8 @@ mysql -uroot -p123456 -P 9066 -h 192.168.85.111
 | **Zipkin**     | **侵入低**   | **中** | **一般** | **多**   | **接口级** | **无** | **有**   | **有**      |
 | **Cat**        | **侵入高**   | **中** | **丰富** | **较多** | **代码级** | **有** | **无**   | **无**      |
 
+## docker安装
+
 docker-compose.yml
 
 ```yaml
@@ -1484,7 +1486,7 @@ services:
       - /etc/localtime:/etc/localtime 
 ```
 
-## java服务接入
+## java服务接入agent
 
 * 下载agent地址： https://archive.apache.org/dist/java-agent/  8.91版本
 
@@ -1503,8 +1505,6 @@ java -javaagent:/data/skywalking-agent/agent/skywalking-agent.jar
     <artifactId>apm-toolkit-trace</artifactId>
     <version>8.9.0</version>
 </dependency> 
-
-
 ```
 
 ```java
@@ -1533,15 +1533,20 @@ if (SKYWALKING_TRACE_CONTENT_PRESENT) {
 6.3.2 在log4j2的配置文件中获得TraceId
 
 ```properties
-通过 - [%traceId] - 标签可获取全局TraceId
+通过 - [%traceId] - 标签可获取全局TraceId 缩写格式:[%tid]
 示例：%date{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%traceId] - %msg% 
 ```
-
-
 
 
 
 # <span style="border-left: 5px solid rgb(248, 57, 41);">备注</span>
 
 
+
+```shell
+#skywalking参数备注
+-javaagent:E:\tmp\skywalking\skywalking-agent\skywalking-agent.jar -Dskywalking.agent.service_name=lzmh-gateway -Dskywalking.collector.backend_service=127.0.0.1:11800
+#sentinel参数备注
+-Dcsp.sentinel.app.type=1 -Dcsp.sentinel.dashboard.server=localhost:8718
+```
 

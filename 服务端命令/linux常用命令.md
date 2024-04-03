@@ -252,6 +252,12 @@ chown 用户名组  文件名
 
 ```shell
 env 查看所有变量
+#新增变量
+ENV JAVA_HOME /usr/lib/jvm/java-1.8.0-openjdk/
+export JAVA_HOME
+#移除变量
+env -u 环境变量名
+#这种都是临时的环境变量，永久的话用profile或者.bashrc配置
 ```
 
 ```shell
@@ -813,6 +819,11 @@ firewall-cmd --permanent --remove-port=123/tcp   #移除指定端口123
 firewall-cmd --reload                            #重载入添加的端口
 ———————————————— 
 firewall-cmd --reload # 重新加载
+
+设置防火墙
+$ firewall-cmd --zone=public --add-port=9100/tcp --permanent
+或指定白名单 IP
+$ firewall-cmd --permanent --add-rich-rule="rule family="ipv4" source address="192.168.1.141" port protocol="tcp" port="9100" accept"
 
 #### iptables
 sudo iptables -nL --line-number                               #查看

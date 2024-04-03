@@ -4929,6 +4929,23 @@ if标签里面的test判断是可以使用工具类来做判断的，毕竟test�
 </if>
 ```
 
+#### Insert标签
+
+映射插入方法的返回类型可以是`void`或`int`（在这种情况下，它将返回插入行的编号）。您可以执行以下机制来返回生成的 id：
+
+```xml
+方式一 返回自增主键
+<insert id="insert" useGeneratedKeys="true" keyProperty="id" >
+    
+方式二 使用 selectKey 返回主键的值
+<insert id="insert" parameterClass="MyParameter">
+  <selectKey resultType="Long" order="AFTER" keyProperty="id">
+      SELECT LAST_INSERT_ID()
+   </selectKey>
+  INSERT INTO mytable(col1, col2) VALUES (#{val1}, #{val2})
+</insert>
+```
+
 
 
 ### 使用@Param 和不使用@Param的区别
