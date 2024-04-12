@@ -179,6 +179,8 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 | jnpf白皮书项目                           | https://github.com/anglamei/medical-java-cloud               |
 | pigx学习微服务<br />这人4.2k的仓库就离谱 | https://github.com/cckmit/pigx-1.git <br />https://github.com/cckmit/wallet-parent.git<br />还有翻墙软件 |
 | java加密和解密工具                       | https://mp.weixin.qq.com/s?__biz=Mzg5Mzg1ODg2OA==&mid=2247484590&idx=8&sn=fbcec5eba567697bda6dd6f0b272c8ff&chksm=c02921f5f75ea8e3bb9413de1274d9591d10e32427899c0751676076d3ff09ae1cc83ba08049&scene=27<br /><br />https://gitee.com/yuquan0405/org.yq.tools.encrypt.git |
+|                                          |                                                              |
+| 看着学的动态代码生成，数据库加载模板     | https://github.com/easy-do/game-server-manager<br />https://gitee.com/yuzhanfeng/game-server-manager一套游戏管理、开发、云部署的平台软件 |
 
 
 

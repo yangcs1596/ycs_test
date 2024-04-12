@@ -108,6 +108,7 @@ curl -XGET "http://localhost:9200/test_index/_stats?pretty"
 #获取索引的mappings
 curl -XGET "http://localhost:9200/test_index/_mappings?pretty"
 #删除索引, 多个用逗号隔开  如何需要账号 -u elastic:密码
+#插件例子 http://elastic:Ns8shp4i6wZViAzFA6u7@121.40.86.195:9200
 curl -XDELETE "http://localhost:9200/test_index"
 ```
 
@@ -1366,11 +1367,10 @@ select * from user_info order by field(gender, 'Male', 'Female'), id desc;
 
 Delete-by-query 和 Update-by-query 重新回到 core 
 
-#### _delete-by-query
+#### _delete_by_query
 
 ```json
-#方式一：http://serverhost:9200/index/type/_delete_by_query   post
-#方式二：/索引名/需要清空的type/_query  DELETE
+http://serverhost:9200/index/type/_delete_by_query   post
 {
    "query": {
       "match": {

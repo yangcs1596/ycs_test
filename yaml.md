@@ -296,7 +296,7 @@ git remote add origin git@github.com:jinzhaogit/git.git 连接远程仓库
 git push -u origin master 将本地仓库文件推送到远程仓库
 git log 查看变更日志
 git reset --hard 版本号前六位 回归到指定版本
-git branch 查看分支
+git branch 查看分支 -a  --all查看全部分支
 git branch newname 创建一个叫newname的分支
 git checkout newname 切换到叫newname的分支上
 git merge newname 把newname分支合并到当前分支上
