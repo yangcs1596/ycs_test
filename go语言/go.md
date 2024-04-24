@@ -2,18 +2,33 @@
 
 前提：
 
+### 模板新建项目
+
+```cmd
+wails init -n [你的应用名称] -t https://github.com/misitebao/wails-template-vue
+#或者gitee地址 https://gitee.com/wailscn/wails-template-vue/tree/v1.0.0-beta.2
+n - 将要创建的应用名称
+t - 模板名称，支持内置模板名称以及超链接形式的第三方模板
+```
+
+
+
 ### 安装
 
 适合Go做的比较成熟的软件开发方向主要包括服务器开发，云平台开发，微服务实践和重构，区块链开发
 
 ```go
 //安装Wails v1.16.9
-go get -u github.com/wailsapp/wails/cmd/wails11
+go get -u github.com/wailsapp/wails/cmd/wails
+//最新版本
+go install github.com/wailsapp/wails/v2/cmd/wails@latest 
 
 go mod download github.com/wailsapp/wails
 
+
 //常用命令
 wails init
+//安装依赖
 //启动写好的桌面项目
 wails serve
 //Final Build and Run
