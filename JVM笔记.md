@@ -309,6 +309,21 @@ lsof -iTCP |grep ip
 
 kill -9 pid
 
+#### CPU线程飙高排查
+
+```cmd
+1、获取pid
+top 查看进程 假设pid=100标高
+2、查看线程
+top -hp 100 获取到飙高线程假设线程id=111
+3、将线程id转换成十六进制
+printf "0x%x" 111    得到0xa48a
+4、jstack工具跟踪堆栈定位代码位置
+jstack 100 |grep 0xa48a -A 5
+```
+
+
+
 
 
 # java常用命令

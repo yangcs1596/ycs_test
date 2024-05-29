@@ -537,9 +537,14 @@ HEAD^的意思是上一个版本，也可以写成HEAD~1，如果你进行了2�
  git revert <commit>
 ```
 
+#### GIT本地修改远程地址
 
-
-
+```shell
+cd /path/to/your/local/repo  # 替换为你的本地仓库路径
+git remote -v               # 查看当前远程仓库地址
+git remote set-url origin 新的GitLab地址  # 替换为新的GitLab地址
+git remote -v               # 再次查看以确认更改
+```
 
 ### GitLab安装教程
 
@@ -583,6 +588,30 @@ $ gitlab-ctl reconfigure
 ```
 
 最后一句出现 gitlab Reconfigured！ 则初始化成功
+
+#### GIT项目迁移
+
+```shell
+#方案一
+直接在gitlab界面上import
+#方案二
+在服务器后台拷贝代码仓库，
+gitlab-rake gitlab:import:repos['旧仓库代码的临时文件目录拷贝目录']
+#方案三
+将旧服务器上的工程克隆裸仓库到本地，再将本地仓库镜像推送到新服务器
+git push -–mirror 新目标仓库地址
+可以添加-f参数：
+如果需要强制覆盖远程仓库中的内容 git push -f --mirror 新目标仓库地址
+
+#权限验证时
+ https://<username>:<password>@<repository-url>
+```
+
+
+
+
+
+
 
 ### RestFul风格
 
@@ -1032,9 +1061,9 @@ HashTag可能会使过多的key分配到同一个slot中，造成数据倾斜影
 
 #### Redis新数据结构 统计数据
 
-* Bitmap  统计用户是否访问过网站
+* Bitmap  统计用户是否访问过网站 应用场景举例 ：用户签到情况、活跃用户情况、用户行为统计（比如是否点赞过某个视频）。
 
-  常用语法 setbit  getbit   bitcount
+  常用语法 `SETBIT`、`GETBIT`、`BITCOUNT`、`BITOP`
 
 * **HyperLogLog**   是用来做**基数统计**的算法 如 网站页统计UV 
 
@@ -1057,6 +1086,15 @@ HashTag可能会使过多的key分配到同一个slot中，造成数据倾斜影
 * **GEO**  用于存储地理信息以及对地理信息作操作的场景；应用：查看附近的人 ；微信位置共享；地图上直线距离的展示
 
   常用语法：geoadd   geopos    geodist
+
+#### Redis的有序集合zset
+
+数据量非常大，可能内存小号，数据频繁更新，导致redis写入负载增加，影响系统性能
+
+* 可以用来对大数据量的排序，如做一个排行榜功能、微信运动排行榜
+* ZREVRANGE 表示从大到小排序
+* ZRANGE 表示从小到大排序
+* ZADD key score1 member1 score2 member2…表示向集合中添加元素
 
 ### **启动**
 
@@ -2675,7 +2713,40 @@ mapper.setSerializationInclusion(Include.NON_NULL);
    }
    ```
 
-   
+
+##### Cache自定义Redis缓存过期时间
+
+```java
+#
+public class CustomRedisCacheManager extends RedisCacheManager {
+
+public CustomRedisCacheManager(RedisCacheWriter cacheWriter, 
+                               RedisCacheConfiguration defaultCacheConfiguration) {
+	super(cacheWriter, defaultCacheConfiguration);
+}
+
+/**
+* 针对@Cacheable设置缓存过期时间
+* @param name
+* @param cacheConfig
+* @return
+*/
+@Override
+protected RedisCache createRedisCache(String name, RedisCacheConfiguration cacheConfig) {
+	String[] array = StringUtils.delimitedListToStringArray(name, "#");
+	name = array[0];
+    // 解析TTL
+    if (array.length > 1) {
+    	long ttl = Long.parseLong(array[1]);
+    	cacheConfig = cacheConfig.entryTtl(Duration.ofSeconds(ttl)); // 注意单位我此处用的是秒，而非毫秒
+    }
+    return super.createRedisCache(name, cacheConfig);
+ }
+}
+
+```
+
+
 
 
 
@@ -11367,7 +11438,13 @@ Harbor 封装了Docker的registry v2，帮用户提供了许多便捷管理的�
 
 **图片或视频水印**： FFmpeg
 
-**思维导图软件**：XMind， GitMind
+## **思维导图软件**：
+
+XMind， GitMind,  middleMind
+
+## 原型设计
+
+蓝湖
 
 
 
