@@ -542,9 +542,9 @@ taskkill -pid 进程pid -f  //根据pid杀死的进程
 #### Windowns的操作
 
 ```cmd
-tasklist | findstr 端口号
+tasklist | findstr PID 查看是哪个应用
 或者
-netstat -ano |findstr 端口号
+netstat -ano |findstr 端口号 查看端口号占用PID
 
 杀死进程
 taskill -PID 进程号 -F
@@ -1039,6 +1039,15 @@ curl -H "Content-Type: application/json" \
 -X POST \
 \-d '{"user_id": "123", "coin":100, "success":1, "msg":"OK!" }' "http://192.168.0.1:8001/test"
 
+```
+
+curl保存文件命令
+
+```shell
+curl -o 文件目录名字 https:xxxx
+
+#weget示例
+wget -O docker-compose.yaml https://raw.githubusercontent.com/souying/serverMmon/main/docker-compose.yaml && docker-compose up -d
 ```
 
 
@@ -1622,7 +1631,7 @@ chown -R mybk. /home/mybk/files/plugshell #chown将指定文件的拥有者改�
 su - mybk -c "/home/mybk/files/plugshell/upload_vul.sh"  #能切换到一个用户中去执行一个指令或脚本
 
 
-if [[ $? -eq 0 ]]; then # 该句的命令判断上条命令是否成功
+if [[ $? -eq 0 ]]; then # $?是上一个程序执行是否成功的标志，如果执行成功则$? 为0，否则 不为0
 # echo "old_pass:" $old_pass
  export MYSQL_PWD=$old_pass
 else
@@ -1659,5 +1668,34 @@ find [OPTION]... [查找路径] [查找条件] [处理动作]
 处理动作：对符合条件的文件做操作，默认输出至屏幕
 
 find /etc/ -size +1M -type f  查找/etc目录下大于1M且类型为普通文件的所有文件
+```
+
+### read获取输入的参数
+
+```shell
+read -e -r -p "是否需要安装? [Y/n] " option
+case $option in
+	[yY][eE][sS] | [yY])
+	echo "确认安装"
+	install_vnstat 0
+;;
+	[nN][oO] | [nN])
+	echo "退出安装"
+	#exit 0
+;;
+	*)
+    echo "默认安装"
+    install_vnstat 0
+    ;;
+esac
+-a 后跟一个变量，该变量会被认为是个数组，然后给其赋值，默认是以空格为分割符。
+-d 后面跟一个标志符，其实只有其后的第一个字符有用，作为结束的标志。
+-p 后面跟提示信息，即在输入前打印提示信息。
+-e 在输入的时候可以使用命令补全功能。
+-n 后跟一个数字，定义输入文本的长度，很实用。
+-r 屏蔽\，如果没有该选项，则\作为一个转义字符，有的话 \就是个正常的字符了。
+-s 安静模式，在输入字符时不再屏幕上显示，例如login时输入密码。
+-t 后面跟秒数，定义输入字符的等待时间。
+-u 后面跟fd，从文件描述符中读入，该文件描述符可以是exec新开启的。
 ```
 

@@ -367,6 +367,17 @@ git commit -m "第一次提交代码"
 若要换成某个分支的 则将 /tree/master 换成 /branches/分支名/ 即可
 ```
 
+#### GitLab下载分组下所有项目
+
+```shell
+git clone -recurse-submodules 分组url地址
+
+遍历下载
+curl –header “PRIVATE-TOKEN: 【YOUR_ACCESS_TOKEN】” “https://gitlab.com/api/v4/groups/【group-name】/projects” | jq ‘.[].ssh_url_to_repo’
+```
+
+
+
 #### git的subModel语句记录
 
 https://blog.csdn.net/caz28/article/details/107547745

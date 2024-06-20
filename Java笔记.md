@@ -4130,6 +4130,14 @@ Vue.js支持插件，写过前端的朋友肯定用过，可以根据模板创�
 
 Element-UI支持插件，可以对Element-UI中的标签进行智能提示，有了它就不用盲写相关代码了
 
+### IDEA创建项目绕过JDK17的方法
+
+```
+https://start.aliyun.com/
+```
+
+
+
 ### Lombox插件
 
 - idea — setting — plugins, 

@@ -18,9 +18,18 @@ EVERMOTION
 
 ### 本地跑大模型
 
-```
-Ollama3
+```shell
+Ollama3   https://ollama.com/
 前端Anything LLM
+Open-WebUi 
+#安装Docker命令
+docker run -d -p 3000:8080 
+--add-host=host.docker.internal:host-gateway 
+-v open-webui:/app/backend/data 
+--name open-webui --restart always ghcr.io/open-webui/open-webui:main
+http://localhost:3000
+
+
 #如使用对话数据集，一个问题一个答案
 #选择合适的工具训练模型 比较有名的unsloth， torchtune
 
@@ -29,6 +38,11 @@ LM studio
 大内存和大显卡
 
 PyThoch、 huggingface/transformers
+
+#Ollama 与 Dify：AI 应用开发的强大组合 https://zhuanlan.zhihu.com/p/696216386
+Ollama 官方网站： https://ollama.ai/
+Dify 官方网站： https://dify.ai/
+Mistral 官方网站： https://mistral.ai/
 ```
 
 
@@ -98,6 +112,24 @@ stable diffusion 收费的软件
 ```
 
 * 滤镜-高斯模糊： 会将物品放在远处的感觉
+
+### SAI2皮肤上色
+
+```
+1、选区， 选择扩展一个选区像素，不会有锯齿； 反选修一修边沿
+2、填充一个淡橙色H-24作为肤色，提高纯度S-08 降低明度V-100 得到二分颜色
+3、吸取固有色，颜色往红色方向调； 水彩笔将过渡部分涂抹一下，纯度更纯S明度更低V颜色，压一下暗部
+4、新建一个发光图层，用喷枪喷亮，记得降低图层的不透明度
+5、新建一个叠加图层，选一个冷色，喷枪喷一下暗部；炫一个亮色，画出高光
+```
+
+* 添加水彩笔画笔
+
+```
+1、纸质效果： 羊皮纸
+2、倍率尽量调高 288%
+3、水彩边缘 调到2-4
+```
 
 
 
@@ -208,7 +240,7 @@ ctrl+c 和ctrl+v会新建复制图层
 ```
 1、污点修复工具： 根据周边环境修复
   修复画笔工具： alt+鼠标左键： 把某一个地方复制到另一个地方（比较少用，鸡肋）
-  修补工具   ： 圈起来坏的，移动到好的地方 （即好的覆盖坏的，自动调整）
+  修补工具   ： J j圈起来坏的，移动到好的地方 （即好的覆盖坏的，自动调整）
   仿制图章工具： 快捷键S  alt选择一个区域，完全的复制过去 （alt+鼠标右键 调整画笔软硬大小）
   红眼工具 ： 把眼睛变黑
 2、液化工具： 滤镜-->液化 （alt往左边旋转） （修脸等比较常用）
