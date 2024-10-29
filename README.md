@@ -1,6 +1,6 @@
 # ycs_test
 myfirst study repository
-git push -u origin maste
+git push -u origin master
 
 指定目标
 

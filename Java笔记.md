@@ -161,7 +161,7 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 | 文件上传聚合存储平台                                         | https://spring-file-storage.xuyanwu.cn/#/存储平台            |
 | [芋道源码](https://github.com/yudaocode)                     | 可以关注一下labs学习https://gitee.com/zhijiantianya          |
 | 动态线程池，可简洁封装                                       | https://gitee.com/dromara/dynamic-tp.git                     |
-|                                                              |                                                              |
+| Java业务日志修改解析工具                                     | https://gitee.com/shagang/java-property-comparer <br />https://blog.csdn.net/weixin_46496706/article/details/124082342 |
 
 
 
@@ -3428,7 +3428,7 @@ if (classAnnotation != null) {
 
 ##### 获取方法注解(伪代码)
 
-```jaav
+```java
 Method[] methods = clazz.getMethods();
     for (Method method : methods) {
     MethodAnnotation methodAnnotation = method.getAnnotation(MethodAnnotation.class);

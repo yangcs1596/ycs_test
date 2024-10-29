@@ -587,7 +587,7 @@ mysql添加用户对指定库有权限, 权限控制信息存储在表mysql.user
 1、创建用户和密码
 
 ```mysql
-create user 'acc'@'%' IDENTIFIED  by 'acc@password';
+create user 'account'@'%' IDENTIFIED  by 'password';
 -- acc是账号  '@%'是host
 ```
 
@@ -890,6 +890,10 @@ HAVING语句通常与GROUP BY语句联合使用，用来过滤由GROUP BY语句�
 1、where 后不能跟聚合函数，因为where执行顺序大于聚合函数。 
 2、where 子句的作用是在对查询结果进行分组前，将不符合where条件的行去掉，即在分组之前过滤数据，条件中不能包含聚组函数，使用where条件显示特定的行。 
 3、having 子句的作用是筛选满足条件的组，即在分组之后过滤数据，条件中经常包含聚组函数，使用having 条件显示特定的组，也可以使用多个分组标准进行分组。
+
+### UNION 和Union All区别
+
+* union会去除重复的行
 
 ### 时间默认值
 
@@ -1588,10 +1592,13 @@ drop database test;
 # at 983
 ```
 
-* 通过命令恢复
+* 通过命令查看恢复
 
 ```shell
 mysqlbinlog -v /var/lib/mysql/mysql-bin.000001 --start-position=219 --stop-position=982 | mysql -uroot -p123456
+
+--base64-output=DECODE-ROWS解码行的base64输出
+使用--start-datetime="2023-03-01 00:00:00"和--stop-datetime参数，或者查看特定位置范围内的日志，使用--start-position和--stop-position参数。
 ```
 
 

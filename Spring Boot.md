@@ -3652,7 +3652,8 @@ docker push bxy-registry:5000/tomcat:v1　　　　    #推送镜像
 /etc/docker/daemon.json
 
 ```json
-{
+{       
+   // 有效的加速 https://docker.rainbond.cc
     "registry-mirrors": [
         "http://hub-mirror.c.163.com",
         "https://docker.mirrors.ustc.edu.cn",
@@ -3668,6 +3669,8 @@ docker push bxy-registry:5000/tomcat:v1　　　　    #推送镜像
         "max-size" :"50m","max-file":"1"
     }
 }
+
+
 ```
 
 #### 1-2)查看内存占用
@@ -4333,6 +4336,43 @@ services:
       - ./application.properties:/home/nacos/conf/application.properties
 ```
 
+#### 集群部署nacos示例
+
+```yaml
+version: '3.8'
+
+services:
+  nacos:
+    container_name: nacos
+    image: nacos/nacos-server:v2.1.2
+    restart: always
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    environment:
+      - TZ=Asia/Shanghai
+      - MODE=cluster  #standalone 为单例， 集群 
+      - NACOS_SERVERS="127.0.0.1:8846 127.0.0.1:8847 127.0.0.1:8848" #集群cluster多出来的配置
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - MYSQL_SERVICE_HOST=192.168.10.20
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_DB_NAME=nacos_config
+      - MYSQL_SERVICE_USER=nacos
+      - MYSQL_SERVICE_PASSWORD=nacos
+      - MYSQL_SERVICE_DB_PARAM=characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false 
+      - JVM_XMS=1g
+      - JVM_XMX =1g
+      - JVM_XMN=512m
+      - JVM_MS=128m
+      - JVM_MMS=320m
+    volumes:
+      - $PWD/logs/:/home/nacos/logs
+      # 可用可不用，如果有设置环境参数，就可以不用了，environment
+      - $PWD/conf/application.properties:/home/nacos/conf/application.properties
+```
+
+
+
 ### 6-3 安装canal-server
 
 ```yaml
@@ -4506,10 +4546,7 @@ services:
 ### 6-4 安装elasticsearch
 
 ```yaml
-version: '3.3'
-volumes:
-  data:
-  config:
+version: '3.8'
 networks:
   es:
 services:
@@ -4528,7 +4565,6 @@ services:
      # 配置认证权限 用户名默认是elastic
      # - "ELASTIC_PASSWORD=Ns8shp4i6wZViAzFA6u7"
      # - "xpack.security.enabled=true"
-
     volumes:
       # - /usr/share/elasticsearch/data:/usr/share/elasticsearch/data
       # - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
@@ -4544,6 +4580,8 @@ services:
       - 5601:5601
     networks:
       - "es"
+    depends_on:
+      - elasticsearch
     volumes:
     - ./kibana.yml:/usr/share/kibana/config/kibana.yml
 
@@ -4880,6 +4918,10 @@ services:
   mongo-express:
     image: mongo-express
     restart: always
+    links:
+      - mongo
+    depends_on: 
+      - mongo
     ports:
       - 8181:8081
     environment:
@@ -4887,6 +4929,61 @@ services:
       ME_CONFIG_MONGODB_ADMINPASSWORD: example
       ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
 ```
+
+* 例子二
+
+```yaml
+version: '3.8'
+networks:
+  mongo-network:
+    external: false
+
+services:
+
+  mongo:
+    image: mongo:4.4.16
+    container_name: mongo
+    restart: always
+    networks:
+      - mongo-network
+    ports:
+      - 27017:27017
+    command: mongod --wiredTigerCacheSizeGB 1.0
+    environment:
+      # 时区，设置为上海，就是东八区
+      TZ: Asia/Shanghai
+      # 初始化 mongodb 的账户，这个账户会创建在 admin 下，就是超管权限
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: uEjV3Z8ksi3QRpJf
+    volumes:
+      - /etc/localtime:/etc/localtime
+      # 挂载数据目录
+      - ./data/db:/data/db
+      - ./data/configdb:/data/configdb
+      # 挂载日志目录
+      - ./data/log:/var/log/mongodb
+      - ./data/logs/:/etc/mongo/logs:rw
+  mongo-express:
+    image: mongo-express
+    restart: always
+    container_name: mongo-express
+    networks:
+      - mongo-network
+    links:
+      - mongo
+    depends_on:
+      - mongo
+    ports:
+      - 27018:8081
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: uEjV3Z8ksi3QRpJf
+      # 是否可以执行全部操作
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
+```
+
+
 
 ### 6-7 安装mysql 
 
@@ -5000,6 +5097,7 @@ services:
       - JAVA_OPT_EXT=-Xms512m -Xmx1024m -XX:MaxDirectMemorySize=512m
     volumes:
       - ./data:/data
+      - ./conf/redis.conf:/etc/redis/redis.conf
 
 ```
 
@@ -5024,7 +5122,7 @@ services:
   #Service for broker
   broker:
     restart: always
-    image: apacherocketmq/rocketmq:4.9.2
+    image: apachevim/rocketmq:4.9.2
     container_name: rocketmq-broker
     links:
       - namesrv
@@ -5040,8 +5138,8 @@ services:
     volumes:
       - /opt/docker/rocketmq/data/broker/logs:/home/rocketmq/logs
       - /opt/docker/rocketmq/data/broker/store:/home/rocketmq/store
-      - /opt/docker/rocketmq/conf/broker.conf:/home/rocketmq/conf/broker.conf
-    command: sh mqbroker -c /home/rocketmq/conf/broker.conf
+      - /opt/docker/rocketmq/conf/broker.conf:/opt/rocketmq/broker.conf
+    command: ["sh","mqbroker","-c","/opt/rocketmq/broker.conf","-n","namesrv:9876","autoCreateTopicEnable=true"]
 
   #Service for rocketmq-dashboard
   dashboard:
@@ -5129,6 +5227,180 @@ networks:
     name: rocketmq_net
     driver: bridge
 ```
+
+#### broker.conf配置
+
+```properties
+#所属集群名字
+brokerClusterName=DefaultCluster
+
+#broker名字，注意此处不同的配置文件填写的不一样，如果在broker-a.properties使用:broker-a,
+#在broker-b.properties使用:broker-b
+brokerName=broker-a
+
+#0 表示Master，>0 表示Slave
+brokerId=0
+
+#nameServer地址，分号分割
+#namesrvAddr=rocketmq-nameserver1:9876;rocketmq-nameserver2:9876
+namesrvAddr=namesrv:9876
+
+#启动IP,如果 docker 报 com.alibaba.rocketmq.remoting.exception.RemotingConnectException: connect to <192.168.0.120:10909> failed
+# 解决方式1 加上一句producer.setVipChannelEnabled(false);，解决方式2 brokerIP1 设置宿主机IP，不要使用docker 内部IP
+brokerIP1=192.168.1.102
+
+#在发送消息时，自动创建服务器不存在的topic，默认创建的队列数
+defaultTopicQueueNums=4
+
+#是否允许 Broker 自动创建Topic，建议线下开启，线上关闭 ！！！这里仔细看是false，false，false
+#原因下篇博客见~ 哈哈哈哈
+autoCreateTopicEnable=true
+
+#是否允许 Broker 自动创建订阅组，建议线下开启，线上关闭
+autoCreateSubscriptionGroup=true
+
+#Broker 对外服务的监听端口
+listenPort=10911
+
+#删除文件时间点，默认凌晨4点
+deleteWhen=04
+
+#文件保留时间，默认48小时
+fileReservedTime=120
+
+#commitLog每个文件的大小默认1G
+mapedFileSizeCommitLog=1073741824
+
+#ConsumeQueue每个文件默认存30W条，根据业务情况调整
+mapedFileSizeConsumeQueue=300000
+
+#destroyMapedFileIntervalForcibly=120000
+#redeleteHangedFileInterval=120000
+#检测物理文件磁盘空间
+diskMaxUsedSpaceRatio=88
+#存储路径
+#storePathRootDir=/home/ztztdata/rocketmq-all-4.1.0-incubating/store
+#commitLog 存储路径
+#storePathCommitLog=/home/ztztdata/rocketmq-all-4.1.0-incubating/store/commitlog
+#消费队列存储
+#storePathConsumeQueue=/home/ztztdata/rocketmq-all-4.1.0-incubating/store/consumequeue
+#消息索引存储路径
+#storePathIndex=/home/ztztdata/rocketmq-all-4.1.0-incubating/store/index
+#checkpoint 文件存储路径
+#storeCheckpoint=/home/ztztdata/rocketmq-all-4.1.0-incubating/store/checkpoint
+#abort 文件存储路径
+#abortFile=/home/ztztdata/rocketmq-all-4.1.0-incubating/store/abort
+#限制的消息大小
+maxMessageSize=65536
+
+#flushCommitLogLeastPages=4
+#flushConsumeQueueLeastPages=2
+#flushCommitLogThoroughInterval=10000
+#flushConsumeQueueThoroughInterval=60000
+
+#Broker 的角色
+#- ASYNC_MASTER 异步复制Master
+#- SYNC_MASTER 同步双写Master
+#- SLAVE
+brokerRole=ASYNC_MASTER
+
+#刷盘方式
+#- ASYNC_FLUSH 异步刷盘
+#- SYNC_FLUSH 同步刷盘
+flushDiskType=ASYNC_FLUSH
+
+#发消息线程池数量
+#sendMessageThreadPoolNums=128
+#拉消息线程池数量
+#pullMessageThreadPoolNums=128
+
+```
+
+
+
+#### 安装4.9.6版本
+
+```yaml
+version: '3.8'
+
+networks:
+  mq_network:
+    driver: bridge
+
+services:
+  namesrv:
+    restart: always
+    image: apache/rocketmq:4.9.6
+    container_name: rocketmq-namesrv
+    ports:
+      - 9876:9876
+    environment:
+      JAVA_OPT_EXT: "-Duser.home=/home/rocketmq -Xms512M -Xmx512M -Xmn128M"
+    volumes:
+      - /usr/local/docker/rocketmq/namesrv/logs:/opt/rocketmq/logs
+      - /usr/local/docker/rocketmq/namesrv/store:/opt/rocketmq/store
+    command: ["sh","mqnamesrv"]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 512M
+    networks:
+      - mq_network
+
+  broker:
+    restart: always
+    image: apache/rocketmq:4.9.6
+    container_name: rocketmq-broker
+    links:
+      - namesrv
+    depends_on:
+      - namesrv
+    ports:
+      - 10909:10909
+      - 10911:10911
+      - 10912:10912
+    environment:
+      JAVA_OPT_EXT: "-Duser.home=/home/rocketmq -Xms512M -Xmx512M -Xmn128M -XX:-AssumeMP"
+    volumes:
+      - /usr/local/docker/rocketmq/broker/logs:/opt/rocketmq/logs
+      - /usr/local/docker/rocketmq/broker/store:/opt/rocketmq/store
+      - /usr/local/docker/rocketmq/broker/conf/broker.conf:/opt/rocketmq/broker.conf
+    command: ["sh","mqbroker","-c","/opt/rocketmq/broker.conf","-n","namesrv:9876","autoCreateTopicEnable=true"]
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+        reservations:
+          memory: 1024M
+    networks:
+      - mq_network
+
+  dashboard:
+    restart: always
+    image: apacherocketmq/rocketmq-dashboard
+    container_name: rocketmq-dashboard
+    ports:
+      - 11500:8080
+    links:
+      - namesrv
+    depends_on:
+      - namesrv
+    environment:
+      - NAMESRV_ADDR=namesrv:9876
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 512M
+    networks:
+      - mq_network
+
+```
+
+
 
 ### 6-11 安装nexus3
 
@@ -5339,11 +5611,14 @@ services:
       - -Duser.timezone=Asia/Shanghai
       - /usr/local/docker/service/user/lzmh-user.jar
     extra_hosts:
-      - "lzmh-gateway:172.22.196.190"
-      - "lzmh-register:172.20.188.69"
-      - "lzmh-xxl-job:172.22.196.190"
-      - "lzmh-rocketmq:172.22.196.190"
-      - "lzmh-mongodb:172.20.188.69"
+      - "lzmh-gateway:192.168.10.20"
+      - "lzmh-xxl-job:192.168.10.20"
+      - "lzmh-rocketmq:192.168.10.20"
+      - "lzmh-redis:192.168.10.20"
+      - "lzmh-mysql:192.168.10.20"
+      - "lzmh-mongodb:192.168.10.17"
+      - "lzmh-es:192.168.10.17"
+      - "lzmh-register:192.168.10.17"
     deploy:
       resources:
         limits:
@@ -5481,6 +5756,35 @@ services:
 
 
 ```
+
+#### 6-16-2安装gitlab例子
+
+```yaml
+version: '3.8'
+services:
+  gitlab:
+    #image: 'twang2218/gitlab-ce-zh'
+    image: 'gitlab/gitlab-ce:latest'
+    container_name: gitlab
+    restart: always
+    environment:
+        # external_url 外网访问地址
+        # gitlab_shell_ssh_port ssh连接到端口
+        GITLAB_OMNIBUS_CONFIG: |
+            external_url 'http://192.168.1.108:9025'
+            gitlab_rails['gitlab_shell_ssh_port'] = 2225
+    ports: 
+      - '9025:9025'
+      - '2225:2225'
+    volumes:
+      - './config:/etc/gitlab'
+      - './logs:/var/log/gitlab'
+      - './data:/var/opt/gitlab'
+      #- './certs:/opt/gitlab/embedded/ssl/certs'
+      #- './trusted-certs:/etc/gitlab/trusted-certs'
+```
+
+
 
 ### 6-17 安装minio
 

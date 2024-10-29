@@ -1554,6 +1554,13 @@ redisTemplate.convertAndSend(channel_id, body);
 ```
 
 
+### redis管道模式并行处理pipline
+```text
+redis命令执行是时是串行的，效率非常低，为此redis引入了pipline。
+什么时候使用pipline？什么时候使用lua？
+ 当多个命令之间没有依赖、顺序关系，可以使用pipline。
+ 如果命令之间有依赖和顺序关系，此时可以考虑用lua脚本。
+```
 
 ### LUA脚本使用
 
@@ -2526,6 +2533,10 @@ callBackService.execute(() -> {
  
 //使用事务代理 
 service A = AopContext.currentProxy();
+
+大概8个
+方法没有public修饰、类没有被spring托管、异常捕获没抛出、同一个类中调用、rollbackFor参数设置错误、
+没有配置事务管理器、数据库本身不支持事务
 ```
 
 
@@ -5773,10 +5784,6 @@ cd /usr/sbin/
  指定轮询几率，weight和访问比率成正比，用于后端服务器性能不均的情况。
  2、ip_hash
  每个请求按访问ip的hash结果分配，这样每个访客固定访问一个后端服务器，可以解决session的问题。
- 3、fair（第三方）
- 按后端服务器的响应时间来分配请求，响应时间短的优先分配。
- 4、url_hash（第三方）
- 按访问url的hash结果来分配请求，使每个url定向到同一个后端服务器，后端服务器为缓存时比较有效。
 
 ```nginx
 #例子
@@ -5788,6 +5795,34 @@ http {
           server   172.16.0.18:8066 max_fails=3 fail_timeout=30s;
           server   172.16.0.18:8077 backup;
      }
+}
+```
+
+ 3、fair（第三方）
+ 按后端服务器的响应时间来分配请求，响应时间短的优先分配。
+
+```nginx
+upstream xxx_server_name{
+    server 192.168.10.1:80;
+    server 192.168.10.2:80;
+    server 192.168.10.3:80;
+    fail;
+}
+```
+
+ 4、url_hash（第三方）
+ 按访问url的hash结果来分配请求，使每个url定向到同一个后端服务器，后端服务器为缓存时比较有效。
+
+```nginx
+#例子
+http {
+    upstream xxx_server_name{
+        server 192.168.10.1:80;
+        server 192.168.10.2:80;
+        server 192.168.10.3:80;
+        hash $request_uri; 
+        hash_method crc32; 
+    }
 }
 ```
 
@@ -5978,9 +6013,7 @@ server {
    server_name  192.168.10.20;
    index  index.html index.htm;
    location ^~/home/ {
-         proxy_pass http://test;    
-    	#access_log logs/xxx.log;
-        #error_log  logs/xxx.log;
+         proxy_pass http://test;
         #proxy_set_header  Host $host
         #proxy_set_header  X-Real_Ip $remote_addr
         #proxy_set_header  X-Forwarder-For $proxy_add_x_forwarder_for;        
@@ -7816,6 +7849,96 @@ mvn release:update-versions -DdevelopmentVersion=3.7.2-SNAPSHOT
 //mvn release:perform 执行发布
 ```
 
+##### Maven版本号统一控制也可以用`${revision}`
+
+Maven Release Plugin 支持一种模式，可以在执行 mvn release:prepare 时自动替换 ${revision} 为当前的项目版本号。这在准备发布新版本时非常有用，因为你可以事先在 POM 文件中使用 ${revision}，然后由插件根据实际情况填充正确的版本号。
+
+```xml
+<parent>
+     <groupId>com.example</groupId>
+     <artifactId>my-parent</artifactId>
+     <version>${revision}</version>
+</parent>
+```
+
+为了使 ${revision} 能够正确解析并插入实际的版本号，你需要配置 Maven Release Plugin。在你的根 pom.xml 中添加以下插件配置：
+
+```xml
+<properties>
+       <maven-compiler-plugin.verison>3.11.0</maven-compiler-plugin.verison>
+       <project.build.sourceEncoding.version>UTF-8</project.build.sourceEncoding.version>
+       <flatten-maven-plugin.version>1.3.0</flatten-maven-plugin.version>
+</properties>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-release-plugin</artifactId>
+            <version>3.0.0-M5</version>
+            <configuration>
+                <autoVersionSubmodules>true</autoVersionSubmodules>
+                <!-- 其他配置选项，比如标签格式、分支策略等 -->
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+打包配置
+
+```xml
+<build>
+        <pluginManagement>
+            <plugins>
+                <!-- 统一 revision 版本 -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>${flatten-maven-plugin.version}</version>
+                    <configuration>
+                        <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                        <updatePomFile>true</updatePomFile>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>flatten</goal>
+                            </goals>
+                            <id>flatten</id>
+                            <phase>process-resources</phase>
+                        </execution>
+                        <execution>
+                            <goals>
+                                <goal>clean</goal>
+                            </goals>
+                            <id>flatten.clean</id>
+                            <phase>clean</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+```
+
+
+
+#### Maven的properties配置
+
+```xml
+<properties>
+    <java.version>1.8</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <!-- maven.deploy 是否排除 -->
+    <maven.deploy.skip>true</maven.deploy.skip>
+</properties>
+```
+
+
+
 #### Maven打包指定模块
 
 ```cmd
@@ -7878,6 +8001,17 @@ war ---------> 需要部署的项目（war是一个web模块，其中需要包�
     <scope>system</scope>
     <systemPath>${pom.basedir}/src/lib/djnativeswing.jar</systemPath>
 </dependency>
+
+注意system包打包不进去需要单独配置
+<plugin>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-maven-plugin</artifactId>
+    <version>2.5.4</version>
+    <configuration>
+        <executable>true</executable>
+        <includeSystemScope>true</includeSystemScope>
+    </configuration>
+</plugin>
 ```
 
 ##### Maven打包找不到lib目录 
@@ -8551,10 +8685,6 @@ jar命令格式：jar {c t x u f }[ v m e 0 M i ][-C 目录]文件名...
 -i    为指定的jar文件创建索引文件
 -C 表示转到相应的目录下执行jar命令,相当于cd到那个目录，然后不带-C执行jar命令
 
- 
-————————————————
-版权声明：本文为CSDN博主「Angy__」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
-原文链接：https://blog.csdn.net/weixin_39896810/article/details/81316879
 
 #解压到指定目录
 unzip pay.war -d /home/zookeeper1/test/pay
@@ -8572,6 +8702,14 @@ nohup java -jar cloud-upgrade.jar --spring.profiles.active=prod -Dcatalina.base=
 
 #简单启动
 nohup java -jar xxx.jar > msg.log  2>&1 &
+
+
+#一些参数
+-Dfile.encoding=UTF-8 
+-Dlogging.config=/../conf/logback.xml 
+-Dspring.config.location=/../conf/application.yml
+
+--spring.cloud.bootstrap.location=$CONFIG_PATH/bootstrap.yml
 ```
 
 ##### java启动命令中-D和--的区别
@@ -8686,6 +8824,8 @@ mvn archetype:generate
 ####https://github.com:apache/rocketmq-dashboard.git的插件记录
 
 https://blog.csdn.net/who7708/article/details/113115238
+
+## https://zhuanlan.zhihu.com/p/528387287
 
 maven-compiler-plugin  maven项目的打包插件
 frontend-maven-plugin  前后端一键打包
@@ -11166,7 +11306,8 @@ Electron是一个能够让你使用JavaScript 调用丰富的原生 APIs 来创�
 学习例子pdmaner：   https://gitee.com/robergroup/pdmaner
 
 ```cmd
-npm config set registry https://registry.npm.taobao.org
+npm config set registry https://registry.npm.taobao.org  
+# 报错expired时，淘宝镜像地址已经更新成https://registry.npmmirror.com
 npm install -g electron  #默认使用 --save,  dev表示仅在开发过程中使用
 npm install -g electron-forge --save-dev  #好像也是打包工具
 
