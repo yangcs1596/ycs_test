@@ -3595,7 +3595,26 @@ Docker Compose version v2.6.0
 | 拉取 | docker pull 镜像名:tag                          | :tag是可选的，tag表示标签，多为软件的版本，默认是latest  |
 | 列表 | docker images  \| grep  镜像名                  | 查看所有本地镜像                                         |
 | 删除 | docker rmi image-id                             | 删除指定的本地镜像                                       |
-|      |                                                 |                                                          |
+| 清理 |                                                 |                                                          |
+
+清理日志
+
+```sh
+#清理overplay2:  docker system prune 必谨慎使用
+#想要删除没有被任何容器引用过或使用过的镜像，去掉-a：
+docker image prune
+#删除停止的容器
+docker container prune
+#清理容器的日志
+sudo find /var/lib/docker/containers -type f -name "*.log" -delete
+#删除16天之前的日志
+find /var/lib/docker/overlay2/ -type f -name "*.log" -mtime +16 |xargs rm -rf 
+
+#显示磁盘占用信息：
+docker system df
+```
+
+
 
 删除所有<none>镜像  :  docker images | grep none| awk '{print $3}' |xargs docker rmi
 
@@ -4561,7 +4580,7 @@ services:
       - "es"
     environment:
       - "discovery.type=single-node"
-      - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx1024m"
      # 配置认证权限 用户名默认是elastic
      # - "ELASTIC_PASSWORD=Ns8shp4i6wZViAzFA6u7"
      # - "xpack.security.enabled=true"
@@ -4580,6 +4599,9 @@ services:
       - 5601:5601
     networks:
       - "es"
+    environment:
+      - "elasticsearch.hosts=http://elasticsearch:9200"
+      - "I18N_LOCALE=zh_CN"
     depends_on:
       - elasticsearch
     volumes:
@@ -4801,7 +4823,7 @@ output {
 
 ##### docker-filebeat.yml
 
-filebeat单独部署在需要采集日志的服务器中
+filebeat单独部署在需要采集日志的服务器中, 可以不用docker部署
 
 ```yaml
 version: "3"
@@ -4868,7 +4890,7 @@ filebeat.inputs:
   fields:
     log_topics: muats-error
 output.logstash:
-  hosts: ["115.236.191.59:5144"]
+  hosts: ["115.236.191.59:5044"] //可以发送到logstash进行业务日志区分，后来filebeat也可以实现日志的区分
 ```
 
 ### 6-5 安装jenkins
@@ -5484,6 +5506,7 @@ services:
       start_period: 10s
     environment:
       TZ: Asia/Shanghai
+      # 存储方式，可以是H2或者ES
       SW_STORAGE: elasticsearch
       SW_STORAGE_ES_CLUSTER_NODES: elasticsearch:9200
       SW_HEALTH_CHECKER: default

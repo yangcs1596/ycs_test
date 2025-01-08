@@ -3417,8 +3417,10 @@ npm i -save lodash //全局安装
 ##### Vue的子级点击事件
 
 ```vue
-<view @click.stop="method"></view>
-<a @click.prevent='notLink' href="http://www.baidu.com">百度</a>
+<view @click.stop="method"></view>  阻止事件冒泡方法
+<a @click.prevent='notLink' href="http://www.baidu.com">百度</a> 击a标签的时候就不会跳转目标地址链接
+@click.native  监听组件根元素的原生事件 通俗点讲：就是在父组件中给子组件绑定一个原生的事件，就将子组件变成了普通的HTML标签，不加'. native'事件是无法触  发的。  2: this.$emit ( “事件名” ，value )方法 将子组件的值传到父组件
+
 ```
 
 
@@ -5950,6 +5952,12 @@ server {
         location / {
             proxy_pass https://内网IP:项目端口;
             root   html;
+            index  index.html index.htm;
+        }
+        # alias：必须以“/”结尾，否则无法找到文件。
+        location /kk/ {
+            alias  D:/nginx/introduce/; # alias指令后面的路径都加上/
+			try_files $uri $uri/ /kk/index.html;
             index  index.html index.htm;
         }
 }
