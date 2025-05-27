@@ -891,6 +891,71 @@ HAVING语句通常与GROUP BY语句联合使用，用来过滤由GROUP BY语句�
 2、where 子句的作用是在对查询结果进行分组前，将不符合where条件的行去掉，即在分组之前过滤数据，条件中不能包含聚组函数，使用where条件显示特定的行。 
 3、having 子句的作用是筛选满足条件的组，即在分组之后过滤数据，条件中经常包含聚组函数，使用having 条件显示特定的组，也可以使用多个分组标准进行分组。
 
+### Partition分区
+
+```mysql
+常见的分区类型有：Range分区、List分区、Hash分区、Key分区：
+
+（1）Range分区：按照连续的区间范围进行分区
+ PARTITION BY RANGE (id) (  
+     PARTITION p0 VALUES LESS THAN (3),  
+     PARTITION p1 VALUES LESS THAN (6),  
+     PARTITION p2 VALUES LESS THAN (9),  
+     PARTITION p3 VALUES LESS THAN (12),  
+     PARTITION p4 VALUES LESS THAN MAXVALUE  
+ );  
+（2）List分区：按照给定的集合中的值进行选择分区。
+PARTITION BY LIST (province_id) (  
+    PARTITION p0 VALUES IN (1,2,3,4,5,6,7,8),  
+    PARTITION p1 VALUES IN (9,10,11,12,16,21),  
+    PARTITION p2 VALUES IN (13,14,15,19),  
+    PARTITION p3 VALUES IN (17,18,20,22,23,24)  
+);
+（3）Hash分区：基于用户定义的表达式的返回值进行分区，该表达式使用将要插入到表中的这些行的列值进行计算。这个函数可以包含MySQL中有效的、产生非负整数值的任何表达式。
+ partition by hash(year(birthdate))
+ partitions 4;
+（4）Key分区：类似于按照HASH分区，区别在于Key分区只支持计算一列或多列，且key分区的哈希函数是由 MySQL 服务器提供。
+partition by key(birthdate)
+ partitions 4;
+ 
+ -- 一些语句
+ SELECT count(*) FROM t_energy_statistical_day PARTITION (p20241201);
+```
+
+```mysql
+-- demo
+CREATE TABLE `myabc` (
+  `emp_no` int(11) NOT NULL,
+  `salary` int(11) NOT NULL,
+  `from_date` date NOT NULL,
+  `to_date` date NOT NULL,
+  `response_code` blob NOT NULL,
+  PRIMARY KEY (`emp_no`,`from_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+/*!50500 PARTITION BY RANGE  COLUMNS(from_date)
+(PARTITION p01 VALUES LESS THAN ('1985-12-31') ENGINE = InnoDB,
+ PARTITION p02 VALUES LESS THAN ('1986-12-31') ENGINE = InnoDB,
+ PARTITION p03 VALUES LESS THAN ('1987-12-31') ENGINE = InnoDB,
+ PARTITION p04 VALUES LESS THAN ('1988-12-31') ENGINE = InnoDB,
+ PARTITION p05 VALUES LESS THAN ('1989-12-31') ENGINE = InnoDB,
+ PARTITION p06 VALUES LESS THAN ('1990-12-31') ENGINE = InnoDB,
+ PARTITION p07 VALUES LESS THAN ('1991-12-31') ENGINE = InnoDB,
+ PARTITION p08 VALUES LESS THAN ('1992-12-31') ENGINE = InnoDB,
+ PARTITION p09 VALUES LESS THAN ('1993-12-31') ENGINE = InnoDB,
+ PARTITION p10 VALUES LESS THAN ('1994-12-31') ENGINE = InnoDB,
+ PARTITION p11 VALUES LESS THAN ('1995-12-31') ENGINE = InnoDB,
+ PARTITION p12 VALUES LESS THAN ('1996-12-31') ENGINE = InnoDB,
+ PARTITION p13 VALUES LESS THAN ('1997-12-31') ENGINE = InnoDB,
+ PARTITION p14 VALUES LESS THAN ('1998-12-31') ENGINE = InnoDB,
+ PARTITION p15 VALUES LESS THAN ('1999-12-31') ENGINE = InnoDB,
+ PARTITION p16 VALUES LESS THAN ('2000-12-31') ENGINE = InnoDB,
+ PARTITION p17 VALUES LESS THAN ('2001-12-31') ENGINE = InnoDB,
+ PARTITION p18 VALUES LESS THAN ('2002-12-31') ENGINE = InnoDB,
+ PARTITION p19 VALUES LESS THAN (MAXVALUE) ENGINE = InnoDB) */
+```
+
+
+
 ### UNION 和Union All区别
 
 * union会去除重复的行
@@ -949,7 +1014,7 @@ set time_zone = '+8:00';
 #与mssql即 server SQL略微不同
 CAST(value as type);  
 CONVERT(value, type); 
-
+DATE_FORMAT('2025-11-07 23:40:59', '%Y-%m-%d %H:%i:%s')
 ```
 
 
