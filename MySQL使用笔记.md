@@ -244,7 +244,7 @@ substring_index(str,'.',2)
  也就是说，如果count是正数，那么就是从左往右数，第N个分隔符的左边的全部内容
 ```
 
-#### 5、LPAD函数
+#### 5、LPAD函数填充数据
 
 ```mysql
 lpad：函数语法：
@@ -1062,6 +1062,14 @@ UPDATE a
 INNER JOIN b ON a.userName = b.userName
 SET a.password = b.password
 where condition
+```
+
+```mysql
+### 增加序号
+select 
+@row_num := @row_num + 1 as row_num
+FRom table1
+CROSS JOIN (SELECT @row_num := 0) AS dummy
 ```
 
 #### delete

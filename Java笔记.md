@@ -44,7 +44,7 @@
 
 容器技术： dockers、podman;     k8s、openshift;
 
-API调试工具： Apifox、 Postman      fiddler抓包工具：app或者电脑端的请求抓取
+API调试工具： Apifox、 Postman   fiddler抓包工具：app或者电脑端的请求抓取  showdoc开源
 
 代码版本管理：svn, git, gitlab, gitlib
 
@@ -53,6 +53,20 @@ dev敏捷模式：jenkins
 
 
 Linx连接工具：全能终端神器 MobaXterm， X-shell,  FinalShell
+
+```
+#备注jdk下载地址
+清华大学开源软件镜像站
+Adoptium Java
+
+https://mirrors.tuna.tsinghua.edu.cn/Adoptium
+
+华为云openjdk
+https://mirrors.huaweicloud.com/openjdk/
+
+微软OpenJDK
+https://learn.microsoft.com/zh-cn/java/openjdk/download
+```
 
 ```shell
 Zuul：
@@ -129,6 +143,7 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 
 | 项目名称                                                     | 项目地址                                                     |
 | :----------------------------------------------------------- | ------------------------------------------------------------ |
+|                                                              | dromara、baomidou、jeecg                                     |
 | canal 缓存同步工具                                           | https://github.com/alibaba/canal.git                         |
 | canal胶水层 可封装                                           | https://gitee.com/throwableDoge/canal-glue.git               |
 | dynamic-datasource-spring-boot-starter 动态数据源            | https://github.com/baomidou/dynamic-datasource-spring-boot-starter.git |
@@ -147,6 +162,7 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 | swagger-starter                                              | https://github.com/SpringForAll/spring-boot-starter-swagger.git |
 | xxl-job                                                      | https://gitee.com/xuxueli0323/xxl-job.git<br />https://github.com/zero9102/xxl-job-spring-boot-starter.git |
 | 闪验                                                         | https://gitee.com/hiwepy/shanyan-spring-boot-starter.git     |
+| x-file-storage                                               | 一行代码实现文件上传的插件                                   |
 |                                                              |                                                              |
 | 微信开发weixin-java-mp<br />微信端第三方对接开发             | https://gitee.com/binary/weixin-java-tools.git               |
 | 项目推荐浏览页                                               | https://gitee.com/explore/backend                            |
@@ -156,12 +172,14 @@ Spring Boot和Spring Webflux提供的Netty底层环境，不能和传统的Servl
 | DingTalk消息通知                                             | https://github.com/AnswerAIL/dingtalk-spring-boot-starter    |
 | 异常通知的框架                                               | https://gitee.com/ITEater/prometheus-spring-boot-starter     |
 | guerlab-sms 不同的短信通道支持                               | https://gitee.com/guerlab_net/guerlab-sms?_from=gitee_search |
+|                                                              | https://gitee.com/dromara/sms4j                              |
 | UMS 是一个非侵入式、与业务高度解耦、可自定义的用户管理脚手架 | https://gitee.com/pcore/UMS?_from=gitee_search               |
 | IJPay聚合支付                                                | https://gitee.com/javen205/IJPay?_from=gitee_search          |
 | 文件上传聚合存储平台                                         | https://spring-file-storage.xuyanwu.cn/#/存储平台            |
 | [芋道源码](https://github.com/yudaocode)                     | 可以关注一下labs学习https://gitee.com/zhijiantianya          |
 | 动态线程池，可简洁封装                                       | https://gitee.com/dromara/dynamic-tp.git                     |
 | Java业务日志修改解析工具                                     | https://gitee.com/shagang/java-property-comparer <br />https://blog.csdn.net/weixin_46496706/article/details/124082342 |
+|                                                              |                                                              |
 
 
 
@@ -4751,7 +4769,7 @@ resultMap=”userResultMap”>
 映射到实体的map或者list
 
 
--- 嵌套查询
+-- 嵌套查询 大数据常用
 <!--association使用select属性引入另外一条SQL语句 -->
 <association property="card "
  javaType="card"
@@ -5372,6 +5390,22 @@ public class FileExportParams implements Serializable{
 	}	
 }
 ```
+
+### 特殊excel的表头 jxls
+
+https://blog.csdn.net/wfeil211/article/details/144769873
+
+```jsx
+# excel的批注
+# 设置 列表数据展示 
+jx:each(items="item.itemsList" var="obj" lastCell="H11" varIndex="ojbIndex")
+jx:if(condition="item.productType.equals('财务报表')&&ojbIndex==0" lastCell="H11" areas=["A11:H11"])
+
+# 设置表title 范围
+jx:area(lastCell=”H12”)
+```
+
+
 
 ## Spring的xml的一些配置详解
 
