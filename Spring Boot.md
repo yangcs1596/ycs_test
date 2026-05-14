@@ -3668,16 +3668,37 @@ docker push bxy-registry:5000/tomcat:v1　　　　    #推送镜像
 
 参考 https://www.jianshu.com/p/3d1878f857eb
 
+1、阿里云镜像站：（需登录，免费）
+
+https://.mirror.aliyuncs.com
+2、网易云镜像站：
+
+[http://hub-mirror.c.163.com](http://hub-mirror.c.163.com/)
+3、百度云镜像站：
+
+[https://mirror.baidubce.com](https://mirror.baidubce.com/)
+4、上海交大镜像站：
+
+[https://docker.mirrors.sjtug.sjtu.edu.cn](https://docker.mirrors.sjtug.sjtu.edu.cn/)
+5、南京大学镜像站：
+
+[https://docker.nju.edu.cn](https://docker.nju.edu.cn/)
+
 /etc/docker/daemon.json
 
 ```json
 {       
    // 有效的加速 https://docker.rainbond.cc
     "registry-mirrors": [
-        "http://hub-mirror.c.163.com",
-        "https://docker.mirrors.ustc.edu.cn",
-        "https://registry.docker-cn.com"
-    ],
+                "https://72idtxd8.mirror.aliyuncs.com",
+                "https://ckdhnbk9.mirror.aliyuncs.com",
+                "https://hub.uuuadc.top",
+                "https://docker.anyhub.us.kg",
+                "https://dockerhub.jobcher.com",
+                "https://dockerhub.icu",
+                "https://docker.ckyl.me",
+                "https://docker.awsl9527.cn"
+        ],
     // "insecure-registries": ["120.123.122.123:12312"], # ———————设置私有仓库地址可以设为http
     // "iptables": false, # ————————启用iptables规则添加（默认为true）
     //====配置容器的日志大小 ====
@@ -3686,7 +3707,8 @@ docker push bxy-registry:5000/tomcat:v1　　　　    #推送镜像
     //"log-level":"", # ——————设置日志记录级别（"调试"，"信息"，"警告"，"错误"，"致命"）（默认为"信息"）
     "log-opts":{
         "max-size" :"50m","max-file":"1"
-    }
+    },
+    
 }
 
 
@@ -4428,6 +4450,11 @@ socket          = /var/run/mysqld/mysqld.sock
 datadir         = /var/lib/mysql
 secure-file-priv= NULL
 
+# 慢查询语句记录日志路径 超过5s
+# slow_query_log = 1
+# long_query_time = 5
+# slow_query_log_file = /path/to/your/directory/mysql-slow.log
+
 # Custom config should go here
 !includedir /etc/mysql/conf.d/
 
@@ -4443,9 +4470,9 @@ init_connect='SET NAMES utf8mb4'
 sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
 
 [mysqld]
-# server_id不重复即可，不要和canal的slaveId重复
+# 主从server_id不重复即可，不要和canal的slaveId重复
 server_id=1
-# 开启binlog
+# 开启binlog 配置 binary log二进制日志文件名前缀，默认为binlog
 log_bin = mysql-bin
 # 选择row模式
 binlog_format = ROW
@@ -4455,6 +4482,11 @@ binlog_format = ROW
 # binlog-do-db=test1
 # binlog-do-db=test2
 # binlog-do-db=test3
+# 指定数据库不记录binlog，如多个则重复配置
+binlog-ignore-db=mysql
+binlog-ignore-db=sys
+binlog-ignore-db=information_schema
+binlog-ignore-db=performance_schema
 
 ```
 
@@ -5072,16 +5104,10 @@ services:
       - 666:666
       - 776:776
       - 777:777
-      - 443:443  
-      - 9011:81
-      - 9021:82
-      - 9031:83
-      - 9041:84
-      - 9051:85
-      - 9540:85
+      - 443:443
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./wwwroot:/usr/share/nginx/wwwroot
+      - ./wwwroot:/usr/share/nginx/html 
 
 ```
 
@@ -5122,6 +5148,50 @@ services:
       - ./conf/redis.conf:/etc/redis/redis.conf
 
 ```
+
+#### 6-9-1 哨兵集群部署
+
+```yml
+version: '3.3'
+services:
+  redis-sentinel1:
+    image: redis:latest
+    network_mode: 'host'
+    container_name: redis-sentinel1
+    command: redis-sentinel /etc/redis/sentinel.conf
+    volumes:
+      - ./sentinel1.conf:/etc/redis/sentinel.conf
+  redis-sentinel2:
+    image: redis:latest
+    network_mode: 'host'
+    container_name: redis-sentinel2
+    command: redis-sentinel /etc/redis/sentinel.conf
+    volumes:
+      - ./sentinel2.conf:/etc/redis/sentinel.conf
+  redis-sentinel3:
+    image: redis:latest
+    network_mode: 'host'
+    container_name: redis-sentinel3
+    command: redis-sentinel /etc/redis/sentinel.conf
+    volumes:
+      - ./sentinel3.conf:/etc/redis/sentinel.conf
+```
+
+示例: sentinel1.conf
+
+为每个 Sentinel 节点创建一个配置文件，例如 sentinel1.conf、sentinel2.conf 等。在配置文件中，您可以定义监视的主节点、故障判定超时等设置。
+
+```
+port 26479
+dir /tmp
+sentinel monitor mymaster 192.168.10.108 6479 2
+sentinel down-after-milliseconds mymaster 5000
+sentinel failover-timeout mymaster 10000
+sentinel parallel-syncs mymaster 1
+sentinel auth-pass mymaster xj2022
+```
+
+
 
 ### 6-10 安装rocketmq
 
@@ -5572,7 +5642,7 @@ Docker run -it --network test-network --network-alias b b
 #### 6-13-1 容器化Dockerfile
 
 ```dockerfile
-FROM openjdk:8-jdk-alpine  #FROM openjdk:8-jre-slim   实测alpine的包更小
+FROM openjdk:8-jdk-alpine  #FROM openjdk:8-jre-slim   实测alpine的包更小 #openjdk:8u342-jdk-oracle
 ADD lzmh-search.jar /usr/local/docker/service/search/
 WORKDIR /usr/local/docker/service/search
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
@@ -5664,7 +5734,14 @@ RUN apk add --update ttf-dejavu fontconfig && rm -rf /var/cache/apk/*
 docker build -t swr.cn-north-1.myhuaweicloud.com/d00105737/openjdk:8-jdk-font .
 ```
 
+更换镜像
+```shell
+FROM frolvlad/alpine-java:jdk8-slim
 
+完整版的FROM openjdk:8 而不是-alpine或-slim版本
+
+FROM openjdk:8u342-jdk-oracle
+```
 
 #### 6-14-1 手动导入导出镜像
 
@@ -6227,7 +6304,40 @@ ENV CLASS_PATH=:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:$JAVA_HOME/jre/li
 
 ```
 
-### 
+## 8 例子
+
+```dockerfile
+#Dockerfile
+FROM frolvlad/alpine-java:jdk8-slim
+
+MAINTAINER xagtdc-portal-im
+
+run mkdir -p /home/mysql-ct8/
+
+EXPOSE 8080
+
+ADD xagtdc-portal-server-1.0.0.jar xagtdc-portal-server-1.0.0.jar
+
+ENV TZ=Asia/Shanghai
+
+ENTRYPOINT ["java","-Xms1G", "-Xmx1G", "-Xmn250M", "-jar", "xagtdc-portal-server-1.0.0.jar", "--spring.profiles.active=test"]
+
+#run.sh
+DOCKER_CONTAINER_NAME=xagtdc-portal-api
+DEPLOY_HOME=/root/project/xagtdc-portal
+docker stop ${DOCKER_CONTAINER_NAME}
+
+docker rm ${DOCKER_CONTAINER_NAME}
+
+docker rmi xagtdc-portal-im
+
+docker build -t xagtdc-portal-im .
+
+docker run -d -p 8611:8080 -m 1G   -v /home/mysql-ct8/:/home/mysql-ct8/  -v /etc/localtime:/etc/localtime:ro -v /etc/timezone/timezone:/etc/timezone:ro -v ${DEPLOY_HOME}:${DEPLOY_HOME} --name ${DOCKER_CONTAINER_NAME} --restart=always xagtdc-portal-im
+
+```
+
+
 
 ## Portainer.io远程 
 

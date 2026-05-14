@@ -3106,8 +3106,19 @@ https://www.jianshu.com/p/5858b2a9b509
   npm install -g pnpm
   #pnpm可以替代npm的命令，下载包之类的效率更高
   ```
-  
-  
+
+
+##### nvm的node多版本管理
+  ```cmd
+  # 安装 nvm
+  下载(https://github.com/coreybutler/nvm-windows/releases)
+  为了避免版本冲突和环境混乱，在安装 nvm 之前先卸载之前安装的 Node.js。
+  # 命令
+  nvm list available
+  nvm install <version>
+  nvm list
+  nvm use <version>
+  ```
 
 ##### nrm的使用
 
@@ -8742,7 +8753,7 @@ System.getEnv("server.port");  // java -- 添加的参数方式获取
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-archetype-plugin</artifactId>
-    <version>xxx</version>
+    <version>3.8.0</version>
     <configuration>
     	<addDefaultExcludes>false</addDefaultExcludes>
     </configuration>
@@ -9507,7 +9518,174 @@ podTemplate(label: label, containers: [
 
 ```
 
-### Jenkins持续集成 之 hook自动触发构建
+#### Jenkins使用Dokcer构造镜像发布前端
+
+##### 前端的Dockerfile配置
+
+```dockerfile
+FROM nginx:1.24.0
+
+RUN mkdir -p /data/city-brain-iot-web-test/
+
+ADD city-brain-iot-web-test /data/city-brain-iot-web-test/
+
+ADD nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 80
+
+CMD nginx && tail -f /dev/null
+
+
+```
+
+##### jenkins的pipeline
+
+```groovy
+pipeline {
+    agent any
+
+    stages {
+        stage('1. clone') {
+            steps {
+                git branch: 'dev_2.0.0', credentialsId: '8e3b746a-7a86-4d2c-9e20-28f8a52c8d32', url: 'http://172.16.9.75:81/technology-roadmap/vibase/vibase-web.git'
+            }
+        }
+        stage('2. build') {
+            steps {
+                nodejs('nodejs-16.19.1') {
+                    // sh('npm cache clean --force')
+                    sh('npm install --save --legacy-peer-deps')
+                    sh 'npm run build:sub:no-patch'
+                }
+            }
+        }
+        stage('3. build docker image') {
+            steps {
+                sh 'docker build -t 172.16.9.78/vibase/vibase-web:test-v1.0.0 .'
+            }
+        }
+        stage('4. push docker image') {
+            steps {
+                sh 'docker push 172.16.9.78/vibase/vibase-web:test-v1.0.0'
+                sh 'docker rmi 172.16.9.78/vibase/vibase-web:test-v1.0.0'
+            }
+        }
+        stage('5. restart server') {
+            steps {
+                
+                script {                 
+  	                def remote = [:]
+                    remote.name = '172.16.9.172'
+                    remote.host = '172.16.9.172'
+                    remote.user = "${username}"
+                    remote.password = "${password}"
+                    remote.allowAnyHosts = true
+                    // withCredentials([usernamePassword(credentialsId: '172.16.9.172', passwordVariable: 'password', usernameVariable: 'username')]) {
+                    //     remote.user = "${username}"
+                    //     remote.password = "${password}"
+                    // }
+                
+                    sshCommand remote: remote, command: "docker-compose -f /root/applications/vibase-test/docker-compose.yaml stop -t 0 vibase-web"
+                    sshCommand remote: remote, command: "docker-compose -f /root/applications/vibase-test/docker-compose.yaml rm -f vibase-web"
+                    sshCommand remote: remote, command: "docker rmi 172.16.9.78/vibase/vibase-web:test-v1.0.0"
+                    sshCommand remote: remote, command: "docker-compose -f /root/applications/vibase-test/docker-compose.yaml up -d vibase-web"
+                }
+            }
+        }
+    }
+}
+```
+
+#### Jenkins使用Dokcer构造镜像发布后端
+
+##### 后端的Dockerfile
+
+```dockerfile
+FROM openjdk:8u342-jdk-oracle
+
+RUN mkdir -p /xagtdc-portal/logs
+
+ADD ./target/xagtdc-portal-api-*.jar /xagtdc-portal/xagtdc-portal-api.jar
+
+ENV TZ=Asia/Shanghai
+ENV SERVER_PORT=8080
+ENV SPRING_PROFILES_ACTIVE=dev
+ENV JAVA_OPTS=""
+
+EXPOSE ${SERVER_PORT}
+RUN ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone
+
+WORKDIR /xagtdc-portal
+
+CMD java -jar -server ${JAVA_OPTS} -Dserver.port=${SERVER_PORT} -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE} /xagtdc-portal/xagtdc-portal-api.jar
+
+```
+
+
+
+```groovy
+pipeline {
+    agent any
+
+    stages {
+        stage('1. clone') {
+            steps {
+                git branch: 'dev-v1.0.0', credentialsId: '8e3b746a-7a86-4d2c-9e20-28f8a52c8d32', url: 'http://172.16.9.75:81/technology-roadmap/vibase/vibase-boot.git'
+            }
+        }
+        stage('2. build') {
+            steps {
+                withMaven(globalMavenSettingsConfig: '', jdk: 'openjdk', maven: 'apache-maven', mavenSettingsConfig: '', traceability: true) {
+                    sh 'mvn clean package -U -DskipTests=true -P tenant-test'
+                }
+            }
+        }
+        stage('3. build docker image') {
+            steps {
+                sh 'docker build -t 172.16.9.78/vibase/vibase-server:test-v1.0.0 vibase-server/'
+            }
+        }
+        stage('4. push docker image') {
+            steps {
+                sh 'docker push 172.16.9.78/vibase/vibase-server:test-v1.0.0'
+                sh 'docker rmi 172.16.9.78/vibase/vibase-server:test-v1.0.0'
+            }
+        }
+        stage('5. restart server') {
+            steps {
+
+                script {
+  	                def remote = [:]
+                    remote.name = '172.16.9.172'
+                    remote.host = '172.16.9.172'
+                    remote.user = "${username}"
+                    remote.password = "${password}"
+                    remote.allowAnyHosts = true
+                    // withCredentials([usernamePassword(credentialsId: '172.16.9.172', passwordVariable: 'password', usernameVariable: 'username')]) {
+                    //     remote.user = "${username}"
+                    //     remote.password = "${password}"
+                    // }
+
+                    sshCommand remote: remote, command: "docker-compose -f /root/applications/vibase-test/docker-compose.yaml stop -t 0 vibase-api"
+                    sshCommand remote: remote, command: "docker-compose -f /root/applications/vibase-test/docker-compose.yaml rm -f vibase-api"
+                    sshCommand remote: remote, command: "docker rmi 172.16.9.78/vibase/vibase-server:test-v1.0.0"
+                    sshCommand remote: remote, command: "docker-compose -f /root/applications/vibase-test/docker-compose.yaml up -d vibase-api"
+                }
+            }
+        }
+        stage('6. clean workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+    }
+}
+
+```
+
+
+
+#### Jenkins持续集成 之 hook自动触发构建
 
 ### 例子2
 

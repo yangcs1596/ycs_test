@@ -326,7 +326,7 @@ https://www.kutu66.com//Java_API_Classes/article_65069#1-yfsys 看不懂的示�
       </dependency>
 ```
 
-#### 二维码生成工具zxing
+### 二维码生成工具zxing
 
 ```
 <dependency>
@@ -515,3 +515,28 @@ mvn versions:set -DnewVersion=1.2.0-SNAPSHOT
             </plugin>  
         </plugins>  
     </build>
+
+### html转pdf
+
+```xml
+<!--第三方组件-->
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>fastjson</artifactId>
+</dependency>
+<dependency>
+    <groupId>com.itextpdf</groupId>
+    <artifactId>html2pdf</artifactId>
+    <version>5.0.5</version>
+</dependency>
+<!--生成二维码和html转pdf-->
+<dependency>
+    <groupId>org.thymeleaf</groupId>
+    <artifactId>thymeleaf</artifactId>
+</dependency>
+<dependency>
+    <groupId>com.google.zxing</groupId>
+    <artifactId>core</artifactId>
+    <version>3.5.3</version>
+</dependency>
+```

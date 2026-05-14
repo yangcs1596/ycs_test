@@ -46,6 +46,10 @@
 
 API调试工具： Apifox、 Postman   fiddler抓包工具：app或者电脑端的请求抓取  showdoc开源
 
+API集成: springdoc零侵入式文档
+
+自己的api文档网站搭建：vitepress,  docsify(参考ruoyi-cloud-plus)
+
 代码版本管理：svn, git, gitlab, gitlib
 
 dev敏捷模式：jenkins
