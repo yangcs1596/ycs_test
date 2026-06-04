@@ -47,6 +47,8 @@ System.out.println(b1.add(b2).doubleValue());
    ***** 显示堆的详细信息：jmap -heap [pid]
    ***** 生成堆转储快照文件：jmap -dump:format=b,file=[name].hprof [pid]
    注：如果需要，通过参数 -XX:+HeapDumpOnOutOfMemoryError 可以让虚拟机在出现内存溢出异常的时候Dump出当前的内存堆转储快照。该命令有可能会导致Full GC。
+   GC日志：开启后可长期追踪，是调优的“第一手证据”
+   -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:gc.log
    
 ###工具###
 1、MemoryAnalyzer 

@@ -251,6 +251,7 @@ lpad：函数语法：
 lpad(str1,length,str2)。
 其中str1是第一个字符串，length是结果字符串的长度，str2是一个填充字符串。如果str1的长度没有length那么长，则使用str2填充；如果str1的长度大于length，则截断。
 #rpad：同理 
+示例： select LAPD('1',2, '0') 结果为： 01
 ```
 
 #### 6、垂直显示
@@ -696,6 +697,51 @@ create procedure test(in a int)
         END IF;
     END
 ```
+
+##### 7.1 生成年月季度周数据
+
+```mysql
+CREATE PROCEDURE `generate_year_week_data`(IN target_year INT)
+BEGIN
+    DECLARE currentDate DATE;
+    DECLARE week_num INT;
+    DECLARE month_num INT;
+    DECLARE quarter_num INT;
+    DECLARE week_id_str VARCHAR(8);
+    DECLARE week_start_date DATE;
+    DECLARE week_end_date DATE;
+    
+    -- 设置起始日期为目标年份的1月1日
+    SET currentDate = STR_TO_DATE(CONCAT(target_year, '-01-01'), '%Y-%m-%d');
+    
+    WHILE YEAR(currentDate) = target_year DO
+        -- 获取周数，以周一为一周的开始
+        SET week_num = WEEK(currentDate, 1);
+        -- 获取月份
+        SET month_num = MONTH(currentDate);
+        -- 获取季度
+        SET quarter_num = QUARTER(currentDate);
+        -- 计算周起始日期，以周一为一周的开始
+        SET week_start_date = DATE_SUB(currentDate, INTERVAL (WEEKDAY(currentDate)) DAY);
+        -- 计算周结束日期
+        SET week_end_date = DATE_ADD(week_start_date, INTERVAL 6 DAY);
+        -- 生成年周标识，格式为YYYYWW
+        SET week_id_str = CONCAT(target_year, LPAD(week_num, 2, '0'));
+        
+        -- 插入数据
+        INSERT INTO year_week_data (week_id, week_number, week_start_date, week_end_date, year, month, quarter)
+        VALUES (week_id_str, week_num, week_start_date, week_end_date, target_year, month_num, quarter_num);
+        
+        -- 移动到下一周
+        SET currentDate = DATE_ADD(currentDate, INTERVAL 7 DAY);
+    END WHILE;
+END
+
+#执行
+call generate_year_week_data(2026)
+```
+
+
 
 #### 8、查看表详细信息
 
@@ -1208,6 +1254,15 @@ AND b.selling_price = (
     AND a.goods_id = b.goods_id 
     GROUP BY a.goods_id  
  )
+```
+
+#### 6 row()多字段的 IN 条件匹配
+
+把多个条件合并成一个逻辑单元，让 SQL 更加直观、易读
+
+```mysql
+select * from user
+where row(name, age) in (('张三'，'25'), ('李四','20'))
 ```
 
 

@@ -813,7 +813,7 @@ firewall-cmd --zone=public --list-ports #查询防火墙开放的所有端口
 firewall-cmd --list-all   # 查看防火墙规则
 ####对外开发端口
 firewall-cmd --query-port=6379/tcp               #查看6379端口是否已开
-firewall-cmd --add-port=123/tcp --permanent      #添加指定需要开放的端口123
+firewall-cmd --zone=public --add-port=123/tcp --permanent      #添加指定需要开放的端口123
 firewall-cmd --query-port=123/tcp                #查询指定端口123是否开启成功
 firewall-cmd --permanent --remove-port=123/tcp   #移除指定端口123
 firewall-cmd --reload                            #重载入添加的端口
@@ -831,7 +831,8 @@ sudo iptables -D INPUT 5                      #根据行号删除某个规则，
 sudo iptables -D OUTPUT -p tcp --dport 443 -j ACCEPT          #删除
 "sudo iptables -A INPUT -p tcp --dport $PORT -j DROP"         #关闭某个端口
 "sudo iptables -A OUTPUT -p tcp --dport $PORT -j DROP"        #关闭某个端口
-sudo iptables -I INPUT -p tcp --dport 8011 -j ACCEPT         #开启8011端口
+sudo iptables -A INPUT -p tcp --dport 8011 -j ACCEPT         #开启8011端口
+sudo iptables -A OUTPUT -p tcp --sport 8011 -j ACCEPT
 
 iptables -A OUTPUT -s 192.168.88.94 -p tcp -m tcp --dport 15674 -j ACCEPT  #指定ip
 iptables -R TEST_CHAIN 1  -s 10.0.0.12 -p tcp -m multiport  --dports 80,443,8080 -j REJECT #替换
@@ -1736,5 +1737,4 @@ memory
 disk 
 tcp_status
 ```
-
 
